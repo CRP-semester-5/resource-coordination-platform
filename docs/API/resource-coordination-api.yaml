@@ -1,0 +1,524 @@
+openapi: 3.0.3
+info:
+  title: Resource Coordination Platform API
+  description: API Contract for the Resource Coordination Platform for Community Resilience
+  version: 1.0.0
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local Development Server
+tags:
+- name: Authentication
+- name: Requests
+- name: Donations
+- name: Inventory
+- name: Volunteers
+- name: Notifications
+- name: Admin
+paths:
+  /auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: Register a new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "201":
+          description: User registered successfully
+  /auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Login user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+  /auth/profile:
+    get:
+      tags:
+      - Authentication
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+      security:
+      - bearerAuth: []
+  /requests:
+    get:
+      tags:
+      - Requests
+      summary: Get all requests
+      responses:
+        "200":
+          description: List of requests
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Requests
+      summary: Create a help request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestCreate"
+        required: true
+      responses:
+        "201":
+          description: Request created
+      security:
+      - bearerAuth: []
+  /requests/{id}:
+    get:
+      tags:
+      - Requests
+      summary: Get request by ID
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Request details
+      security:
+      - bearerAuth: []
+    put:
+      tags:
+      - Requests
+      summary: Update request
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Request updated
+      security:
+      - bearerAuth: []
+  /requests/{id}/verify:
+    patch:
+      tags:
+      - Admin
+      summary: Verify request
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Request verified
+      security:
+      - bearerAuth: []
+  /donations:
+    get:
+      tags:
+      - Donations
+      summary: Get all donations
+      responses:
+        "200":
+          description: Donation list
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Donations
+      summary: Submit donation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationCreate"
+        required: true
+      responses:
+        "201":
+          description: Donation submitted
+      security:
+      - bearerAuth: []
+  /inventory:
+    post:
+      tags:
+      - Inventory
+      summary: Add inventory item
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItem"
+        required: true
+      responses:
+        "201":
+          description: Inventory item added
+      security:
+      - bearerAuth: []
+  /inventory/{id}:
+    put:
+      tags:
+      - Inventory
+      summary: Update inventory item
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItem"
+        required: true
+      responses:
+        "200":
+          description: Inventory updated
+      security:
+      - bearerAuth: []
+  /inventory/{id}/allocate:
+    patch:
+      tags:
+      - Inventory
+      summary: Allocate inventory to a request
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllocateInventory"
+        required: true
+      responses:
+        "200":
+          description: Inventory allocated
+      security:
+      - bearerAuth: []
+  /inventory/{id}/restock:
+    patch:
+      tags:
+      - Inventory
+      summary: Restock inventory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RestockInventory"
+        required: true
+      responses:
+        "200":
+          description: Inventory restocked
+      security:
+      - bearerAuth: []
+  /volunteers/profile:
+    post:
+      tags:
+      - Volunteers
+      summary: Create volunteer profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerProfile"
+        required: true
+      responses:
+        "201":
+          description: Volunteer profile created
+      security:
+      - bearerAuth: []
+  /tasks:
+    get:
+      tags:
+      - Volunteers
+      summary: Get all tasks
+      responses:
+        "200":
+          description: Task list
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Admin
+      summary: Create a volunteer task
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTask"
+        required: true
+      responses:
+        "201":
+          description: Task created
+      security:
+      - bearerAuth: []
+  /tasks/{id}/assign:
+    patch:
+      tags:
+      - Admin
+      summary: Assign task to volunteer
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignTask"
+        required: true
+      responses:
+        "200":
+          description: Volunteer assigned successfully
+      security:
+      - bearerAuth: []
+  /tasks/{id}/accept:
+    patch:
+      tags:
+      - Volunteers
+      summary: Accept assigned task
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Task accepted
+      security:
+      - bearerAuth: []
+  /tasks/{id}/complete:
+    patch:
+      tags:
+      - Volunteers
+      summary: Mark task as completed
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Task completed
+      security:
+      - bearerAuth: []
+  /notifications:
+    get:
+      tags:
+      - Notifications
+      summary: Get notifications
+      responses:
+        "200":
+          description: Notification list
+      security:
+      - bearerAuth: []
+  /dashboard:
+    get:
+      tags:
+      - Admin
+      summary: Coordinator dashboard
+      responses:
+        "200":
+          description: Dashboard information
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    RegisterRequest:
+      required:
+      - email
+      - name
+      - password
+      type: object
+      properties:
+        name:
+          type: string
+          example: Pamoth Kumarasinghe
+        email:
+          type: string
+          example: pamoth@gmail.com
+        password:
+          type: string
+          example: Password@123
+    LoginRequest:
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          type: string
+          example: pamoth@gmail.com
+        password:
+          type: string
+          example: Password@123
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        role:
+          type: string
+          example: Coordinator
+        userId:
+          type: integer
+    RequestCreate:
+      required:
+      - location
+      - quantity
+      - resourceType
+      - urgency
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: Food
+        quantity:
+          type: integer
+          example: 10
+        location:
+          type: string
+          example: Galle
+        urgency:
+          type: string
+          enum:
+          - Low
+          - Medium
+          - High
+          - Critical
+    DonationCreate:
+      required:
+      - quantity
+      - resourceType
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: Bottled Water
+        quantity:
+          type: integer
+          example: 100
+        deliveryMethod:
+          type: string
+          example: Pickup
+    VolunteerProfile:
+      required:
+      - serviceArea
+      - skills
+      type: object
+      properties:
+        skills:
+          type: array
+          example:
+          - First Aid
+          - Transport
+          items:
+            type: string
+        serviceArea:
+          type: string
+          example: Colombo
+        availability:
+          type: string
+          example: Weekends
+    CreateTask:
+      required:
+      - description
+      - requestId
+      - volunteerId
+      type: object
+      properties:
+        requestId:
+          type: integer
+          example: 12
+        volunteerId:
+          type: integer
+          example: 5
+        description:
+          type: string
+          example: Deliver food package
+        deadline:
+          type: string
+          format: date
+          example: 2026-08-15
+    AssignTask:
+      required:
+      - volunteerId
+      type: object
+      properties:
+        volunteerId:
+          type: integer
+          example: 5
+    InventoryItem:
+      required:
+      - quantity
+      - resourceType
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: Rice
+        quantity:
+          type: integer
+          example: 100
+        unit:
+          type: string
+          example: kg
+        location:
+          type: string
+          example: Main Warehouse
+    AllocateInventory:
+      required:
+      - quantity
+      - requestId
+      type: object
+      properties:
+        requestId:
+          type: integer
+          example: 18
+        quantity:
+          type: integer
+          example: 20
+    RestockInventory:
+      required:
+      - quantity
+      type: object
+      properties:
+        quantity:
+          type: integer
+          example: 50
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
