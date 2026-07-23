@@ -1,9 +1,10 @@
-version: "3.9"
-
 # ─────────────────────────────────────────────────────────────────
 #  Resource Coordination Platform — Docker Compose
 #
 #  Database: Supabase (hosted) — no local DB container needed.
+
+# ********* NOT YET IMPLEMENTED (SUPABASE DB) **********
+
 #  All services connect via SUPABASE_URL / DATABASE_URL from .env
 #
 #  NOTE: All build contexts are set to root (.) so Docker can
@@ -16,7 +17,7 @@ networks:
 
 services:
 
-  # ── API Gateway ──────────────────────────────────────────────
+  # API Gateway
   api-gateway:
     build:
       context: .
@@ -47,7 +48,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── User Service ─────────────────────────────────────────────
+  # User-Service
   user-service:
     build:
       context: .
@@ -64,7 +65,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── Organization Service ─────────────────────────────────────
+  # Organization-Service
   organization-service:
     build:
       context: .
@@ -81,7 +82,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── Resource Service ─────────────────────────────────────────
+  # Resource-Service
   resource-service:
     build:
       context: .
@@ -98,7 +99,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── Request Service ──────────────────────────────────────────
+  # Request-Service
   request-service:
     build:
       context: .
@@ -115,7 +116,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── Task Service ─────────────────────────────────────────────
+  # Task-Service
   task-service:
     build:
       context: .
@@ -132,7 +133,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── Volunteer Service ────────────────────────────────────────
+  # Volunteer-Service
   volunteer-service:
     build:
       context: .
@@ -149,7 +150,7 @@ services:
       - crp-network
     restart: unless-stopped
 
-  # ── Notification Service ─────────────────────────────────────
+  # Notification-Service
   notification-service:
     build:
       context: .

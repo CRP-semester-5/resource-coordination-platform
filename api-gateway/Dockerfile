@@ -1,7 +1,7 @@
 # Build context is the repo ROOT (set in docker-compose.yml)
 # so all paths below are relative to the monorepo root.
 
-# ── Stage 1: Install dependencies ────────────────────────────
+# Stage 1: Install dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
 
@@ -11,7 +11,7 @@ COPY api-gateway/package.json ./package.json
 
 RUN npm ci --only=production
 
-# ── Stage 2: Runtime ──────────────────────────────────────────
+# Stage 2: Runtime
 FROM node:20-alpine
 WORKDIR /app
 
