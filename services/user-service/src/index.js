@@ -42,4 +42,5 @@ app.get('/health', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`user-service running on port ${PORT}`)
     console.log(`Health: http://localhost:${PORT}/health`)
-})
+});
+// this has to be changed "http://localhost:${PORT}/health"
