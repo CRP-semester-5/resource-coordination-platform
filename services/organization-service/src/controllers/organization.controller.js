@@ -111,10 +111,50 @@ export const deleteOrganization = async (req, res) => {
     }
 };
 
-export const approveOrganization = (req, res) => {
-    res.json({ message: "Approve Organization" });
+export const approveOrganization = async (req, res) => {
+
+    try {
+
+        const organization =
+            await organizationService.approveOrganization(
+                req.params.id
+            );
+
+        return res.status(200).json({
+            success: true,
+            message: "Organization approved successfully.",
+            data: organization
+        });
+
+    } catch(error){
+
+        return res.status(400).json({
+            success:false,
+            message:error.message
+        });
+    }
 };
 
-export const rejectOrganization = (req, res) => {
-    res.json({ message: "Reject Organization" });
+export const rejectOrganization = async (req, res) => {
+
+    try {
+
+        const organization =
+            await organizationService.rejectOrganization(
+                req.params.id
+            );
+
+        return res.status(200).json({
+            success: true,
+            message: "Organization rejected successfully.",
+            data: organization
+        });
+
+    } catch(error){
+
+        return res.status(400).json({
+            success:false,
+            message:error.message
+        });
+    }
 };

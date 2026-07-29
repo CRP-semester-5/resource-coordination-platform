@@ -1,9 +1,15 @@
 import express from "express";
 import * as organizationController from "../controllers/organization.controller.js";
+import { validate } from "../middleware/validate.middleware.js";
+import { createOrganizationSchema } from "../validators/organization.validator.js";
 
 const router = express.Router();
 
-router.post("/", organizationController.createOrganization);
+router.post(
+    "/",
+    validate(createOrganizationSchema),
+    organizationController.createOrganization
+);
 
 router.get("/", organizationController.getOrganizations);
 

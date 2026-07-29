@@ -51,3 +51,14 @@ export const softDelete = async (organizationId) => {
         .select()
         .single();
 };
+
+export const updateStatus = async (organizationId, status) => {
+    return await supabase
+        .from("organizations")
+        .update({
+            status: status
+        })
+        .eq("organization_id", organizationId)
+        .select()
+        .single();
+};

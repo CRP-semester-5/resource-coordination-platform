@@ -79,3 +79,33 @@ export const deleteOrganization = async (organizationId) => {
 
     return data;
 };
+
+export const approveOrganization = async (organizationId) => {
+
+    const { data, error } =
+        await organizationRepository.updateStatus(
+            organizationId,
+            "ACTIVE"
+        );
+
+    if(error){
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+export const rejectOrganization = async (organizationId) => {
+
+    const { data, error } =
+        await organizationRepository.updateStatus(
+            organizationId,
+            "SUSPENDED"
+        );
+
+    if(error){
+        throw new Error(error.message);
+    }
+
+    return data;
+};
