@@ -1,0 +1,16 @@
+{
+  "name": "@crp/shared-middleware",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared Express middleware for all CRP microservices — JWT auth guard and role-based access control.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.3"
+  }
+}
