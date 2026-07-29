@@ -62,12 +62,53 @@ export const getOrganizationById = async (req, res) => {
     }
 };
 
-export const updateOrganization = (req, res) => {
-    res.json({ message: "Update Organization" });
+export const updateOrganization = async (req, res) => {
+    try {
+
+        const organization =
+            await organizationService.updateOrganization(
+                req.params.id,
+                req.body
+            );
+
+        return res.status(200).json({
+            success:true,
+            message:"Organization updated successfully.",
+            data:organization
+        });
+
+    } catch(error){
+
+        return res.status(400).json({
+            success:false,
+            message:error.message
+        });
+
+    }
 };
 
-export const deleteOrganization = (req, res) => {
-    res.json({ message: "Delete Organization" });
+export const deleteOrganization = async (req, res) => {
+    try {
+
+        const organization =
+            await organizationService.deleteOrganization(
+                req.params.id
+            );
+
+        return res.status(200).json({
+            success: true,
+            message: "Organization deleted successfully.",
+            data: organization
+        });
+
+    } catch(error) {
+
+        return res.status(400).json({
+            success:false,
+            message:error.message
+        });
+
+    }
 };
 
 export const approveOrganization = (req, res) => {

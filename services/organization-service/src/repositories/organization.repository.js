@@ -31,3 +31,23 @@ export const findById = async (organizationId) => {
         .eq("organization_id", organizationId)
         .maybeSingle();
 };
+
+export const update = async (organizationId, organizationData) => {
+    return await supabase
+        .from("organizations")
+        .update(organizationData)
+        .eq("organization_id", organizationId)
+        .select()
+        .single();
+};
+
+export const softDelete = async (organizationId) => {
+    return await supabase
+        .from("organizations")
+        .update({
+            status: "INACTIVE"
+        })
+        .eq("organization_id", organizationId)
+        .select()
+        .single();
+};

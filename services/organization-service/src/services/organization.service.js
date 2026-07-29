@@ -47,3 +47,35 @@ export const getOrganizationById = async (organizationId) => {
 
     return data;
 };
+
+export const updateOrganization = async (
+    organizationId,
+    organizationData
+) => {
+
+    const { data, error } =
+        await organizationRepository.update(
+            organizationId,
+            organizationData
+        );
+
+    if(error){
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+export const deleteOrganization = async (organizationId) => {
+
+    const { data, error } =
+        await organizationRepository.softDelete(
+            organizationId
+        );
+
+    if(error){
+        throw new Error(error.message);
+    }
+
+    return data;
+};
