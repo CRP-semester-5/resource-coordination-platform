@@ -1,191 +1,355 @@
-# Resource Coordination Platform
+# ResQ Hub — Resource Coordination Platform
 
-A microservices-based backend platform for coordinating resources, volunteers, tasks, and organizations. Built with Node.js + Express, containerized with Docker, and backed by Supabase (PostgreSQL).
+A microservices backend for coordinating community resources, volunteers, tasks, and emergency relief operations. Built with **Node.js + Express**, routed through **Kong Gateway**, backed by **Supabase (PostgreSQL)**, and containerized with **Docker**.
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [First-Time Setup](#first-time-setup)
+- [Running the Project](#running-the-project)
+  - [Option A — Individual Service (dev)](#option-a--individual-service-recommended-for-development)
+  - [Option B — All Services with Docker](#option-b--all-services-with-docker)
+- [Service Reference](#service-reference)
+- [API Quick Reference](#api-quick-reference)
+- [Testing Endpoints](#testing-endpoints)
+- [Environment Variables](#environment-variables)
+- [Database Setup](#database-setup)
+- [Git Workflow](#git-workflow)
 
 ---
 
 ## Architecture
 
 ```
-resource-coordination-platform/
-├── api-gateway/                  # Single entry point — routes traffic to services
-├── services/
-│   ├── user-service/             # User accounts & authentication   → :3001
-│   ├── organization-service/     # Organization management          → :3002
-│   ├── resource-service/         # Resource inventory & tracking    → :3003
-│   ├── request-service/          # Resource requests & approvals    → :3004
-│   ├── task-service/             # Task assignment & tracking       → :3005
-│   ├── volunteer-service/        # Volunteer profiles & matching    → :3006
-│   └── notification-service/     # Alerts & notifications           → :3007
-├── docs/                         # API docs & project reports
-├── database/                     # DB migration scripts (Supabase)
-├── docker-compose.yml
-├── package.json                  # Root npm workspace config
-├── .env.example
-├── .gitignore
-└── .dockerignore
+Client (Browser / Mobile)
+        │
+        ▼
+  Kong Gateway  :3000          ← single public entry point
+        │
+  ┌─────┴──────────────────────────────────┐
+  │                                         │
+user-service :3001        organization-service :3002
+request-service :3004     resource-service :3003
+task-service :3005        volunteer-service :3006
+notification-service :3007
+        │
+        ▼
+  Supabase (PostgreSQL)        ← hosted database, not containerized
 ```
 
-### Service Port Map
-
-| Service               | Port |
-|-----------------------|------|
-| API Gateway           | 3000 |
-| User Service          | 3001 |
-| Organization Service  | 3002 |
-| Resource Service      | 3003 |
-| Request Service       | 3004 |
-| Task Service          | 3005 |
-| Volunteer Service     | 3006 |
-| Notification Service  | 3007 |
-
----
-
-## Tech Stack
-
-- **Runtime**: Node.js 20 (Alpine)
-- **Framework**: Express.js
-- **Database**: [Supabase](https://supabase.com) (hosted PostgreSQL) — *not containerized*
-- **Package Management**: npm workspaces (monorepo)
-- **Containerization**: Docker + Docker Compose
+```
+resource-coordination-platform/
+├── api-gateway/
+│   └── kong/
+│       └── kong.yml           ← Kong declarative config (DB-less)
+├── services/
+│   ├── user-service/          ← auth, profiles, addresses  → :3001
+│   ├── organization-service/  ← orgs & memberships         → :3002
+│   ├── resource-service/      ← inventory & donations       → :3003
+│   ├── request-service/       ← assistance requests         → :3004
+│   ├── task-service/          ← tasks & assignments         → :3005
+│   ├── volunteer-service/     ← volunteer profiles          → :3006
+│   └── notification-service/  ← real-time notifications     → :3007
+├── packages/
+│   └── shared-middleware/     ← JWT auth + RBAC (npm workspace package)
+├── database/
+│   └── resource_coordination_platform_schema.sql
+├── docs/
+│   ├── resQHub.md             ← project plan
+│   └── API/
+│       └── resource-coordination-api.yaml
+├── docker-compose.yml
+├── .env.example
+└── package.json               ← npm workspaces root
+```
 
 ---
 
 ## Prerequisites
 
-Make sure the following are installed before starting:
+Install these before starting:
 
-- [Node.js](https://nodejs.org/) v20+
-- [npm](https://www.npmjs.com/) v10+
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- A [Supabase](https://supabase.com) account & project
+| Tool | Version | Download |
+|---|---|---|
+| Node.js | v20+ | https://nodejs.org |
+| npm | v10+ | comes with Node |
+| Docker Desktop | latest | https://www.docker.com/products/docker-desktop |
+| Git | any | https://git-scm.com |
+
+You also need a **Supabase** project (free):
+→ https://supabase.com — create an account, create a new project
 
 ---
 
-## Getting Started
+## First-Time Setup
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/CRP-semester-5/resource-coordination-platform.git
 cd resource-coordination-platform
 ```
 
-### 2. Set Up Environment Variables
+### 2. Install all dependencies
 
-Copy the example env file and fill in your credentials:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and replace the placeholder values:
-
-```env
-# Get these from: Supabase Dashboard → Project → Settings → API
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Get this from: Supabase Dashboard → Settings → Database → Connection string
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.your-project-id.supabase.co:5432/postgres
-
-# Auth
-JWT_SECRET=your-secret-key
-```
-
-### 3. Install Node Modules
-
-This project uses **npm workspaces**. A single install from the root installs dependencies for all services:
+This project uses **npm workspaces** — one install from the root handles all services:
 
 ```bash
 npm install
 ```
 
-> Shared packages (express, dotenv) are hoisted to the root `node_modules/`. Each service's specific dependencies are symlinked automatically.
+### 3. Create your `.env` file
+
+```bash
+# Windows
+copy .env.example .env
+
+# Mac / Linux
+cp .env.example .env
+```
+
+Open `.env` and fill in these values (get them from your Supabase dashboard):
+
+```env
+# Supabase Dashboard → Project → Settings → API
+SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+SUPABASE_SECRET_KEY=eyJhbGciOiJIUz...     ← use the service_role key
+
+# Make this a long random string — keep it secret
+JWT_SECRET=change-this-to-a-long-random-secret
+
+# Gmail SMTP (see email setup section below)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=youremail@gmail.com
+SMTP_PASS=your-16-char-app-password
+EMAIL_FROM=ResQ Hub <youremail@gmail.com>
+```
+
+> **Leave SMTP_USER empty** if you want to use Ethereal (fake inbox). The service auto-creates a test account and prints a preview URL to the console — good for quick testing without Gmail.
+
+### 4. Set up the database
+
+(already done)
+
+Open your **Supabase Dashboard → SQL Editor** and run the full schema:
+
+1. Open `database/resource_coordination_platform_schema.sql`
+2. Copy all contents
+3. Paste into the SQL Editor and click **Run**
 
 ---
 
 ## Running the Project
 
-### Option A — Docker (Recommended)
+### Option A — Individual Service (recommended for development)
 
-Builds and starts all 8 containers (api-gateway + 7 services) on a shared Docker network:
+Run a single service with hot-reload (nodemon restarts on file save):
+
+```bash
+# User Service
+cd services/user-service
+npm run dev
+
+# Organization Service
+cd services/organization-service
+npm run dev
+
+# (same pattern for any other service)
+```
+
+Check it's running:
+```
+✅  user-service running on port 3001
+    Health  → http://localhost:3001/health
+    Auth    → http://localhost:3001/api/v1/auth
+    Users   → http://localhost:3001/api/v1/users
+```
+
+Hit the health endpoint to confirm the DB connection:
+```
+GET http://localhost:3001/health
+```
+
+Expected response:
+```json
+{ "status": "healthy", "service": "user-service", "db": "connected" }
+```
+
+---
+
+### Option B — All Services with Docker
+
+> Requires Docker Desktop to be running.
+
+**Build and start everything** (Kong + all 7 services):
 
 ```bash
 docker-compose up --build
 ```
 
-Run in the background:
+**Run in the background:**
 
 ```bash
 docker-compose up --build -d
 ```
 
-Stop all containers:
+**View logs for a specific service:**
+
+```bash
+docker-compose logs -f user-service
+docker-compose logs -f kong
+```
+
+**Stop everything:**
 
 ```bash
 docker-compose down
 ```
 
-Rebuild a single service after a code change:
+**Rebuild a single service after code changes:**
 
 ```bash
 docker-compose up --build user-service
 ```
 
-### Option B — Local Development (without Docker)
-
-Run each service individually using nodemon for hot-reload:
-
-```bash
-# From inside any service folder
-cd services/user-service
-npm run dev
+**Kong Admin API** (inspect routes, plugins, etc.) — dev only:
 ```
-
-Or run all services concurrently from the root (requires a tool like `concurrently`):
-
-```bash
-npm install -g concurrently
-# then from root:
-concurrently "npm run dev --workspace=services/user-service" \
-             "npm run dev --workspace=services/organization-service" \
-             ...
+http://localhost:8001
 ```
 
 ---
 
-## Docker Notes
+## Service Reference
 
-- **Build context** for all services is the **repo root** (`.`) so Docker can access the shared root `package-lock.json` (required by npm workspaces).
-- Each `Dockerfile` uses a **multi-stage build**: a `deps` stage installs production dependencies, and the final `runtime` stage is a lean Alpine image.
-- `.dockerignore` excludes `node_modules/`, `.env`, and editor files from the image.
-- **Supabase is not containerized** — services connect to it as an external hosted service via environment variables.
+### User Service `:3001` ✅ Implemented
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/register` | Public | Register new user — sends verification email |
+| `POST` | `/api/v1/auth/login` | Public | Login → returns JWT + roles |
+| `GET` | `/api/v1/auth/verify-email?token=` | Public | Verify email by clicking link |
+| `POST` | `/api/v1/auth/verify-email` | Public | Verify email via API (body: `{token}`) |
+| `POST` | `/api/v1/auth/forgot-password` | Public | Send password reset email |
+| `POST` | `/api/v1/auth/reset-password` | Public | Reset password with token |
+| `POST` | `/api/v1/auth/logout` | Bearer | Acknowledge logout |
+| `GET` | `/api/v1/users/me` | Bearer | Get own profile |
+| `PATCH` | `/api/v1/users/me` | Bearer | Update own profile |
+| `GET` | `/api/v1/users/me/addresses` | Bearer | List own addresses |
+| `POST` | `/api/v1/users/me/addresses` | Bearer | Add address |
+| `DELETE` | `/api/v1/users/me/addresses/:id` | Bearer | Delete address |
+| `GET` | `/api/v1/users/:userId` | Bearer | Get any user by UUID |
+| `GET` | `/health` | Public | Health check |
+
+### Organization Service `:3002` ⏳ Pending
+
+### Resource Service `:3003` ⏳ Pending
+
+### Request Service `:3004` ⏳ Pending
+
+### Task Service `:3005` ⏳ Pending
+
+### Volunteer Service `:3006` ⏳ Pending
+
+### Notification Service `:3007` ⏳ Pending
 
 ---
 
-## What's Set Up
+## API Quick Reference
 
-| Area | Status |
-|---|---|
-| npm workspaces (monorepo) | ✅ Done |
-| `package.json` for all 8 services | ✅ Done |
-| `Dockerfile` for all 8 services | ✅ Done |
-| Root `docker-compose.yml` | ✅ Done |
-| Root `.gitignore` | ✅ Done |
-| Root `.dockerignore` | ✅ Done |
-| `.env.example` with Supabase variables | ✅ Done |
-| Supabase DB integration (per service) | ⏳ Pending |
-| Service source code (`src/index.js`) | ⏳ Pending |
-| API Gateway routing logic | ⏳ Pending |
+All requests go through Kong on port `3000` in Docker, or directly to the service port in dev.`
 
 ---
 
-## Contributing
+## Environment Variables
 
-1. Create a branch: `git checkout -b feature/your-feature`
-2. Make your changes
-3. Commit: `git commit -m "feat: describe your change"`
-4. Push: `git push origin feature/your-feature`
-5. Open a Pull Request
+All variables live in the root `.env` file (copy from `.env.example`).
+
+| Variable | Required | Description |
+|---|---|---|
+| `SUPABASE_URL` | ✅ | Your Supabase project URL |
+| `SUPABASE_SECRET_KEY` | ✅ | Supabase `service_role` key |
+| `JWT_SECRET` | ✅ | Secret for signing JWTs — keep this private |
+| `JWT_EXPIRES_IN` | — | Token expiry (default: `7d`) |
+| `SMTP_HOST` | — | SMTP server host |
+| `SMTP_PORT` | — | SMTP port (587 for TLS) |
+| `SMTP_USER` | — | Email address — leave empty for Ethereal auto-account |
+| `SMTP_PASS` | — | App password (Gmail) or SMTP password |
+| `EMAIL_FROM` | — | Display name + address in outgoing emails |
+| `EMAIL_VERIFICATION_EXPIRES_MINUTES` | — | Verification link TTL (default: 60) |
+| `PASSWORD_RESET_EXPIRES_MINUTES` | — | Reset link TTL (default: 15) |
+| `FRONTEND_URL` | — | Frontend origin for CORS (default: `http://localhost:5173`) |
+| `USER_SERVICE_PORT` | — | Port for user-service (default: 3001) |
+
+### Gmail App Password setup
+
+1. Enable **2-Step Verification** on your Google account
+2. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+3. Create an app password — name it anything (e.g. `ResQHub`)
+4. Copy the 16-character password into `SMTP_PASS` (no spaces)
+
+---
+
+## Database Setup
+
+Database: **PostgreSQL hosted on Supabase** (not containerized locally).
+
+Schema file: `database/resource_coordination_platform_schema.sql`
+
+Run this SQL in **Supabase Dashboard → SQL Editor** to create all tables, enums, indexes, and triggers.
+
+
+**Available roles:** `SUPER_ADMIN` · `ORGANIZATION_ADMIN` · `COORDINATOR` · `COMMUNITY_MEMBER` · `DONOR` · `VOLUNTEER`
+
+> ⚠️ `requireRole` checks if the user has the role in **any** organization. For org-specific checks, also verify `req.user.roles.find(r => r.org_id === req.params.orgId)` in your controller.
+
+---
+
+## Git Workflow
+
+```bash
+# Start a new feature
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+
+# After coding
+git add .
+git commit -m "feat(service): describe what you did"
+git push origin feature/your-feature-name
+# → Open a Pull Request to develop
+```
+
+**Commit format:**
+```
+feat(user): add password reset flow
+fix(task): prevent duplicate volunteer assignments
+docs(api): update donation endpoints
+test(resource): add inventory transaction tests
+chore(docker): update service health checks
+```
+
+**Branch rules:**
+- `main` — production only, protected
+- `develop` — integration branch, all PRs merge here
+- `feature/*` — your working branch
+- Never push directly to `main` or `develop`
+
+---
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+|---|---|---|
+| `Missing required environment variable` | `.env` not set up | Check `.env` exists and values are filled |
+| `503 db: unreachable` on `/health` | Wrong Supabase credentials | Verify `SUPABASE_URL` and `SUPABASE_SECRET_KEY` |
+| `403 Please verify your email` | Account is PENDING | Check email inbox, click verification link |
+| `401 Invalid token` | Missing or wrong JWT | Send `Authorization: Bearer <token>` header |
+| `409 Email already registered` | Duplicate email | Use different email or delete row from Supabase |
+| `400 first_name is required` | Joi validation failed | Check request body has all required fields |
+| Gmail email not arriving | Wrong App Password | Re-generate App Password, check spam folder |
+| `nodemon: command not found` | nodemon not installed | `npm install -D nodemon --workspace=services/user-service` |
+| Port already in use | Another process on same port | Change `USER_SERVICE_PORT` in `.env` or kill the process |
