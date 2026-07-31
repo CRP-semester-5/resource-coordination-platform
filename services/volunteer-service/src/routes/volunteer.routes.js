@@ -1,5 +1,5 @@
 import express from 'express'
-import { authenticate } from '@crp/shared-middleware'
+import { authenticate, requireRole } from '@crp/shared-middleware'
 import {
   createVolunteerProfile,
   getVolunteers,
@@ -9,7 +9,12 @@ import {
   removeSkillFromVolunteer,
   addAvailability,
   getAvailability,
-  updateAvailability
+  updateAvailability,
+  addCertification,
+  getCertifications,
+  updateCertification,
+  deleteCertification,
+  updateVerificationStatus
 } from '../controllers/volunteer.controller.js'
 
 const router = express.Router()
@@ -22,6 +27,7 @@ router.post('/', createVolunteerProfile)
 router.get('/', getVolunteers)
 router.get('/:volunteerId', getVolunteerById)
 router.patch('/:volunteerId', updateVolunteerProfile)
+router.patch('/:volunteerId/verify', requireRole('COORDINATOR', 'ORGANIZATION_ADMIN'), updateVerificationStatus)
 
 //volunteer skills
 router.post('/:volunteerId/skills', addSkillToVolunteer)
@@ -32,5 +38,10 @@ router.post('/:volunteerId/availability', addAvailability)
 router.get('/:volunteerId/availability', getAvailability)
 router.patch('/:volunteerId/availability/:availabilityId', updateAvailability)
 
-export default router
+//volunteer certifications
+router.post('/:volunteerId/certifications', addCertification)
+router.get('/:volunteerId/certifications', getCertifications)
+router.patch('/:volunteerId/certifications/:certificationId', updateCertification)
+router.delete('/:volunteerId/certifications/:certificationId', deleteCertification)
 
+export default router

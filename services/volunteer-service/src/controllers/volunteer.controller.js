@@ -4,7 +4,10 @@ import {
   updateVolunteerSchema,
   addSkillSchema,
   addAvailabilitySchema,
-  updateAvailabilitySchema
+  updateAvailabilitySchema,
+  addCertificationSchema,
+  updateCertificationSchema,
+  updateVerificationSchema
 } from '../validators/volunteer.validator.js'
 
 export const createVolunteerProfile = async (req, res, next) => {
@@ -41,12 +44,17 @@ export const createVolunteerProfile = async (req, res, next) => {
 export const getVolunteers = async (req, res, next) => {
   try {
     const organizationId = req.headers['x-organization-id']
-    const volunteers = await VolunteerRepository.getVolunteersByOrg(organizationId)
+    const filters = {
+      skill_name: req.query.skill_name,
+      availability_status: req.query.availability_status
+    }
+    const volunteers = await VolunteerRepository.getVolunteersByOrg(organizationId, filters)
     res.json({ volunteers })
   } catch (err) {
     next(err)
   }
 }
+
 
 export const getVolunteerById = async (req, res, next) => {
   try {
@@ -75,6 +83,24 @@ export const updateVolunteerProfile = async (req, res, next) => {
 
     const updated = await VolunteerRepository.updateVolunteer(volunteerId, organizationId, value)
     res.json({ message: 'Volunteer profile updated', volunteer: updated })
+  } catch (err) {
+    if (err.code === 'PGRST116') {
+      return res.status(404).json({ message: 'Volunteer not found' })
+    }
+    next(err)
+  }
+}
+
+export const updateVerificationStatus = async (req, res, next) => {
+  try {
+    const { error, value } = updateVerificationSchema.validate(req.body)
+    if (error) return res.status(400).json({ message: error.details[0].message })
+
+    const organizationId = req.headers['x-organization-id']
+    const { volunteerId } = req.params
+
+    const updated = await VolunteerRepository.updateVerificationStatus(volunteerId, organizationId, value.verification_status)
+    res.json({ message: 'Verification status updated', volunteer: updated })
   } catch (err) {
     if (err.code === 'PGRST116') {
       return res.status(404).json({ message: 'Volunteer not found' })
@@ -186,3 +212,78 @@ export const updateAvailability = async (req, res, next) => {
     next(err)
   }
 }
+
+
+export const addCertification = async (req, res, next) => {
+  try {
+    const { error, value } = addCertificationSchema.validate(req.body)
+    if (error) return res.status(400).json({ message: error.details[0].message })
+
+    const organizationId = req.headers['x-organization-id']
+    const { volunteerId } = req.params
+
+    const volunteer = await VolunteerRepository.getVolunteerById(volunteerId, organizationId)
+    if (!volunteer) return res.status(404).json({ message: 'Volunteer not found' })
+
+    const certification = await VolunteerRepository.addCertification({
+      volunteer_id: volunteerId,
+      ...value,
+    })
+
+    res.status(201).json({ message: 'Certification added', certification })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const getCertifications = async (req, res, next) => {
+  try {
+    const organizationId = req.headers['x-organization-id']
+    const { volunteerId } = req.params
+
+    const volunteer = await VolunteerRepository.getVolunteerById(volunteerId, organizationId)
+    if (!volunteer) return res.status(404).json({ message: 'Volunteer not found' })
+
+    const certifications = await VolunteerRepository.getCertifications(volunteerId)
+    res.json({ certifications })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const updateCertification = async (req, res, next) => {
+  try {
+    const { error, value } = updateCertificationSchema.validate(req.body)
+    if (error) return res.status(400).json({ message: error.details[0].message })
+
+    const organizationId = req.headers['x-organization-id']
+    const { volunteerId, certificationId } = req.params
+
+    const volunteer = await VolunteerRepository.getVolunteerById(volunteerId, organizationId)
+    if (!volunteer) return res.status(404).json({ message: 'Volunteer not found' })
+
+    const updated = await VolunteerRepository.updateCertification(certificationId, volunteerId, value)
+    res.json({ message: 'Certification updated', certification: updated })
+  } catch (err) {
+    if (err.code === 'PGRST116') {
+      return res.status(404).json({ message: 'Certification not found' })
+    }
+    next(err)
+  }
+}
+
+export const deleteCertification = async (req, res, next) => {
+  try {
+    const organizationId = req.headers['x-organization-id']
+    const { volunteerId, certificationId } = req.params
+
+    const volunteer = await VolunteerRepository.getVolunteerById(volunteerId, organizationId)
+    if (!volunteer) return res.status(404).json({ message: 'Volunteer not found' })
+
+    await VolunteerRepository.deleteCertification(certificationId, volunteerId)
+    res.json({ message: 'Certification deleted' })
+  } catch (err) {
+    next(err)
+  }
+}
+

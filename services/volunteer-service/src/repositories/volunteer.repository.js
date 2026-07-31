@@ -12,16 +12,35 @@ export class VolunteerRepository {
     return data
   }
 
-  static async getVolunteersByOrg(organizationId) {
-    const { data, error } = await supabase
+  static async getVolunteersByOrg(organizationId, filters = {}) {
+    let query = supabase
       .from('volunteers')
       .select(`
         *,
-        users (first_name, last_name, email, phone)
+        users (first_name, last_name, email, phone),
+        volunteer_skills (
+          skills (
+            skill_name
+          )
+        )
       `)
       .eq('organization_id', organizationId)
 
+    if (filters.availability_status) {
+      query = query.eq('availability_status', filters.availability_status)
+    }
+
+    const { data, error } = await query
+
     if (error) throw error
+
+
+    if (filters.skill_name) {
+      return data.filter(v =>
+        v.volunteer_skills?.some(vs => vs.skills?.skill_name.toLowerCase() === filters.skill_name.toLowerCase())
+      )
+    }
+
     return data
   }
 
@@ -44,6 +63,19 @@ export class VolunteerRepository {
     const { data, error } = await supabase
       .from('volunteers')
       .update(updateData)
+      .eq('volunteer_id', volunteerId)
+      .eq('organization_id', organizationId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async updateVerificationStatus(volunteerId, organizationId, status) {
+    const { data, error } = await supabase
+      .from('volunteers')
+      .update({ verification_status: status })
       .eq('volunteer_id', volunteerId)
       .eq('organization_id', organizationId)
       .select()
@@ -135,4 +167,51 @@ export class VolunteerRepository {
     if (error) throw error
     return data
   }
+
+  static async addCertification(certificationData) {
+    const { data, error } = await supabase
+      .from('certifications')
+      .insert([certificationData])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async getCertifications(volunteerId) {
+    const { data, error } = await supabase
+      .from('certifications')
+      .select('*')
+      .eq('volunteer_id', volunteerId)
+      .order('issue_date', { ascending: false })
+
+    if (error) throw error
+    return data
+  }
+
+  static async updateCertification(certificationId, volunteerId, updateData) {
+    const { data, error } = await supabase
+      .from('certifications')
+      .update(updateData)
+      .eq('certification_id', certificationId)
+      .eq('volunteer_id', volunteerId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async deleteCertification(certificationId, volunteerId) {
+    const { error } = await supabase
+      .from('certifications')
+      .delete()
+      .eq('certification_id', certificationId)
+      .eq('volunteer_id', volunteerId)
+
+    if (error) throw error
+    return true
+  }
 }
+

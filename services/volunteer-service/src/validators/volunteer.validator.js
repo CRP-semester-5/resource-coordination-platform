@@ -29,3 +29,30 @@ export const addAvailabilitySchema = Joi.object({
 export const updateAvailabilitySchema = Joi.object({
   status: Joi.string().valid('AVAILABLE', 'BUSY', 'UNAVAILABLE').required(),
 })
+
+export const addCertificationSchema = Joi.object({
+  certificate_name: Joi.string().max(255).required(),
+  issuing_organization: Joi.string().max(255).optional(),
+  issue_date: Joi.date().iso().optional(),
+  expiry_date: Joi.date().iso().min(Joi.ref('issue_date')).optional().messages({
+    'date.min': 'expiry_date must be on or after issue_date',
+  }),
+  certificate_url: Joi.string().uri().optional(),
+})
+
+
+
+export const updateCertificationSchema = Joi.object({
+  certificate_name: Joi.string().max(255).optional(),
+  issuing_organization: Joi.string().max(255).optional(),
+  issue_date: Joi.date().iso().optional(),
+  expiry_date: Joi.date().iso().optional(),
+  certificate_url: Joi.string().uri().optional(),
+}).min(1).messages({
+  'object.min': 'At least one field must be provided for update',
+})
+
+export const updateVerificationSchema = Joi.object({
+  verification_status: Joi.string().valid('PENDING', 'VERIFIED', 'REJECTED').required(),
+})
+
