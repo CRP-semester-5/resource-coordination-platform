@@ -73,7 +73,6 @@ CREATE TABLE password_reset_tokens (
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-
 CREATE TABLE requests (
  request_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  organization_id UUID NOT NULL REFERENCES organizations(organization_id) ON DELETE RESTRICT,
