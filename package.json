@@ -8,6 +8,7 @@
     "doc": "docs"
   },
   "workspaces": [
+    "packages/shared-middleware",
     "api-gateway",
     "services/user-service",
     "services/organization-service",

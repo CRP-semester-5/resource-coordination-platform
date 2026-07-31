@@ -1,0 +1,193 @@
+_format_version: "3.0"
+_transform: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  ResQ Hub — Kong Gateway Declarative Configuration
+#
+#  Mode: DB-less (no Kong database required)
+#  File loaded by Kong at startup via KONG_DECLARATIVE_CONFIG env var.
+#
+#  Route naming convention:
+#    {service-name}-{route-descriptor}
+#
+#  Internal service URLs use Docker Compose service names as hostnames.
+#  Kong and all microservices are on the same Docker network (crp-network).
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── User Service ─────────────────────────────────────────────────────────────
+  - name: user-service
+    url: http://user-service:3001
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      # Auth routes — public and protected auth endpoints
+      - name: user-service-auth
+        paths:
+          - /api/v1/auth
+        strip_path: false
+        preserve_host: false
+
+      # User routes — profile and address management
+      - name: user-service-users
+        paths:
+          - /api/v1/users
+        strip_path: false
+        preserve_host: false
+
+  # ── Organization Service ──────────────────────────────────────────────────────
+  - name: organization-service
+    url: http://organization-service:3002
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      - name: organization-service-orgs
+        paths:
+          - /api/v1/organizations
+        strip_path: false
+        preserve_host: false
+
+  # ── Request Service ───────────────────────────────────────────────────────────
+  - name: request-service
+    url: http://request-service:3004
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      - name: request-service-requests
+        paths:
+          - /api/v1/requests
+        strip_path: false
+        preserve_host: false
+
+  # ── Resource Service ──────────────────────────────────────────────────────────
+  - name: resource-service
+    url: http://resource-service:3003
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      - name: resource-service-resources
+        paths:
+          - /api/v1/resources
+        strip_path: false
+        preserve_host: false
+
+      - name: resource-service-donations
+        paths:
+          - /api/v1/donations
+        strip_path: false
+        preserve_host: false
+
+  # ── Task Service ──────────────────────────────────────────────────────────────
+  - name: task-service
+    url: http://task-service:3005
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      - name: task-service-tasks
+        paths:
+          - /api/v1/tasks
+        strip_path: false
+        preserve_host: false
+
+  # ── Volunteer Service ─────────────────────────────────────────────────────────
+  - name: volunteer-service
+    url: http://volunteer-service:3006
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      - name: volunteer-service-volunteers
+        paths:
+          - /api/v1/volunteers
+        strip_path: false
+        preserve_host: false
+
+  # ── Notification Service ──────────────────────────────────────────────────────
+  - name: notification-service
+    url: http://notification-service:3007
+    connect_timeout: 10000
+    read_timeout: 30000
+    write_timeout: 30000
+
+    routes:
+      - name: notification-service-notifications
+        paths:
+          - /api/v1/notifications
+        strip_path: false
+        preserve_host: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Global Plugins — applied to all routes
+# ─────────────────────────────────────────────────────────────────────────────
+plugins:
+  # ── CORS ──────────────────────────────────────────────────────────────────────
+  - name: cors
+    config:
+      origins:
+        - "http://localhost:5173"   # Vite dev server (web frontend)
+        - "http://localhost:3000"   # Kong itself (for browser testing)
+      methods:
+        - GET
+        - POST
+        - PATCH
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Authorization
+        - Content-Type
+        - X-Requested-With
+        - X-Correlation-ID
+      exposed_headers:
+        - X-Correlation-ID
+      credentials: true
+      max_age: 3600
+
+  # ── Correlation ID ────────────────────────────────────────────────────────────
+  # Adds X-Correlation-ID to every request for distributed tracing
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+
+  # ── Request Size Limiting ─────────────────────────────────────────────────────
+  # Reject request bodies larger than 5MB
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 5
+      size_unit: megabytes
+
+  # ── Rate Limiting (default — all routes) ─────────────────────────────────────
+  # Conservative default: 300 requests per minute per IP
+  - name: rate-limiting
+    config:
+      minute: 300
+      policy: local
+      error_message: "Rate limit exceeded. Please slow down."
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Route-Level Plugins — stricter limits on abuse-prone auth endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+# Apply tighter rate limiting on auth endpoints (login, register, password reset)
+# This overrides the global rate-limiting plugin for these specific routes.
+# Uncomment and adjust as needed:
+#
+# - name: rate-limiting
+#   route: user-service-auth
+#   config:
+#     minute: 20
+#     policy: local
+#     error_message: "Too many authentication attempts. Please try again later."
