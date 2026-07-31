@@ -6,7 +6,6 @@ import { supabase } from './lib/supabase.js'
 const app = express()
 
 const PORT = process.env.REQUEST_SERVICE_PORT || 3004
-const HOST = process.env.SERVICE_HOST || '0.0.0.0'
 
 app.use(express.json())
 
@@ -18,7 +17,7 @@ app.get('/health', async (req, res) => {
     try {
         const { error } = await supabase
             .from('requests')
-            .select('id')
+            .select('request_id')
             .limit(1)
 
         if (error) {
@@ -49,7 +48,7 @@ app.get('/health', async (req, res) => {
     }
 })
 
-app.listen(PORT, HOST, () => {
+app.listen(PORT, () => {
     console.log(`Request Service running on port ${PORT}`)
-    console.log(`Health endpoint: /health`)
+    console.log(`Health: http://localhost:${PORT}/health`)
 })
