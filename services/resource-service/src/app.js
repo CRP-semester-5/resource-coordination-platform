@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import resourceRoutes from "./routes/resource.routes.js";
-
+import donationRoutes from "./routes/donation.routes.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -11,5 +11,8 @@ app.use(
     "/api/v1/resources",
     resourceRoutes
 );
-
-export default app;
+app.use(
+    "/api/v1/donations",
+    donationRoutes
+);
+export default app 
