@@ -2,7 +2,7 @@
 # so all paths below are relative to the monorepo root.
 
 # ── Stage 1: Install dependencies ────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 
 # Copy root lockfile + this service's package.json
@@ -12,7 +12,7 @@ COPY services/request-service/package.json ./package.json
 RUN npm ci --only=production
 
 # ── Stage 2: Runtime ──────────────────────────────────────────
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
