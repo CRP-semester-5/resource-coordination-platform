@@ -90,8 +90,8 @@ function RegisterPage() {
 
   // Step 2 — organization details
   const [orgName, setOrgName] = useState("");
-  const [orgCategory, setOrgCategory] = useState(CATEGORIES[0]);
-  const [orgDistrict, setOrgDistrict] = useState(SRI_LANKA_DISTRICTS[4]); // Colombo
+  const [orgCategory, setOrgCategory] = useState(CATEGORIES[0] as string);
+  const [orgDistrict, setOrgDistrict] = useState(SRI_LANKA_DISTRICTS[4] as string); // Colombo
   const [orgDescription, setOrgDescription] = useState("");
   const [orgRegNum, setOrgRegNum] = useState("");
   const [orgEmail, setOrgEmail] = useState("");

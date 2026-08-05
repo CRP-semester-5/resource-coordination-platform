@@ -45,8 +45,13 @@ export const inventoryAPI = {
 
 export const volunteersAPI = {
   getAll: () => http.get("/api/v1/volunteers"),
+  getById: (id: string) => http.get(`/api/v1/volunteers/${id}`),
 };
 
 export const tasksAPI = {
   getAll: () => http.get("/api/v1/tasks"),
+  getById: (id: string) => http.get(`/api/v1/tasks/${id}`),
+  create: (data: any) => http.post("/api/v1/tasks", data),
+  update: (id: string, data: any) => http.patch(`/api/v1/tasks/${id}`, data),
+  assign: (id: string, volunteer_id: string) => http.post(`/api/v1/tasks/${id}/assign`, { volunteer_id }),
 };

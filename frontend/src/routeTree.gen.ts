@@ -18,7 +18,9 @@ import { Route as CoordinatorIndexRouteImport } from './routes/coordinator.index
 import { Route as CoordinatorDonationsRouteImport } from './routes/coordinator.donations'
 import { Route as CoordinatorInventoryRouteImport } from './routes/coordinator.inventory'
 import { Route as CoordinatorRequestsRouteImport } from './routes/coordinator.requests'
+import { Route as CoordinatorTasksRouteImport } from './routes/coordinator.tasks'
 import { Route as CoordinatorTeamRouteImport } from './routes/coordinator.team'
+import { Route as CoordinatorVolunteersRouteImport } from './routes/coordinator.volunteers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -65,9 +67,19 @@ const CoordinatorRequestsRoute = CoordinatorRequestsRouteImport.update({
   path: '/requests',
   getParentRoute: () => CoordinatorRoute,
 } as any)
+const CoordinatorTasksRoute = CoordinatorTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => CoordinatorRoute,
+} as any)
 const CoordinatorTeamRoute = CoordinatorTeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => CoordinatorRoute,
+} as any)
+const CoordinatorVolunteersRoute = CoordinatorVolunteersRouteImport.update({
+  id: '/volunteers',
+  path: '/volunteers',
   getParentRoute: () => CoordinatorRoute,
 } as any)
 
@@ -80,7 +92,9 @@ export interface FileRoutesByFullPath {
   '/coordinator/donations': typeof CoordinatorDonationsRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
+  '/coordinator/tasks': typeof CoordinatorTasksRoute
   '/coordinator/team': typeof CoordinatorTeamRoute
+  '/coordinator/volunteers': typeof CoordinatorVolunteersRoute
   '/coordinator/': typeof CoordinatorIndexRoute
 }
 export interface FileRoutesByTo {
@@ -91,7 +105,9 @@ export interface FileRoutesByTo {
   '/coordinator/donations': typeof CoordinatorDonationsRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
+  '/coordinator/tasks': typeof CoordinatorTasksRoute
   '/coordinator/team': typeof CoordinatorTeamRoute
+  '/coordinator/volunteers': typeof CoordinatorVolunteersRoute
   '/coordinator': typeof CoordinatorIndexRoute
 }
 export interface FileRoutesById {
@@ -104,7 +120,9 @@ export interface FileRoutesById {
   '/coordinator/donations': typeof CoordinatorDonationsRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
+  '/coordinator/tasks': typeof CoordinatorTasksRoute
   '/coordinator/team': typeof CoordinatorTeamRoute
+  '/coordinator/volunteers': typeof CoordinatorVolunteersRoute
   '/coordinator/': typeof CoordinatorIndexRoute
 }
 export interface FileRouteTypes {
@@ -118,7 +136,9 @@ export interface FileRouteTypes {
     | '/coordinator/donations'
     | '/coordinator/inventory'
     | '/coordinator/requests'
+    | '/coordinator/tasks'
     | '/coordinator/team'
+    | '/coordinator/volunteers'
     | '/coordinator/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,7 +149,9 @@ export interface FileRouteTypes {
     | '/coordinator/donations'
     | '/coordinator/inventory'
     | '/coordinator/requests'
+    | '/coordinator/tasks'
     | '/coordinator/team'
+    | '/coordinator/volunteers'
     | '/coordinator'
   id:
     | '__root__'
@@ -141,7 +163,9 @@ export interface FileRouteTypes {
     | '/coordinator/donations'
     | '/coordinator/inventory'
     | '/coordinator/requests'
+    | '/coordinator/tasks'
     | '/coordinator/team'
+    | '/coordinator/volunteers'
     | '/coordinator/'
   fileRoutesById: FileRoutesById
 }
@@ -218,11 +242,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoordinatorRequestsRouteImport
       parentRoute: typeof CoordinatorRoute
     }
+    '/coordinator/tasks': {
+      id: '/coordinator/tasks'
+      path: '/tasks'
+      fullPath: '/coordinator/tasks'
+      preLoaderRoute: typeof CoordinatorTasksRouteImport
+      parentRoute: typeof CoordinatorRoute
+    }
     '/coordinator/team': {
       id: '/coordinator/team'
       path: '/team'
       fullPath: '/coordinator/team'
       preLoaderRoute: typeof CoordinatorTeamRouteImport
+      parentRoute: typeof CoordinatorRoute
+    }
+    '/coordinator/volunteers': {
+      id: '/coordinator/volunteers'
+      path: '/volunteers'
+      fullPath: '/coordinator/volunteers'
+      preLoaderRoute: typeof CoordinatorVolunteersRouteImport
       parentRoute: typeof CoordinatorRoute
     }
   }
@@ -232,7 +270,9 @@ interface CoordinatorRouteChildren {
   CoordinatorDonationsRoute: typeof CoordinatorDonationsRoute
   CoordinatorInventoryRoute: typeof CoordinatorInventoryRoute
   CoordinatorRequestsRoute: typeof CoordinatorRequestsRoute
+  CoordinatorTasksRoute: typeof CoordinatorTasksRoute
   CoordinatorTeamRoute: typeof CoordinatorTeamRoute
+  CoordinatorVolunteersRoute: typeof CoordinatorVolunteersRoute
   CoordinatorIndexRoute: typeof CoordinatorIndexRoute
 }
 
@@ -240,7 +280,9 @@ const CoordinatorRouteChildren: CoordinatorRouteChildren = {
   CoordinatorDonationsRoute: CoordinatorDonationsRoute,
   CoordinatorInventoryRoute: CoordinatorInventoryRoute,
   CoordinatorRequestsRoute: CoordinatorRequestsRoute,
+  CoordinatorTasksRoute: CoordinatorTasksRoute,
   CoordinatorTeamRoute: CoordinatorTeamRoute,
+  CoordinatorVolunteersRoute: CoordinatorVolunteersRoute,
   CoordinatorIndexRoute: CoordinatorIndexRoute,
 }
 
