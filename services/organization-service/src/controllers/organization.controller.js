@@ -2,12 +2,13 @@ import * as organizationService from "../services/organization.service.js";
 
 export const createOrganization = async (req, res) => {
     try{
+        const applicantId = req.user.sub; // User making the request
         const organization =
-            await organizationService.createOrganization(req.body);
+            await organizationService.createOrganization(req.body, applicantId);
 
         return res.status(201).json({
             success: true,
-            message: "Organization created successfully.",
+            message: "Organization application submitted successfully.",
             data: organization,
         });
     } catch (error){
@@ -36,6 +37,30 @@ export const getOrganizations = async(req, res) => {
             message:error.message
         });
 
+    }
+};
+
+export const getPendingOrganizations = async(req, res) => {
+    try {
+        const organizations = await organizationService.getPendingOrganizations();
+        return res.status(200).json({
+            success: true,
+            data: organizations
+        });
+    } catch(error){
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getMyOrganizations = async(req, res) => {
+    try {
+        const organizations = await organizationService.getMyOrganizations(req.user.sub);
+        return res.status(200).json({
+            success: true,
+            data: organizations
+        });
+    } catch(error){
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 

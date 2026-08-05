@@ -24,6 +24,31 @@ export const findAll = async () => {
         .order("created_at", { ascending: false });
 };
 
+export const findPending = async () => {
+    return await supabase
+        .from("organizations")
+        .select(`
+            *,
+            users!applicant_id ( first_name, last_name, email )
+        `)
+        .eq("status", "PENDING")
+        .order("created_at", { ascending: false });
+};
+
+export const findUserOrganizations = async (userId) => {
+    return await supabase
+        .from("organization_members")
+        .select(`
+            role,
+            status,
+            organization_id,
+            organizations (*)
+        `)
+        .eq("user_id", userId)
+        .eq("status", "ACTIVE")
+        .eq("organizations.status", "ACTIVE");
+};
+
 export const findById = async (organizationId) => {
     return await supabase
         .from("organizations")
