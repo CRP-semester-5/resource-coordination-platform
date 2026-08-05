@@ -130,7 +130,8 @@ export const cancelRequest = async (requestId) => {
 
 export const approveRequest = async (
     requestId,
-    verifiedBy
+    verifiedBy,
+    orgId
 ) => {
 
     const existing =
@@ -138,6 +139,10 @@ export const approveRequest = async (
 
     if (!existing.data) {
         throw new Error("Request not found.");
+    }
+
+    if (orgId && existing.data.organization_id && existing.data.organization_id !== orgId) {
+        throw new Error("Unauthorized: Request is already assigned to another organization.");
     }
 
     if (existing.data.status !== "PENDING") {
@@ -149,7 +154,8 @@ export const approveRequest = async (
     const { data, error } =
         await requestRepository.verify(
             requestId,
-            verifiedBy
+            verifiedBy,
+            orgId
         );
 
     if (error) {
@@ -162,7 +168,8 @@ export const approveRequest = async (
 export const rejectRequest = async (
     requestId,
     verifiedBy,
-    reason
+    reason,
+    orgId
 ) => {
 
     const existing =
@@ -170,6 +177,10 @@ export const rejectRequest = async (
 
     if (!existing.data) {
         throw new Error("Request not found.");
+    }
+
+    if (orgId && existing.data.organization_id && existing.data.organization_id !== orgId) {
+        throw new Error("Unauthorized: Request is already assigned to another organization.");
     }
 
     if (existing.data.status !== "PENDING") {
@@ -182,7 +193,8 @@ export const rejectRequest = async (
         await requestRepository.reject(
             requestId,
             verifiedBy,
-            reason
+            reason,
+            orgId
         );
 
     if (error) {

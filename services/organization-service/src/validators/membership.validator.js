@@ -1,12 +1,8 @@
 import Joi from "joi";
 
 const roles = [
-    "SUPER_ADMIN",
     "ORGANIZATION_ADMIN",
     "COORDINATOR",
-    "COMMUNITY_MEMBER",
-    "DONOR",
-    "VOLUNTEER",
 ];
 
 const statuses = [
@@ -17,12 +13,12 @@ const statuses = [
 
 // Create Membership
 export const createMembershipSchema = Joi.object({
-    user_id: Joi.string()
-        .uuid()
+    email: Joi.string()
+        .email()
         .required()
         .messages({
-            "string.guid": "User ID must be a valid UUID.",
-            "any.required": "User ID is required.",
+            "string.email": "Must be a valid email address.",
+            "any.required": "Email is required.",
         }),
 
     role: Joi.string()

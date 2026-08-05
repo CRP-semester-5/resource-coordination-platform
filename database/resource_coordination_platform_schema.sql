@@ -5,8 +5,11 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TYPE user_status AS ENUM ('ACTIVE','INACTIVE','SUSPENDED','PENDING');
-CREATE TYPE membership_role AS ENUM ('SUPER_ADMIN','ORGANIZATION_ADMIN','COORDINATOR','COMMUNITY_MEMBER','DONOR','VOLUNTEER');
-CREATE TYPE membership_status AS ENUM ('ACTIVE','INACTIVE','PENDING');
+-- Global platform roles (no org context needed)
+CREATE TYPE global_role AS ENUM ('USER','VOLUNTEER','SUPER_ADMIN');
+
+-- Organization-specific staff roles
+CREATE TYPE organization_role AS ENUM ('COORDINATOR','ORGANIZATION_ADMIN');
 CREATE TYPE request_status AS ENUM ('PENDING','VERIFIED','REJECTED','ASSIGNED','IN_PROGRESS','FULFILLED','CANCELLED');
 CREATE TYPE urgency_level AS ENUM ('LOW','MEDIUM','HIGH','CRITICAL');
 CREATE TYPE task_status AS ENUM ('PENDING','ASSIGNED','ACCEPTED','IN_PROGRESS','COMPLETED','CANCELLED');
@@ -23,7 +26,8 @@ CREATE TABLE organizations (
  tenant_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
  organization_name VARCHAR(200) NOT NULL,
  description TEXT, email VARCHAR(255), phone VARCHAR(30), address TEXT,
- status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE','INACTIVE','SUSPENDED')),
+ applicant_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+ status VARCHAR(30) NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','ACTIVE','INACTIVE','SUSPENDED','REJECTED')),
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -35,15 +39,29 @@ CREATE TABLE users (
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE memberships (
- membership_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- organization_id UUID NOT NULL REFERENCES organizations(organization_id) ON DELETE RESTRICT,
- user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
- role membership_role NOT NULL DEFAULT 'COMMUNITY_MEMBER',
- status membership_status NOT NULL DEFAULT 'PENDING',
- joined_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
- updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
- UNIQUE(organization_id,user_id)
+-- Global roles: USER is assigned automatically on registration.
+-- VOLUNTEER is added after coordinator approval.
+-- SUPER_ADMIN is a platform-level admin assigned manually.
+CREATE TABLE user_roles (
+ role       global_role NOT NULL,
+ user_id    UUID        NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ PRIMARY KEY (user_id, role)
+);
+
+-- Organization-specific staff roles. Only COORDINATOR and ORGANIZATION_ADMIN
+-- appear here. Regular users and volunteers are NOT in this table.
+CREATE TABLE organization_members (
+ organization_member_id UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+ organization_id        UUID              NOT NULL REFERENCES organizations(organization_id) ON DELETE RESTRICT,
+ user_id                UUID              NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+ role                   organization_role NOT NULL,
+ status                 VARCHAR(20)       NOT NULL DEFAULT 'ACTIVE'
+                                          CHECK (status IN ('PENDING','ACTIVE','INACTIVE')),
+ invited_by             UUID              REFERENCES users(user_id) ON DELETE SET NULL,
+ created_at             TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
+ updated_at             TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
+ UNIQUE (organization_id, user_id)        -- one org role per user per org
 );
 
 CREATE TABLE user_addresses (
@@ -230,8 +248,9 @@ CREATE TABLE audit_logs (
 );
 
 -- Important indexes
-CREATE INDEX idx_memberships_user ON memberships(user_id);
-CREATE INDEX idx_memberships_org_status ON memberships(organization_id,status);
+CREATE INDEX idx_user_roles_user    ON user_roles(user_id);
+CREATE INDEX idx_org_members_user   ON organization_members(user_id, status);
+CREATE INDEX idx_org_members_org    ON organization_members(organization_id, status);
 CREATE INDEX idx_requests_org_status ON requests(organization_id,status);
 CREATE INDEX idx_requests_org_created ON requests(organization_id,created_at DESC);
 CREATE INDEX idx_requests_requester ON requests(requester_id);
@@ -252,13 +271,36 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at=NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER organizations_updated BEFORE UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER users_updated BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER memberships_updated BEFORE UPDATE ON memberships FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER addresses_updated BEFORE UPDATE ON user_addresses FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER organizations_updated  BEFORE UPDATE ON organizations       FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER users_updated          BEFORE UPDATE ON users               FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER org_members_updated    BEFORE UPDATE ON organization_members FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER addresses_updated      BEFORE UPDATE ON user_addresses       FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER requests_updated BEFORE UPDATE ON requests FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER volunteers_updated BEFORE UPDATE ON volunteers FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER availability_updated BEFORE UPDATE ON volunteer_availability FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER resources_updated BEFORE UPDATE ON resources FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER donations_updated BEFORE UPDATE ON donations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER tasks_updated BEFORE UPDATE ON tasks FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER volunteers_updated   BEFORE UPDATE ON volunteers             FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER availability_updated BEFORE UPDATE ON volunteer_availability  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER resources_updated    BEFORE UPDATE ON resources               FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER donations_updated    BEFORE UPDATE ON donations               FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER tasks_updated        BEFORE UPDATE ON tasks                   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Auto-assign USER role on registration
+--
+-- Every new row in the users table automatically gets the USER global role.
+-- This mirrors the mobile app behavior: register → you are USER immediately.
+-- No manual step needed in application code (but auth.service.js also does it
+-- as a redundant safety net).
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION assign_default_user_role()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO user_roles (user_id, role)
+    VALUES (NEW.user_id, 'USER')
+    ON CONFLICT DO NOTHING;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER users_assign_default_role
+    AFTER INSERT ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION assign_default_user_role();

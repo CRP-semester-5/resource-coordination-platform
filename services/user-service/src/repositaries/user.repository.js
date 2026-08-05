@@ -70,21 +70,49 @@ export async function updateUser(userId, fields) {
 }
 
 /**
- * Fetch all ACTIVE memberships for a user across all organisations.
- * Returns: [{ org_id, role }, ...] — empty array for new users.
+ * Fetch all global roles for a user from the user_roles table.
+ * Returns: ['USER', 'VOLUNTEER'] — always at least ['USER'] for normal accounts.
  */
-export async function findUserMemberships(userId) {
+export async function findUserGlobalRoles(userId) {
     const { data, error } = await supabase
-        .from('memberships')
-        .select('organization_id, role')
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+
+    if (error) throw error
+    return (data ?? []).map((r) => r.role)
+}
+
+/**
+ * Fetch all active organization memberships for a user.
+ * Used by the web app middleware to verify COORDINATOR / ORGANIZATION_ADMIN access.
+ * Returns: [{ org_id, role, status }, ...]
+ */
+export async function findUserOrgMemberships(userId) {
+    const { data, error } = await supabase
+        .from('organization_members')
+        .select('organization_id, role, status')
         .eq('user_id', userId)
         .eq('status', 'ACTIVE')
 
     if (error) throw error
     return (data ?? []).map((m) => ({
         org_id: m.organization_id,
-        role: m.role,
+        role:   m.role,
     }))
+}
+
+/**
+ * Assign the default USER global role to a newly registered user.
+ * The DB trigger handles this automatically, but we call it here too
+ * as a safety net in case the trigger is not applied yet.
+ */
+export async function assignDefaultRole(userId) {
+    const { error } = await supabase
+        .from('user_roles')
+        .upsert({ user_id: userId, role: 'USER' }, { onConflict: 'user_id,role' })
+
+    if (error) throw error
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

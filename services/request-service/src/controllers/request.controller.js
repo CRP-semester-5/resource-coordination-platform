@@ -46,7 +46,7 @@ export const getRequestById = async (req, res) => {
 
         const request =
             await requestService.getRequestById(
-                req.params.requestId
+                req.params.id
             );
 
         return res.status(200).json({
@@ -71,7 +71,7 @@ export const updateRequest = async (req, res) => {
 
         const request =
             await requestService.updateRequest(
-                req.params.requestId,
+                req.params.id,
                 req.body
             );
 
@@ -97,7 +97,7 @@ export const deleteRequest = async (req, res) => {
 
         const request =
             await requestService.deleteRequest(
-                req.params.requestId
+                req.params.id
             );
 
         return res.status(200).json({
@@ -122,8 +122,9 @@ export const approveRequest = async (req, res) => {
 
         const request =
             await requestService.approveRequest(
-                req.params.requestId,
-                req.body.verified_by
+                req.params.id,
+                req.user.sub,
+                req.orgMembership?.org_id
             );
 
         return res.status(200).json({
@@ -147,9 +148,10 @@ export const rejectRequest = async (req, res) => {
 
         const request =
             await requestService.rejectRequest(
-                req.params.requestId,
-                req.body.verified_by,
-                req.body.rejection_reason
+                req.params.id,
+                req.user.sub,
+                req.body.rejection_reason,
+                req.orgMembership?.org_id
             );
 
         return res.status(200).json({
@@ -173,7 +175,7 @@ export const cancelRequest = async (req, res) => {
 
         const request =
             await requestService.cancelRequest(
-                req.params.requestId
+                req.params.id
             );
 
         return res.status(200).json({
@@ -198,7 +200,7 @@ export const fulfillRequest = async (req, res) => {
 
         const request =
             await requestService.fulfillRequest(
-                req.params.requestId
+                req.params.id
             );
 
         return res.status(200).json({

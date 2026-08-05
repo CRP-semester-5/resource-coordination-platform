@@ -136,6 +136,7 @@ plugins:
     config:
       origins:
         - "http://localhost:5173"   # Vite dev server (web frontend)
+        - "http://localhost:5174"   # Vite dev server (fallback)
         - "http://localhost:3000"   # Kong itself (for browser testing)
       methods:
         - GET
@@ -150,6 +151,7 @@ plugins:
         - Content-Type
         - X-Requested-With
         - X-Correlation-ID
+        - x-organization-id
       exposed_headers:
         - X-Correlation-ID
       credentials: true

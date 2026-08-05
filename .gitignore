@@ -44,3 +44,7 @@ coverage/
 *.pem
 *.key
 *.cert
+
+# remove the below later
+
+frontend

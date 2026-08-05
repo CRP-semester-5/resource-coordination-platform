@@ -1,6 +1,7 @@
 {
   "name": "organization-service",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@crp/shared-middleware": "*",
     "@supabase/supabase-js": "^2.111.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
