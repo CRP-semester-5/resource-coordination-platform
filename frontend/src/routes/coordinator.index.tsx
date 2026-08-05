@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Boxes, ClipboardList, HeartHandshake, ListChecks, Users } from "lucide-react";
-import { requestsAPI } from "@/api/real";
+import { requestsAPI, donationsAPI, volunteersAPI, tasksAPI, inventoryAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -91,11 +91,47 @@ function DashboardPage() {
 
   const maxCount = Math.max(1, ...requestsByStatus.map((r) => r.count));
 
-  // Hardcode other metrics as 0 since backend services are not yet implemented
-  const pendingDonations = 0;
-  const activeVolunteers = 0;
-  const lowStock = 0;
-  const overdueTasks = 0;
+  const { data: rawDonations = [] } = useQuery({
+    queryKey: ["donations", orgId],
+    queryFn: async () => {
+      const res = await donationsAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: rawVolunteers = [] } = useQuery({
+    queryKey: ["volunteers", orgId],
+    queryFn: async () => {
+      const res = await volunteersAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: rawTasks = [] } = useQuery({
+    queryKey: ["tasks", orgId],
+    queryFn: async () => {
+      const res = await tasksAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: rawInventory = [] } = useQuery({
+    queryKey: ["inventory", orgId],
+    queryFn: async () => {
+      const res = await inventoryAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  // Calculate dynamic metrics
+  const pendingDonations = rawDonations.filter((d: any) => d.status === "PENDING").length;
+  const activeVolunteers = rawVolunteers.filter((v: any) => v.is_available).length;
+  const lowStock = rawInventory.filter((i: any) => i.quantity < 50).length; // simple threshold
+  const overdueTasks = rawTasks.filter((t: any) => t.status !== "COMPLETED" && new Date(t.created_at).getTime() < Date.now() - 86400000).length; // Older than 1 day
 
   return (
     <>

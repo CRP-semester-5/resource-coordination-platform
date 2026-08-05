@@ -85,6 +85,18 @@ services:
         strip_path: false
         preserve_host: false
 
+      - name: resource-service-categories
+        paths:
+          - /api/v1/categories
+        strip_path: false
+        preserve_host: false
+
+      - name: resource-service-inventory
+        paths:
+          - /api/v1/inventory
+        strip_path: false
+        preserve_host: false
+
   # ── Task Service ──────────────────────────────────────────────────────────────
   - name: task-service
     url: http://task-service:3005

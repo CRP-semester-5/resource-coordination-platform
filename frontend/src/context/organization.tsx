@@ -22,13 +22,14 @@ interface OrgContextValue {
 
 const OrgContext = createContext<OrgContextValue | null>(null);
 
-function normalizeOrg(raw: Record<string, string>): OrgShape {
+function normalizeOrg(raw: any): OrgShape {
+  const org = raw.organizations || raw;
   return {
-    id: raw.organization_id ?? raw.id,
-    name: raw.organization_name ?? raw.name ?? raw.org_name ?? "Unknown Organization",
-    district: raw.district ?? "",
-    category: raw.category ?? "",
-    status: raw.status ?? "approved",
+    id: org.organization_id ?? org.id ?? raw.organization_id,
+    name: org.organization_name ?? org.name ?? org.org_name ?? "Unknown Organization",
+    district: org.district ?? "",
+    category: org.category ?? "",
+    status: org.status ?? "approved",
   };
 }
 

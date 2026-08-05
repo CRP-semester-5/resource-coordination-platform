@@ -52,3 +52,4 @@
 
 export { authenticate }                                    from './authenticate.js'
 export { requireGlobalRole, requireOrgRole, requireRole }  from './requireRole.js'
+export { AppError, errorHandler }                          from './errors.js'
