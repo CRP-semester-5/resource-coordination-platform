@@ -25,8 +25,8 @@ RUN npm ci \
     --omit=dev \
     --ignore-scripts
 
-# ── Stage 2: Runtime ──────────────────────────────────────────
-FROM node:20-alpine
+# ── Stage 2: Runtime ──────────────────────────────────────────────────────────
+FROM node:22-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production
