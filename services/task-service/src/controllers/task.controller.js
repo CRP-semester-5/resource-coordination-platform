@@ -8,7 +8,7 @@ export const createTask = async (req, res, next) => {
         const data = {
             ...req.body,
             organization_id: organizationId,
-            created_by: req.user.user_id
+            created_by: req.user.sub
         };
         const task = await taskService.createTask(data);
         return res.status(201).json({ success: true, data: task });

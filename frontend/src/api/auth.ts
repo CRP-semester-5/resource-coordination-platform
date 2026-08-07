@@ -19,15 +19,15 @@ export interface RegisterOrgPayload {
   rep_name: string;
   rep_email: string;
   rep_password: string;
-  rep_phone?: string;
+  rep_phone?: string | undefined;
   // Organization details
   org_name: string;
   org_category: string;
   org_district: string;
   org_description: string;
-  org_registration_number?: string;
-  org_contact_email?: string;
-  org_contact_phone?: string;
+  org_registration_number?: string | undefined;
+  org_contact_email?: string | undefined;
+  org_contact_phone?: string | undefined;
 }
 
 export interface InvitePayload {

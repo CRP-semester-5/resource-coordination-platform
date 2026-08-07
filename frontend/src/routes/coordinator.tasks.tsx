@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { tasksAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
@@ -9,6 +10,11 @@ import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/coordinator/tasks")({
   head: () => ({
@@ -25,14 +31,37 @@ const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 function TasksPage() {
   const { orgId } = useOrganization();
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [page, setPage] = useState(1);
 
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [taskPriority, setTaskPriority] = useState("MEDIUM");
+  const [requiredSkill, setRequiredSkill] = useState("");
+
   const { data: response, isLoading } = useQuery({
     queryKey: ["tasks", orgId],
     queryFn: () => tasksAPI.getAll(),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => tasksAPI.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks", orgId] });
+      toast.success("Task created successfully");
+      setCreating(false);
+      setTitle("");
+      setDescription("");
+      setTaskPriority("MEDIUM");
+      setRequiredSkill("");
+    },
+    onError: () => {
+      toast.error("Failed to create task");
+    }
   });
 
   const tasks = response?.data?.data || [];
@@ -58,7 +87,13 @@ function TasksPage() {
 
   return (
     <>
-      <PageHeader title="Tasks" description={`Manage ${tasks.length} task${tasks.length === 1 ? "" : "s"} for your organization.`} />
+      <PageHeader 
+        title="Tasks" 
+        description={`Manage ${tasks.length} task${tasks.length === 1 ? "" : "s"} for your organization.`} 
+        actions={
+          <Button onClick={() => setCreating(true)}>Create Task</Button>
+        }
+      />
 
       <Toolbar
         search={search}
@@ -140,6 +175,57 @@ function TasksPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={creating} onOpenChange={(o) => !o && setCreating(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Task</DialogTitle>
+            <DialogDescription>Add a new task for volunteers to pick up or be assigned.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="task-title">Title</Label>
+              <Input id="task-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Distribute water" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-desc">Description</Label>
+              <Textarea id="task-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Provide details about the task..." />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-priority">Priority</Label>
+              <Select value={taskPriority} onValueChange={setTaskPriority}>
+                <SelectTrigger id="task-priority"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-skill">Required Skill (Optional)</Label>
+              <Input id="task-skill" value={requiredSkill} onChange={(e) => setRequiredSkill(e.target.value)} placeholder="e.g. Driver, First Aid" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreating(false)}>Cancel</Button>
+            <Button
+              disabled={!title.trim() || !description.trim() || createMutation.isPending}
+              onClick={() => {
+                createMutation.mutate({
+                  title: title.trim(),
+                  description: description.trim(),
+                  priority: taskPriority,
+                  required_skill: requiredSkill.trim() || undefined,
+                });
+              }}
+            >
+              {createMutation.isPending ? "Creating..." : "Create Task"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

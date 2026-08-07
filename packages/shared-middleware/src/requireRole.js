@@ -60,7 +60,8 @@ function getSupabase() {
  * @param {...string} allowedRoles
  * @returns Express middleware
  */
-export function requireGlobalRole(...allowedRoles) {
+export function requireGlobalRole(...args) {
+    const allowedRoles = args.flat();
     return (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ message: 'Not authenticated' })
@@ -105,7 +106,8 @@ export function requireGlobalRole(...allowedRoles) {
  * @param {...string} allowedRoles
  * @returns Express middleware (async)
  */
-export function requireOrgRole(...allowedRoles) {
+export function requireOrgRole(...args) {
+    const allowedRoles = args.flat();
     return async (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ message: 'Not authenticated' })
@@ -165,7 +167,9 @@ export function requireOrgRole(...allowedRoles) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** @deprecated Use requireOrgRole() or requireGlobalRole() explicitly */
-export function requireRole(...allowedRoles) {
+export function requireRole(...args) {
+    const allowedRoles = args.flat();
+
     // Determine if all allowed roles are org-level or global
     const orgRoles    = ['COORDINATOR', 'ORGANIZATION_ADMIN']
     const globalRoles = ['USER', 'VOLUNTEER', 'SUPER_ADMIN']
