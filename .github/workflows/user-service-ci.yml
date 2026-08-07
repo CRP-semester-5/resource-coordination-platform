@@ -1,0 +1,94 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  User Service CI
+#
+#  Triggers on:
+#    - Pull requests targeting develop or main
+#    - Direct pushes to develop or main
+#    ... but ONLY when files in user-service or shared-middleware changed.
+#      (No point running if only docs or another service changed)
+#
+#  Jobs:
+#    1. install    — workspace-aware npm install, security audit
+#    2. docker     — builds the Docker image to validate the Dockerfile
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: User Service CI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "services/user-service/**"
+      - "packages/shared-middleware/**"
+      - ".github/workflows/user-service-ci.yml"
+
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - "services/user-service/**"
+      - "packages/shared-middleware/**"
+      - ".github/workflows/user-service-ci.yml"
+
+# Cancel in-progress runs on the same branch when a new commit arrives
+concurrency:
+  group: user-service-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: Install & Validate ───────────────────────────────────────────────
+  install:
+    name: Install & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"              # caches ~/.npm between runs — speeds up installs
+
+      - name: Install all workspace dependencies
+        run: npm ci                 # uses package-lock.json for reproducible installs
+
+      - name: Check for high-severity vulnerabilities
+        # Warns on high/critical CVEs in user-service dependencies.
+        # Uses || true so the build doesn't fail on audit issues (informational only).
+        # Remove "|| true" when you want audit failures to block merges.
+        run: npm audit --audit-level=high --workspace=services/user-service || true
+
+      # ── Placeholder: replace with Jest when tests are added ────────────────
+      # - name: Run unit tests
+      #   run: npm test --workspace=services/user-service
+      #   env:
+      #     JWT_SECRET: test-secret-for-ci
+      # ───────────────────────────────────────────────────────────────────────
+
+  # ── Job 2: Docker Build ─────────────────────────────────────────────────────
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: install                  # only runs if install job passes
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build user-service Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .                                    # repo root (workspace-aware build)
+          file: services/user-service/Dockerfile
+          push: false                                   # build only, do not push to registry
+          tags: crp/user-service:ci-${{ github.sha }}
+          cache-from: type=gha                          # reuse cached layers between runs
+          cache-to: type=gha,mode=max
