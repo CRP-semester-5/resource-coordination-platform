@@ -30,6 +30,16 @@ router.patch(
     donationController.updateDonation
 );
 
+router.patch(
+    "/:id/approve",
+    donationController.approveDonation
+);
+
+router.patch(
+    "/:id/reject",
+    donationController.rejectDonation
+);
+
 router.delete(
     "/:id",
     donationController.deleteDonation

@@ -15,15 +15,16 @@ import jwt from 'jsonwebtoken'
  *
  * req.user shape (after successful verification):
  *   {
- *     sub:   "uuid-of-user",           // user_id from users table
- *     email: "user@example.com",
- *     roles: [                          // all active org memberships
- *       { org_id: "uuid", role: "ORGANIZATION_ADMIN" },
- *       { org_id: "uuid", role: "VOLUNTEER" },
- *     ],
+ *     sub:         "uuid-of-user",           // user_id from users table
+ *     email:       "user@example.com",
+ *     globalRoles: ["USER", "VOLUNTEER"],    // from user_roles table
  *     iat: 1234567890,
  *     exp: 1235000000,
  *   }
+ *
+ * Note: Organization roles (COORDINATOR, ORGANIZATION_ADMIN) are NOT in
+ * the JWT. They are checked from the organization_members table by
+ * requireOrgRole() middleware on every request that needs them.
  *
  * Note: Kong API Gateway also validates the token at the gateway level.
  * This middleware provides a second validation layer (defense-in-depth)

@@ -133,3 +133,21 @@ export const deleteDonation = async(req,res)=>{
     }
 
 };
+
+export const approveDonation = async(req, res, next) => {
+    try {
+        const donation = await donationService.approveDonation(req.params.id);
+        return res.json({ success: true, message: "Donation approved and inventory updated.", data: donation });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const rejectDonation = async(req, res, next) => {
+    try {
+        const donation = await donationService.rejectDonation(req.params.id);
+        return res.json({ success: true, message: "Donation rejected.", data: donation });
+    } catch (error) {
+        next(error);
+    }
+};

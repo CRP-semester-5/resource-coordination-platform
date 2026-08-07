@@ -10,7 +10,7 @@ const PORT = process.env.REQUEST_SERVICE_PORT || 3004
 app.use(express.json())
 
 // Routes
-app.use('/requests', requestRoutes)
+app.use('/api/v1/requests', requestRoutes)
 
 // Health Check
 app.get('/health', async (req, res) => {

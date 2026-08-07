@@ -85,6 +85,18 @@ services:
         strip_path: false
         preserve_host: false
 
+      - name: resource-service-categories
+        paths:
+          - /api/v1/categories
+        strip_path: false
+        preserve_host: false
+
+      - name: resource-service-inventory
+        paths:
+          - /api/v1/inventory
+        strip_path: false
+        preserve_host: false
+
   # ── Task Service ──────────────────────────────────────────────────────────────
   - name: task-service
     url: http://task-service:3005
@@ -136,6 +148,7 @@ plugins:
     config:
       origins:
         - "http://localhost:5173"   # Vite dev server (web frontend)
+        - "http://localhost:5174"   # Vite dev server (fallback)
         - "http://localhost:3000"   # Kong itself (for browser testing)
       methods:
         - GET
@@ -150,6 +163,7 @@ plugins:
         - Content-Type
         - X-Requested-With
         - X-Correlation-ID
+        - x-organization-id
       exposed_headers:
         - X-Correlation-ID
       credentials: true

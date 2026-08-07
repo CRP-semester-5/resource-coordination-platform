@@ -14,6 +14,10 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
-  }
+    "express": "^5.2.1",
+    "cors": "*",
+    "joi": "^18.2.3",
+    "@crp/shared-middleware": "*"
+  },
+  "type": "module"
 }

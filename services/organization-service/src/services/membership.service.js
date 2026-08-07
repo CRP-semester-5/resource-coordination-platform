@@ -1,26 +1,48 @@
 import * as membershipRepository from "../repositories/membership.repository.js";
+import { supabase } from "../lib/supabase.js";
 
-export const createMembership = async (organizationId, membershipData) => {
+export const createMembership = async (organizationId, membershipData, inviterId) => {
+
+    // Lookup user by email
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('email', membershipData.email)
+        .single();
+
+    if (userError || !user) {
+        throw new Error("No user found with that email address. They must register for a basic account first.");
+    }
+
+    const userId = user.user_id;
 
     const existing = await membershipRepository.findExistingMembership(
         organizationId,
-        membershipData.user_id
+        userId
     );
 
     if (existing.data) {
         throw new Error("User is already a member of this organization.");
     }
 
-    membershipData.organization_id = organizationId;
-
-    membershipData.status = "PENDING";
+    // Prepare data for DB
+    const dbData = {
+        organization_id: organizationId,
+        user_id: userId,
+        role: membershipData.role,
+        invited_by: inviterId,
+        status: "ACTIVE" // Set to ACTIVE immediately for now
+    };
 
     const { data, error } =
-        await membershipRepository.createMembership(membershipData);
+        await membershipRepository.createMembership(dbData);
 
     if (error) {
         throw new Error(error.message);
     }
+
+    // Mock sending email notification
+    console.log(`[Email Mock] Sending invitation to User ${membershipData.user_id}: "You have been added to Organization ${organizationId} as a ${membershipData.role}."`);
 
     return data;
 };

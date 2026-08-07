@@ -69,7 +69,8 @@ export const cancel = async (requestId) => {
 // Verify / Approve Request
 export const verify = async (
     requestId,
-    verifiedBy
+    verifiedBy,
+    orgId
 ) => {
     return await supabase
         .from("requests")
@@ -77,6 +78,7 @@ export const verify = async (
             status: "VERIFIED",
             verified_by: verifiedBy,
             verified_at: new Date().toISOString(),
+            organization_id: orgId,
             rejection_reason: null
         })
         .eq("request_id", requestId)
@@ -88,7 +90,8 @@ export const verify = async (
 export const reject = async (
     requestId,
     verifiedBy,
-    reason
+    reason,
+    orgId
 ) => {
     return await supabase
         .from("requests")
@@ -96,6 +99,7 @@ export const reject = async (
             status: "REJECTED",
             verified_by: verifiedBy,
             verified_at: new Date().toISOString(),
+            organization_id: orgId,
             rejection_reason: reason
         })
         .eq("request_id", requestId)
