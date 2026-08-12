@@ -1,0 +1,174 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  ResQ Hub — Docker Compose
+#
+#  Database: Supabase (hosted) — no local DB container needed.
+#  All services connect via SUPABASE_URL / SUPABASE_SECRET_KEY from .env
+#
+#  API Gateway: Kong (DB-less mode, declarative config from api-gateway/kong/kong.yml)
+#
+#  NOTE: Build contexts are set to root (.) so Docker can access the root
+#  package-lock.json required by npm workspaces (user-service, org-service, etc.)
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  crp-network:
+    driver: bridge
+
+services:
+
+  # ── Kong API Gateway ─────────────────────────────────────────────────────────
+  kong:
+    image: kong:3.7-ubuntu
+    container_name: crp-kong
+    environment:
+      KONG_DATABASE: "off"                         # DB-less mode
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml      # Load config from file
+      KONG_PROXY_LISTEN: "0.0.0.0:3000"           # Public API port
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"           # Admin API (dev only)
+      KONG_LOG_LEVEL: notice
+      KONG_PLUGINS: "bundled"                      # Use all bundled plugins
+    volumes:
+      - ./api-gateway/kong/kong.yml:/kong/kong.yml:ro
+    ports:
+      - "3000:3000"   # Kong proxy — clients connect here
+      - "8001:8001"   # Kong Admin API — dev/debugging only
+    depends_on:
+      - user-service
+      - organization-service
+      - resource-service
+      - request-service
+      - task-service
+      - volunteer-service
+      - notification-service
+    networks:
+      - crp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── User Service ──────────────────────────────────────────────────────────────
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: crp-user-service
+    ports:
+      - "3001:3001"   # Exposed for direct dev/testing; Kong proxies in production
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - USER_SERVICE_PORT=3001
+    networks:
+      - crp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Organization Service ──────────────────────────────────────────────────────
+  organization-service:
+    build:
+      context: .
+      dockerfile: services/organization-service/Dockerfile
+    container_name: crp-organization-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - ORGANIZATION_SERVICE_PORT=3002
+    networks:
+      - crp-network
+    restart: unless-stopped
+
+  # ── Resource Service ──────────────────────────────────────────────────────────
+  resource-service:
+    build:
+      context: .
+      dockerfile: services/resource-service/Dockerfile
+    container_name: crp-resource-service
+    ports:
+      - "3003:3003"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - RESOURCE_SERVICE_PORT=3003
+    networks:
+      - crp-network
+    restart: unless-stopped
+
+  # ── Request Service ───────────────────────────────────────────────────────────
+  request-service:
+    build:
+      context: .
+      dockerfile: services/request-service/Dockerfile
+    container_name: crp-request-service
+    ports:
+      - "3004:3004"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - REQUEST_SERVICE_PORT=3004
+    networks:
+      - crp-network
+    restart: unless-stopped
+
+  # ── Task Service ──────────────────────────────────────────────────────────────
+  task-service:
+    build:
+      context: .
+      dockerfile: services/task-service/Dockerfile
+    container_name: crp-task-service
+    ports:
+      - "3005:3005"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - TASK_SERVICE_PORT=3005
+    networks:
+      - crp-network
+    restart: unless-stopped
+
+  # ── Volunteer Service ─────────────────────────────────────────────────────────
+  volunteer-service:
+    build:
+      context: .
+      dockerfile: services/volunteer-service/Dockerfile
+    container_name: crp-volunteer-service
+    ports:
+      - "3006:3006"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - VOLUNTEER_SERVICE_PORT=3006
+    networks:
+      - crp-network
+    restart: unless-stopped
+
+  # ── Notification Service ──────────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: crp-notification-service
+    ports:
+      - "3007:3007"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - NOTIFICATION_SERVICE_PORT=3007
+    networks:
+      - crp-network
+    restart: unless-stopped

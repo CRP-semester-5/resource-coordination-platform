@@ -1,0 +1,35 @@
+{
+  "name": "resource-coordination-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "to run each service;\r docker build user-service\r docker run user-service",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "workspaces": [
+    "packages/shared-middleware",
+    "api-gateway",
+    "services/user-service",
+    "services/organization-service",
+    "services/resource-service",
+    "services/request-service",
+    "services/task-service",
+    "services/volunteer-service",
+    "services/notification-service"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CRP-semester-5/resource-coordination-platform.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CRP-semester-5/resource-coordination-platform/issues"
+  },
+  "homepage": "https://github.com/CRP-semester-5/resource-coordination-platform#readme"
+}
