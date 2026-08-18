@@ -35,7 +35,7 @@ function LoginPage() {
     const res = await login(email, password);
     setSubmitting(false);
     if (res.success) {
-      router.navigate({ to: isSuperAdmin ? "/admin" : "/coordinator" });
+      router.navigate({ to: res.isSuperAdmin ? "/admin" : "/coordinator" });
     } else {
       setError(res.message ?? "Login failed");
     }

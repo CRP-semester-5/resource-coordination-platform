@@ -51,7 +51,7 @@ export const authAPI = {
    *  Super Admin must approve → creates org + makes rep ORGANIZATION_ADMIN.
    */
   applyOrganization: (payload: RegisterOrgPayload) =>
-    http.post("/api/v1/organizations/apply", payload),
+    http.post("/api/v1/organizations", payload),
 
   /** POST /api/v1/organizations/:id/invite
    *  Invites a user by email to join the org as COORDINATOR.

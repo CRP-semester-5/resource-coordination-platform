@@ -43,7 +43,7 @@ interface AuthContextValue {
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   isCoordinator: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; isSuperAdmin?: boolean; message?: string }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
 }
@@ -120,8 +120,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await authAPI.login({ email, password });
         setToken(res.data.token);
+        // Fetch fresh profile and read roles directly from the response
+        // so the caller gets the resolved isSuperAdmin — not the stale closure.
+        const profileRes = await authAPI.getMe();
+        const raw = profileRes.data?.user ?? profileRes.data;
+        const freshRoles: GlobalRole[] = raw?.globalRoles ?? raw?.roles ?? [];
+        const freshIsSuperAdmin = freshRoles.includes("SUPER_ADMIN");
+        // Also update state for the rest of the app
         await fetchProfile();
-        return { success: true };
+        return { success: true, isSuperAdmin: freshIsSuperAdmin };
       } catch (err: unknown) {
         const msg =
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??

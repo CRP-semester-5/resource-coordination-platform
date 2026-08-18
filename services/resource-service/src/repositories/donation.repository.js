@@ -4,7 +4,11 @@ import { supabase } from "../lib/supabase.js";
 export const findAll = async () => {
     return await supabase
         .from("donations")
-        .select("*");
+        .select(`
+            *,
+            resource_categories (name, unit_of_measure)
+        `)
+        .order("created_at", { ascending: false });
 };
 
 

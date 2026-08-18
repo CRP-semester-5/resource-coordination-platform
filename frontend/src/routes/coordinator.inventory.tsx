@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, CalendarClock, PackagePlus, Share2 } from "lucide-react";
-import { allocateInventory, getInventory, restockInventory } from "@/api/client";
+import { inventoryAPI, categoriesAPI } from "@/api/real";
 import type { InventoryItem } from "@/api/types";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
@@ -40,8 +40,39 @@ function InventoryPage() {
   const [allocating, setAllocating] = useState<InventoryItem | null>(null);
   const [qty, setQty] = useState("");
   const [requestCode, setRequestCode] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [newQty, setNewQty] = useState("");
 
-  const { data: items = [], isLoading } = useQuery({ queryKey: ["inventory", orgId], queryFn: () => getInventory(orgId) });
+  const { data: categoriesRes } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoriesAPI.getAll(),
+  });
+  const allCategories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : (categoriesRes?.data?.data || []);
+
+  const { data: itemsRaw = [], isLoading } = useQuery({ 
+    queryKey: ["inventory", orgId], 
+    queryFn: async () => {
+      const res = await inventoryAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    }
+  });
+
+  const items = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return itemsRaw.map((i: any) => ({
+      id: i.inventory_id,
+      resource: i.resource_categories?.name || "Unknown",
+      category: i.resource_categories?.name || "Unknown",
+      available: i.quantity,
+      reserved: 0, // Not stored in DB currently
+      allocated: 0, // Not stored in DB currently
+      warehouse: "Central Warehouse", // Hardcoded
+      expiryDate: null,
+      minThreshold: 50,
+      unit: i.resource_categories?.unit_of_measure || "units",
+    }));
+  }, [itemsRaw]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["inventory", orgId] });
@@ -50,13 +81,25 @@ function InventoryPage() {
   };
 
   const restock = useMutation({
-    mutationFn: ({ id, quantity }: { id: string; quantity: number }) => restockInventory(id, quantity),
+    mutationFn: ({ id, quantity }: { id: string; quantity: number }) => inventoryAPI.restock(id, quantity),
     onSuccess: () => { invalidate(); toast.success("Stock updated"); },
   });
   const allocate = useMutation({
     mutationFn: ({ id, quantity, code }: { id: string; quantity: number; code: string }) =>
-      allocateInventory(id, quantity, code),
+      inventoryAPI.allocate(id, quantity, code),
     onSuccess: () => { invalidate(); toast.success("Resources allocated"); },
+  });
+  const addMutation = useMutation({
+    mutationFn: ({ category_id, quantity }: { category_id: string; quantity: number }) =>
+      inventoryAPI.add(category_id, quantity),
+    onSuccess: () => { 
+      invalidate(); 
+      toast.success("Item added to inventory"); 
+      setIsAdding(false);
+      setNewCategory("");
+      setNewQty("");
+    },
+    onError: () => toast.error("Failed to add item to inventory"),
   });
 
   const categories = useMemo(() => [...new Set(items.map((i) => i.category))], [items]);
@@ -74,7 +117,15 @@ function InventoryPage() {
 
   return (
     <>
-      <PageHeader title="Inventory" description="Available, reserved and allocated stock across your warehouses." />
+      <PageHeader 
+        title="Inventory" 
+        description="Available, reserved and allocated stock across your warehouses." 
+        actions={
+          <Button onClick={() => setIsAdding(true)}>
+            <PackagePlus className="mr-2 size-4" /> Add Item
+          </Button>
+        }
+      />
 
       {(lowStock.length > 0 || expiring.length > 0) && (
         <div className="mb-4 grid gap-3 sm:grid-cols-2">
@@ -215,6 +266,45 @@ function InventoryPage() {
               }}
             >
               Allocate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isAdding} onOpenChange={setIsAdding}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Inventory Item</DialogTitle>
+            <DialogDescription>Log physically received resources into your inventory.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-category">Category</Label>
+              <select
+                id="add-category"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+              >
+                <option value="">Select a category</option>
+                {allCategories.map((c: any) => (
+                  <option key={c.category_id} value={c.category_id}>
+                    {c.name} ({c.unit_of_measure})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-qty">Initial Quantity</Label>
+              <Input id="add-qty" type="number" min={1} value={newQty} onChange={(e) => setNewQty(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAdding(false)}>Cancel</Button>
+            <Button
+              disabled={!newCategory || !Number(newQty) || addMutation.isPending}
+              onClick={() => addMutation.mutate({ category_id: newCategory, quantity: Number(newQty) })}
+            >
+              {addMutation.isPending ? "Adding..." : "Add to Inventory"}
             </Button>
           </DialogFooter>
         </DialogContent>

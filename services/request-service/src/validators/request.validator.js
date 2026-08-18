@@ -5,7 +5,12 @@ export const createRequestSchema = Joi.object({
 
     organization_id: Joi.string()
         .uuid()
-        .required(),
+        .allow(null, "")
+        .optional(),
+
+    requester_id: Joi.string()
+        .uuid()
+        .optional(),
 
     title: Joi.string()
         .min(3)

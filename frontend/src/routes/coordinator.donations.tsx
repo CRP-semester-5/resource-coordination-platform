@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
-import { getDonations, verifyDonation } from "@/api/client";
+import { donationsAPI } from "@/api/real";
 import type { Donation } from "@/api/types";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
@@ -63,14 +63,38 @@ function DonationsPage() {
   const [rejecting, setRejecting] = useState<Donation | null>(null);
   const [reason, setReason] = useState("");
 
-  const { data: donations = [], isLoading } = useQuery({
+  const { data: donationsRaw = [], isLoading } = useQuery({
     queryKey: ["donations", orgId],
-    queryFn: () => getDonations(orgId),
+    queryFn: async () => {
+      const res = await donationsAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: !!orgId,
   });
 
+  const donations = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return donationsRaw.map((d: any) => ({
+      id: d.donation_id,
+      code: d.donation_id.split("-")[0].toUpperCase(),
+      donorName: d.donor_name,
+      donorPhone: d.donor_email, // Using email as phone is missing
+      resource: d.resource_categories?.name || "Unknown",
+      category: d.resource_categories?.name || "Unknown",
+      quantity: d.quantity,
+      unit: d.resource_categories?.unit_of_measure || "units",
+      pickupLocation: "N/A", // Not stored
+      expiryDate: null,
+      status: d.status.charAt(0).toUpperCase() + d.status.slice(1).toLowerCase(),
+      rejectionReason: d.notes || "",
+    }));
+  }, [donationsRaw]);
+
   const decide = useMutation({
-    mutationFn: ({ id, decision, note }: { id: string; decision: "Accepted" | "Rejected"; note?: string }) =>
-      verifyDonation(id, decision, note),
+    mutationFn: ({ id, decision, note }: { id: string; decision: "Accepted" | "Rejected"; note?: string }) => {
+      if (decision === "Accepted") return donationsAPI.approve(id);
+      return donationsAPI.reject(id, note);
+    },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["donations", orgId] });
       qc.invalidateQueries({ queryKey: ["inventory", orgId] });

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useRouterState, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, LogOut, Menu, ShieldCheck, LifeBuoy, ChevronsUpDown, X } from "lucide-react";
-import { getNotifications, markAllNotificationsRead, markNotificationRead } from "@/api/client";
+import { notificationsAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
 import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
@@ -27,15 +27,32 @@ export interface NavItem {
 
 function NotificationsBell() {
   const qc = useQueryClient();
-  const { data: items = [] } = useQuery({ queryKey: ["notifications"], queryFn: getNotifications });
-  const unread = items.filter((n) => !n.read).length;
+  const { data: itemsRaw = [] } = useQuery({ 
+    queryKey: ["notifications"], 
+    queryFn: async () => {
+      const res = await notificationsAPI.getAll();
+      return res.data?.data ?? res.data ?? [];
+    },
+    refetchInterval: 5000, // Poll every 5s for pseudo-realtime
+  });
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items = itemsRaw.map((n: any) => ({
+    id: n.notification_id,
+    title: n.type.replace(/_/g, ' '),
+    description: n.message,
+    read: n.is_read,
+    at: n.created_at,
+  }));
+  
+  const unread = items.filter((n: any) => !n.read).length;
 
   const readOne = useMutation({
-    mutationFn: markNotificationRead,
+    mutationFn: (id: string) => notificationsAPI.markRead(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
   const readAll = useMutation({
-    mutationFn: markAllNotificationsRead,
+    mutationFn: () => notificationsAPI.markAllRead(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 

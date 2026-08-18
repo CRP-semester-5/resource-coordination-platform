@@ -93,8 +93,8 @@ CREATE TABLE password_reset_tokens (
 
 CREATE TABLE requests (
  request_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- organization_id UUID NOT NULL REFERENCES organizations(organization_id) ON DELETE RESTRICT,
- requester_id UUID NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+ organization_id UUID NULL REFERENCES organizations(organization_id) ON DELETE RESTRICT,
+ requester_id UUID REFERENCES users(user_id) ON DELETE RESTRICT,
  title VARCHAR(255) NOT NULL, description TEXT NOT NULL, category VARCHAR(100) NOT NULL,
  quantity_required INTEGER NOT NULL CHECK(quantity_required>0), unit VARCHAR(50) NOT NULL,
  urgency urgency_level NOT NULL DEFAULT 'MEDIUM',

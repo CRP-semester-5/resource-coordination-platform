@@ -109,7 +109,7 @@ function RequestsPage() {
         requesterPhone: r.requester_phone ?? "",
         category: r.category ?? "General",
         resourceType: r.title ?? r.resource_type ?? r.resource_name ?? "",
-        quantity: r.quantity ?? 0,
+        quantity: r.quantity_required ?? r.quantity ?? 0,
         unit: r.unit ?? "",
         priority: capitalize(r.urgency ?? r.priority ?? "medium"),
         location: r.location ?? "",

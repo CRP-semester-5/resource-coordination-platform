@@ -14,9 +14,10 @@ export const orgsAPI = {
   reject: (id: string, reason?: string) =>
     http.patch(`/api/v1/organizations/${id}/reject`, { reason }),
   invite: (orgId: string, email: string, role = "COORDINATOR") =>
-    http.post(`/api/v1/organizations/${orgId}/invite`, { email, role }),
+    http.post(`/api/v1/organizations/${orgId}/members`, { email, role }),
   getMembers: (orgId: string) =>
     http.get(`/api/v1/organizations/${orgId}/members`),
+  delete: (id: string) => http.delete(`/api/v1/organizations/${id}`), 
 };
 
 /* --------------------------------------------------------------- Requests */
@@ -39,8 +40,16 @@ export const donationsAPI = {
   reject: (id: string) => http.patch(`/api/v1/donations/${id}/reject`),
 };
 
+export const categoriesAPI = {
+  getAll: () => http.get("/api/v1/categories"),
+  create: (data: any) => http.post("/api/v1/categories", data),
+};
+
 export const inventoryAPI = {
   getAll: () => http.get("/api/v1/inventory"),
+  add: (category_id: string, quantity: number) => http.post("/api/v1/inventory", { category_id, quantity }),
+  restock: (id: string, quantity: number) => http.post(`/api/v1/inventory/${id}/restock`, { quantity }),
+  allocate: (id: string, quantity: number, code: string) => http.post(`/api/v1/inventory/${id}/allocate`, { quantity, request_code: code }),
 };
 
 export const volunteersAPI = {
@@ -54,4 +63,10 @@ export const tasksAPI = {
   create: (data: any) => http.post("/api/v1/tasks", data),
   update: (id: string, data: any) => http.patch(`/api/v1/tasks/${id}`, data),
   assign: (id: string, volunteer_id: string) => http.post(`/api/v1/tasks/${id}/assign`, { volunteer_id }),
+};
+
+export const notificationsAPI = {
+  getAll: () => http.get("/api/v1/notifications"),
+  markRead: (id: string) => http.patch(`/api/v1/notifications/${id}/read`),
+  markAllRead: () => http.post("/api/v1/notifications/mark-all-read"),
 };

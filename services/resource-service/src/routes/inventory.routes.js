@@ -11,4 +11,25 @@ router.get(
     inventoryController.getInventory
 );
 
+router.post(
+    "/",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.addInventory
+);
+
+router.post(
+    "/:id/restock",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.restock
+);
+
+router.post(
+    "/:id/allocate",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.allocate
+);
+
 export default router;

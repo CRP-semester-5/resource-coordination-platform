@@ -2,11 +2,13 @@ import * as requestRepository from "../repositories/request.repository.js";
 
 export const createRequest = async (requestData) => {
 
-    const existing = await requestRepository.findDuplicate(
-        requestData.organization_id,
-        requestData.requester_id,
-        requestData.title
-    );
+export const createRequest = async (requestData, existingUserId = null) => {
+    const payload = { ...requestData };
+    
+    // Extract contact details passed from mobile app
+    const contactName = payload.contact_name;
+    const contactMobile = payload.contact_mobile;
+    const contactEmail = payload.contact_email;
 
     if (existing.data) {
         throw new Error("A similar request already exists.");

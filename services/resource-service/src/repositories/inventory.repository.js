@@ -67,3 +67,20 @@ export const decreaseInventory = async (organizationId, categoryId, amount) => {
         .select()
         .single();
 };
+
+export const getById = async (inventoryId) => {
+    return await supabase
+        .from("inventory")
+        .select("*")
+        .eq("inventory_id", inventoryId)
+        .single();
+};
+
+export const updateQuantityById = async (inventoryId, newQuantity) => {
+    return await supabase
+        .from("inventory")
+        .update({ quantity: newQuantity })
+        .eq("inventory_id", inventoryId)
+        .select()
+        .single();
+};

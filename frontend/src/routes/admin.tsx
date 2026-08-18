@@ -1,10 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, Building2 } from "lucide-react";
-import { orgsAPI } from "@/api/real";
+import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Building2, Tag, LayoutDashboard } from "lucide-react";
+import { AppShell, type NavItem } from "@/components/app-shell";
 import { useAuth } from "@/context/auth";
-import { PageHeader } from "@/components/page-header";
-import { AppShell } from "@/components/app-shell";
+
+const nav: NavItem[] = [
+  { label: "Overview",      to: "/admin",             icon: LayoutDashboard, exact: true },
+  { label: "Organizations", to: "/admin/organizations", icon: Building2 },
+  { label: "Categories",    to: "/admin/categories",   icon: Tag },
+];
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -15,10 +19,25 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { isAuthenticated, isSuperAdmin, loading } = useAuth();
+  const router = useRouter();
 
-  if (loading) return null;
-  
-  if (!isAuthenticated || !isSuperAdmin) {
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.navigate({ to: "/login" });
+    }
+  }, [isAuthenticated, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-red-500">
         Unauthorized. Super Admin access required.
@@ -27,60 +46,8 @@ function AdminLayout() {
   }
 
   return (
-    <AppShell
-      title="Super Admin Console"
-      variant="admin"
-      nav={[
-        { label: "Organizations", to: "/admin", icon: Building2, exact: true },
-      ]}
-    >
-      <AdminDashboard />
+    <AppShell nav={nav} title="Super Admin Console" variant="admin">
+      <Outlet />
     </AppShell>
-  );
-}
-
-function AdminDashboard() {
-  const { data: orgsRaw = [], isLoading } = useQuery({
-    queryKey: ["all-organizations"],
-    queryFn: async () => {
-      const res = await orgsAPI.getAll();
-      return res.data?.data ?? res.data ?? [];
-    },
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orgs: any[] = orgsRaw;
-
-  return (
-    <>
-      <PageHeader
-        title="Organizations"
-        description="Manage all organizations on the platform."
-      />
-      <div className="overflow-hidden rounded-xl border border-border bg-card mt-6">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">District</th>
-                <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orgs.map((o) => (
-                <tr key={o.organization_id ?? o.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-medium">{o.name ?? o.org_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{o.district}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{o.status ?? "approved"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </>
   );
 }

@@ -14,6 +14,9 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CoordinatorRouteImport } from './routes/coordinator'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as CoordinatorIndexRouteImport } from './routes/coordinator.index'
 import { Route as CoordinatorDonationsRouteImport } from './routes/coordinator.donations'
 import { Route as CoordinatorInventoryRouteImport } from './routes/coordinator.inventory'
@@ -46,6 +49,21 @@ const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
+  id: '/organizations',
+  path: '/organizations',
+  getParentRoute: () => AdminRoute,
 } as any)
 const CoordinatorIndexRoute = CoordinatorIndexRouteImport.update({
   id: '/',
@@ -85,44 +103,52 @@ const CoordinatorVolunteersRoute = CoordinatorVolunteersRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/coordinator': typeof CoordinatorRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
   '/coordinator/donations': typeof CoordinatorDonationsRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
   '/coordinator/tasks': typeof CoordinatorTasksRoute
   '/coordinator/team': typeof CoordinatorTeamRoute
   '/coordinator/volunteers': typeof CoordinatorVolunteersRoute
+  '/admin/': typeof AdminIndexRoute
   '/coordinator/': typeof CoordinatorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
   '/coordinator/donations': typeof CoordinatorDonationsRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
   '/coordinator/tasks': typeof CoordinatorTasksRoute
   '/coordinator/team': typeof CoordinatorTeamRoute
   '/coordinator/volunteers': typeof CoordinatorVolunteersRoute
+  '/admin': typeof AdminIndexRoute
   '/coordinator': typeof CoordinatorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/coordinator': typeof CoordinatorRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
   '/coordinator/donations': typeof CoordinatorDonationsRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
   '/coordinator/tasks': typeof CoordinatorTasksRoute
   '/coordinator/team': typeof CoordinatorTeamRoute
   '/coordinator/volunteers': typeof CoordinatorVolunteersRoute
+  '/admin/': typeof AdminIndexRoute
   '/coordinator/': typeof CoordinatorIndexRoute
 }
 export interface FileRouteTypes {
@@ -133,25 +159,30 @@ export interface FileRouteTypes {
     | '/coordinator'
     | '/login'
     | '/register'
+    | '/admin/categories'
+    | '/admin/organizations'
     | '/coordinator/donations'
     | '/coordinator/inventory'
     | '/coordinator/requests'
     | '/coordinator/tasks'
     | '/coordinator/team'
     | '/coordinator/volunteers'
+    | '/admin/'
     | '/coordinator/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/login'
     | '/register'
+    | '/admin/categories'
+    | '/admin/organizations'
     | '/coordinator/donations'
     | '/coordinator/inventory'
     | '/coordinator/requests'
     | '/coordinator/tasks'
     | '/coordinator/team'
     | '/coordinator/volunteers'
+    | '/admin'
     | '/coordinator'
   id:
     | '__root__'
@@ -160,18 +191,21 @@ export interface FileRouteTypes {
     | '/coordinator'
     | '/login'
     | '/register'
+    | '/admin/categories'
+    | '/admin/organizations'
     | '/coordinator/donations'
     | '/coordinator/inventory'
     | '/coordinator/requests'
     | '/coordinator/tasks'
     | '/coordinator/team'
     | '/coordinator/volunteers'
+    | '/admin/'
     | '/coordinator/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CoordinatorRoute: typeof CoordinatorRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
@@ -213,6 +247,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/organizations': {
+      id: '/admin/organizations'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AdminOrganizationsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/coordinator/': {
       id: '/coordinator/'
@@ -266,6 +321,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminOrganizationsRoute: typeof AdminOrganizationsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminOrganizationsRoute: AdminOrganizationsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface CoordinatorRouteChildren {
   CoordinatorDonationsRoute: typeof CoordinatorDonationsRoute
   CoordinatorInventoryRoute: typeof CoordinatorInventoryRoute
@@ -292,7 +361,7 @@ const CoordinatorRouteWithChildren = CoordinatorRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   CoordinatorRoute: CoordinatorRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,

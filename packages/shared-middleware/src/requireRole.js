@@ -180,5 +180,31 @@ export function requireRole(...args) {
     if (hasOrgRoles && !hasGlobalRoles) {
         return requireOrgRole(...allowedRoles)
     }
-    return requireGlobalRole(...allowedRoles)
+    
+    if (!hasOrgRoles && hasGlobalRoles) {
+        return requireGlobalRole(...allowedRoles)
+    }
+
+    // If route allows BOTH org roles and global roles (e.g. COORDINATOR or SUPER_ADMIN)
+    return async (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Not authenticated' })
+        }
+
+        // 1. Check if user has any of the allowed global roles
+        const userGlobalRoles = req.user.globalRoles ?? []
+        const allowedGlobals = allowedRoles.filter(r => globalRoles.includes(r))
+        const hasGlobalMatch = allowedGlobals.some(r => userGlobalRoles.includes(r))
+
+        if (hasGlobalMatch) {
+            // They have the required global role (e.g. SUPER_ADMIN)
+            // Note: SUPER_ADMIN bypasses org level checks anyway in requireOrgRole, 
+            // but for roles like VOLUNTEER this lets them through.
+            return next()
+        }
+
+        // 2. If they didn't have the global role, check if they have the org role
+        //    Delegate to requireOrgRole to perform the DB lookup
+        return requireOrgRole(...allowedRoles)(req, res, next)
+    }
 }
