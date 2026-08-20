@@ -19,7 +19,7 @@
     "services/notification-service"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test --workspace=user-service && npm run test --workspace=organization-service && npm run test --workspace=resource-service && npm run test --workspace=request-service && npm run test --workspace=task-service && npm run test --workspace=volunteer-service && npm run test --workspace=notification-service"
   },
   "repository": {
     "type": "git",
