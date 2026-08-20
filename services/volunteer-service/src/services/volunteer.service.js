@@ -1,14 +1,15 @@
 import * as volunteerRepo from "../repositories/volunteer.repository.js";
 import { AppError } from "@crp/shared-middleware";
 
-export const registerVolunteer = async (userId, data) => {
+export const createVolunteerService = (repository = volunteerRepo) => {
+ const registerVolunteer = async (userId, data) => {
     // Check if already registered
-    const { data: existing, error: existError } = await volunteerRepo.getVolunteerByUserId(userId);
+    const { data: existing, error: existError } = await repository.getVolunteerByUserId(userId);
     if (!existError && existing) {
         throw new AppError(400, "User is already registered as a volunteer");
     }
 
-    const { data: created, error } = await volunteerRepo.createVolunteer({
+    const { data: created, error } = await repository.createVolunteer({
         user_id: userId,
         availability_status: "AVAILABLE"
     });
@@ -19,7 +20,7 @@ export const registerVolunteer = async (userId, data) => {
     if (data.skills && Array.isArray(data.skills)) {
         for (const skill of data.skills) {
             try {
-                await volunteerRepo.addSkill(created.volunteer_id, skill);
+                await repository.addSkill(created.volunteer_id, skill);
             } catch (e) {
                 console.error("Failed to add skill:", e);
             }
@@ -29,14 +30,14 @@ export const registerVolunteer = async (userId, data) => {
     return created;
 };
 
-export const getVolunteers = async () => {
-    const { data, error } = await volunteerRepo.getVolunteers();
+ const getVolunteers = async () => {
+    const { data, error } = await repository.getVolunteers();
     if (error) throw new AppError(500, error.message);
     return data;
 };
 
-export const getVolunteerById = async (id) => {
-    const { data, error } = await volunteerRepo.getVolunteerById(id);
+ const getVolunteerById = async (id) => {
+    const { data, error } = await repository.getVolunteerById(id);
     if (error) {
         if (error.code === 'PGRST116') throw new AppError(404, "Volunteer not found");
         throw new AppError(500, error.message);
@@ -44,11 +45,17 @@ export const getVolunteerById = async (id) => {
     return data;
 };
 
-export const addSkill = async (volunteerId, skillName) => {
-    const { data, error } = await volunteerRepo.addSkill(volunteerId, skillName);
+ const addSkill = async (volunteerId, skillName) => {
+    const { data, error } = await repository.addSkill(volunteerId, skillName);
     if (error) {
         if (error.code === '23505') throw new AppError(409, "Skill already added");
         throw new AppError(500, error.message);
     }
     return data;
 };
+
+ return { registerVolunteer, getVolunteers, getVolunteerById, addSkill };
+};
+
+const service = createVolunteerService();
+export const { registerVolunteer, getVolunteers, getVolunteerById, addSkill } = service;
