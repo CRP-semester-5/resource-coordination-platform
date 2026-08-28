@@ -95,7 +95,8 @@ function DashboardPage() {
     queryKey: ["donations", orgId],
     queryFn: async () => {
       const res = await donationsAPI.getAll();
-      return res.data?.data ?? res.data ?? [];
+      const d = res.data?.data ?? res.data ?? [];
+      return Array.isArray(d) ? d : [];
     },
     enabled: !!orgId,
   });
@@ -104,7 +105,8 @@ function DashboardPage() {
     queryKey: ["volunteers", orgId],
     queryFn: async () => {
       const res = await volunteersAPI.getAll();
-      return res.data?.data ?? res.data ?? [];
+      const d = res.data?.data ?? res.data ?? [];
+      return Array.isArray(d) ? d : [];
     },
     enabled: !!orgId,
   });
@@ -113,7 +115,8 @@ function DashboardPage() {
     queryKey: ["tasks", orgId],
     queryFn: async () => {
       const res = await tasksAPI.getAll();
-      return res.data?.data ?? res.data ?? [];
+      const d = res.data?.data ?? res.data ?? [];
+      return Array.isArray(d) ? d : [];
     },
     enabled: !!orgId,
   });
@@ -122,7 +125,8 @@ function DashboardPage() {
     queryKey: ["inventory", orgId],
     queryFn: async () => {
       const res = await inventoryAPI.getAll();
-      return res.data?.data ?? res.data ?? [];
+      const d = res.data?.data ?? res.data ?? [];
+      return Array.isArray(d) ? d : [];
     },
     enabled: !!orgId,
   });
