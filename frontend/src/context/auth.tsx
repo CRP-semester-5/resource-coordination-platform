@@ -9,6 +9,7 @@ import {
 import { authAPI } from "@/api/auth";
 import { setToken, clearToken, getToken, setStoredOrgId, getStoredOrgId } from "@/api/http";
 import { orgsAPI } from "@/api/real";
+import { useQueryClient } from "@tanstack/react-query";
 
 /* ------------------------------------------------------------------ types */
 
@@ -61,6 +62,7 @@ function initials(name: string) {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [myOrgs, setMyOrgs] = useState<OrgMembership[]>([]);
   const [selectedOrg, _setSelectedOrg] = useState<OrgMembership | null>(null);
@@ -147,7 +149,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setMyOrgs([]);
     _setSelectedOrg(null);
-  }, []);
+    // Clear ALL React Query cached data so the next user never sees
+    // data that belonged to the previous session.
+    queryClient.clear();
+  }, [queryClient]);
 
   const globalRoles = user?.globalRoles ?? [];
   const isSuperAdmin = globalRoles.includes("SUPER_ADMIN");

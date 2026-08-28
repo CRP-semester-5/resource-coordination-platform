@@ -1,7 +1,7 @@
 /**
  * Authentication API — login, logout, org onboarding, member invite.
  */
-import { http } from "./http";
+import { http, setToken } from "./http";
 
 export interface LoginPayload {
   email: string;
@@ -30,6 +30,23 @@ export interface RegisterOrgPayload {
   org_contact_phone?: string | undefined;
 }
 
+export interface RegisterUserPayload {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+}
+
+export interface OrgApplicationPayload {
+  org_name: string;
+  org_category?: string;
+  org_district?: string;
+  org_description: string;
+  org_registration_number?: string;
+  org_contact_email?: string;
+  org_contact_phone?: string;
+}
+
 export interface InvitePayload {
   email: string;
   role?: "COORDINATOR" | "ORGANIZATION_ADMIN";
@@ -46,7 +63,41 @@ export const authAPI = {
   /** GET /api/v1/users/me */
   getMe: () => http.get("/api/v1/users/me"),
 
-  /** POST /api/v1/organizations/apply
+  /**
+   * POST /api/v1/auth/register
+   * Registers a new user account. Returns 201 on success, throws 409 if
+   * the email is already registered. The new account starts as PENDING
+   * until the user clicks the verification link sent to their email.
+   */
+  registerUser: (payload: RegisterUserPayload) =>
+    http.post("/api/v1/auth/register", payload),
+
+  /**
+   * Login and persist the JWT in localStorage so that subsequent http calls
+   * are authenticated. Used in the org-apply returning-user flow.
+   * Will throw if the account is PENDING (email not yet verified).
+   */
+  loginAndStoreToken: async (email: string, password: string): Promise<void> => {
+    const res = await http.post<LoginResponse>("/api/v1/auth/login", { email, password });
+    setToken(res.data.token);
+  },
+
+  /**
+   * POST /api/v1/organizations
+   * Submits a new organization application. Requires a valid JWT to already
+   * be stored in localStorage (call loginAndStoreToken first).
+   */
+  submitOrgApplication: (payload: OrgApplicationPayload) =>
+    http.post("/api/v1/organizations", {
+      organization_name: payload.org_name,
+      description:       payload.org_description,
+      email:             payload.org_contact_email,
+      phone:             payload.org_contact_phone,
+      address:           payload.org_district,
+    }),
+
+  /** @deprecated Use registerUser + loginAndStoreToken + submitOrgApplication instead.
+   *  POST /api/v1/organizations/apply
    *  Creates a pending org application with the rep's details.
    *  Super Admin must approve → creates org + makes rep ORGANIZATION_ADMIN.
    */
