@@ -140,6 +140,18 @@ export const fulfill = async (requestId) => {
         .single();
 };
 
+// Mark as In Progress
+export const inProgress = async (requestId) => {
+    return await supabase
+        .from("requests")
+        .update({
+            status: "IN_PROGRESS"
+        })
+        .eq("request_id", requestId)
+        .select()
+        .single();
+};
+
 // Delete Request
 export const deleteRequest = async (requestId) => {
     return await supabase

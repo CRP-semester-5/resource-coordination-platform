@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -35,12 +35,12 @@ import {
 export const Route = createFileRoute("/coordinator/donations")({
   head: () => ({
     meta: [
-      { title: "Donations — ResQ Hub Coordinator" },
+      { title: "Donations â€” ResQ Hub Coordinator" },
       {
         name: "description",
         content: "Verify donor offers, accept resources into inventory or reject them with a recorded reason.",
       },
-      { property: "og:title", content: "Donations — ResQ Hub Coordinator" },
+      { property: "og:title", content: "Donations â€” ResQ Hub Coordinator" },
       { property: "og:description", content: "Review and verify community donations before they enter relief inventory." },
     ],
   }),
@@ -66,19 +66,19 @@ function DonationsPage() {
   const { data: donationsRaw = [], isLoading } = useQuery({
     queryKey: ["donations", orgId],
     queryFn: async () => {
-      const res = await donationsAPI.getAll();
+      const res = await donationsAPI.getAll(orgId);
       return res.data?.data ?? res.data ?? [];
     },
     enabled: !!orgId,
   });
 
-  const donations = useMemo(() => {
+  const donations = useMemo<Donation[]>(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return donationsRaw.map((d: any) => ({
       id: d.donation_id,
       code: d.donation_id.split("-")[0].toUpperCase(),
-      donorName: (d.users?.first_name ? d.users.first_name + ' ' + d.users.last_name : null) || d.donor_name || "Unknown Donor",
-      donorPhone: d.users?.email || d.donor_email || "N/A",
+      donorName: (d.users?.first_name ? ${d.users.first_name} .trim() : null) || d.donor_name || "Unknown Donor",
+      donorPhone: d.users?.phone || d.users?.email || d.donor_email || "N/A",
       resource: d.resource_name || "Unknown",
       category: d.category || "Unknown",
       quantity: d.quantity,
@@ -87,7 +87,7 @@ function DonationsPage() {
       expiryDate: d.expiry_date || null,
       status: d.status.charAt(0).toUpperCase() + d.status.slice(1).toLowerCase(),
       rejectionReason: d.notes || "",
-    }));
+    } as unknown as Donation));
   }, [donationsRaw]);
 
   const decide = useMutation({
@@ -115,7 +115,7 @@ function DonationsPage() {
           (category === "all" || d.category === category) &&
           (donor === "all" || d.donorName === donor) &&
           (search === "" ||
-            [d.code, d.donorName, d.resource, d.pickupLocation].join(" ").toLowerCase().includes(search.toLowerCase())),
+            [d.donorName, d.resource, d.pickupLocation].join(" ").toLowerCase().includes(search.toLowerCase())),
       ),
     [donations, status, category, donor, search],
   );
@@ -135,7 +135,7 @@ function DonationsPage() {
           setSearch(v);
           setPage(1);
         }}
-        placeholder="Search by code, donor, resource or pickup location"
+        placeholder="Search by donor, resource or pickup location"
         filters={[
           { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
           { label: "Category", value: category, options: categories, onChange: (v) => { setCategory(v); setPage(1); } },
@@ -156,9 +156,8 @@ function DonationsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Donation</TableHead>
-                <TableHead>Donor</TableHead>
                 <TableHead>Resource</TableHead>
+                <TableHead>Donor</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead>Pickup</TableHead>
                 <TableHead>Expiry</TableHead>
@@ -169,21 +168,20 @@ function DonationsPage() {
             <TableBody>
               {rows.map((d) => (
                 <TableRow key={d.id}>
-                  <TableCell className="font-medium">{d.code}</TableCell>
+                  <TableCell>
+                    <span className="block font-medium">{d.resource}</span>
+                    <span className="block text-xs text-muted-foreground">{d.category}</span>
+                  </TableCell>
                   <TableCell>
                     <span className="block">{d.donorName}</span>
                     <span className="block text-xs text-muted-foreground">{d.donorPhone}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="block">{d.resource}</span>
-                    <span className="block text-xs text-muted-foreground">{d.category}</span>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {d.quantity} {d.unit}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{d.pickupLocation}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {d.expiryDate ? new Date(d.expiryDate).toLocaleDateString() : "—"}
+                    {d.expiryDate ? new Date(d.expiryDate).toLocaleDateString() : "â€”"}
                   </TableCell>
                   <TableCell>
                     <StatusBadge value={d.status} />
@@ -224,7 +222,7 @@ function DonationsPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}â€“{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
@@ -240,7 +238,7 @@ function DonationsPage() {
       <AlertDialog open={!!accepting} onOpenChange={(o) => !o && setAccepting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Accept {accepting?.code}?</AlertDialogTitle>
+            <AlertDialogTitle>Accept Donation?</AlertDialogTitle>
             <AlertDialogDescription>
               {accepting?.quantity} {accepting?.unit} of {accepting?.resource} from {accepting?.donorName} will be added
               to your inventory.
@@ -263,7 +261,7 @@ function DonationsPage() {
       <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject {rejecting?.code}</DialogTitle>
+            <DialogTitle>Reject Donation</DialogTitle>
             <DialogDescription>A reason is mandatory and is shared with the donor.</DialogDescription>
           </DialogHeader>
           <Textarea
@@ -292,5 +290,6 @@ function DonationsPage() {
     </>
   );
 }
+
 
 

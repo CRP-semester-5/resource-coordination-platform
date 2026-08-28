@@ -152,3 +152,27 @@ export const fulfillRequest = async (req, res) => {
         });
     }
 };
+
+export const markInProgress = async (req, res) => {
+
+    try {
+
+        const request =
+            await requestService.markInProgress(
+                req.params.id
+            );
+
+        return res.status(200).json({
+            success: true,
+            message: "Request marked as in-progress.",
+            data: request
+        });
+
+    } catch (error) {
+
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

@@ -64,4 +64,8 @@ router.patch(
     requestController.cancelRequest
 );
 
+router.patch("/:id/progress", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.markInProgress);
+
+router.patch("/:id/fulfill", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.fulfillRequest);
+
 export default router;

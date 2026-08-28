@@ -94,7 +94,7 @@ function DashboardPage() {
   const { data: rawDonations = [] } = useQuery({
     queryKey: ["donations", orgId],
     queryFn: async () => {
-      const res = await donationsAPI.getAll();
+      const res = await donationsAPI.getAll(orgId);
       const d = res.data?.data ?? res.data ?? [];
       return Array.isArray(d) ? d : [];
     },

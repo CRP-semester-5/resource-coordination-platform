@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, CalendarClock, PackagePlus, Share2 } from "lucide-react";
-import { inventoryAPI, categoriesAPI } from "@/api/real";
+import { inventoryAPI, categoriesAPI, requestsAPI } from "@/api/real";
 import type { InventoryItem } from "@/api/types";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
@@ -50,6 +50,18 @@ function InventoryPage() {
   });
   const allCategories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : (categoriesRes?.data?.data || []);
 
+  const { data: requestsRes } = useQuery({
+    queryKey: ["requests", orgId],
+    queryFn: () => requestsAPI.getAll(),
+    enabled: !!orgId,
+  });
+  const allRequests = Array.isArray(requestsRes?.data) ? requestsRes.data : (requestsRes?.data?.data || []);
+  const approvedRequests = useMemo(() => {
+    return allRequests.filter((r: any) => 
+      (r.status === "VERIFIED" || r.status === "IN_PROGRESS") && r.organization_id === orgId
+    );
+  }, [allRequests, orgId]);
+
   const { data: itemsRaw = [], isLoading } = useQuery({ 
     queryKey: ["inventory", orgId], 
     queryFn: async () => {
@@ -85,8 +97,20 @@ function InventoryPage() {
     onSuccess: () => { invalidate(); toast.success("Stock updated"); },
   });
   const allocate = useMutation({
-    mutationFn: ({ id, quantity, code }: { id: string; quantity: number; code: string }) =>
-      inventoryAPI.allocate(id, quantity, code),
+    mutationFn: async ({ id, quantity, code }: { id: string; quantity: number; code: string }) => {
+      await inventoryAPI.allocate(id, quantity, code);
+      const req = approvedRequests.find((r: any) => r.request_id === code || r.id === code);
+      if (req) {
+        // If the quantity allocated is greater than or equal to the required quantity, mark fulfilled
+        // Otherwise, if it was just verified or we allocated less, mark in-progress
+        // Note: Without an exact tracked 'allocated_quantity' on the request, this relies on a simple threshold check per allocation.
+        if (quantity >= req.quantity_required) {
+          await requestsAPI.fulfill(code);
+        } else {
+          await requestsAPI.markInProgress(code);
+        }
+      }
+    },
     onSuccess: () => { invalidate(); toast.success("Resources allocated"); },
   });
   const addMutation = useMutation({
@@ -248,8 +272,20 @@ function InventoryPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="alloc-code">Request code</Label>
-              <Input id="alloc-code" value={requestCode} onChange={(e) => setRequestCode(e.target.value)} placeholder="REQ-2451" />
+              <Label htmlFor="alloc-code">Request</Label>
+              <select
+                id="alloc-code"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={requestCode}
+                onChange={(e) => setRequestCode(e.target.value)}
+              >
+                <option value="">Select an approved request...</option>
+                {approvedRequests.map((r: any) => (
+                  <option key={r.request_id || r.id} value={r.request_id || r.id}>
+                    {r.title} ({r.quantity_required} {r.unit} needed) - {r.status === "IN_PROGRESS" ? "Partially fulfilled" : "Approved"}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="alloc-qty">Quantity ({allocating?.unit})</Label>

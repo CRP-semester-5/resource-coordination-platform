@@ -1,11 +1,11 @@
-import express from "express";
+﻿import express from "express";
 import * as donationController from "../controllers/donation.controller.js";
 import { validate } from "../middleware/validate.middleware.js";
-import { authenticate } from "@crp/shared-middleware";
 import {
     createDonationSchema,
-    updateDonationSchema
+    rejectDonationSchema
 } from "../validators/donation.validator.js";
+import { authenticate, requireOrgRole } from "@crp/shared-middleware";
 
 const router = express.Router();
 
@@ -29,29 +29,18 @@ router.get(
 );
 
 router.patch(
-    "/:id",
+    "/:id/verify",
     authenticate,
-    validate(updateDonationSchema),
-    donationController.updateDonation
-);
-
-router.patch(
-    "/:id/approve",
-    authenticate,
-    donationController.approveDonation
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
+    donationController.verifyDonation
 );
 
 router.patch(
     "/:id/reject",
     authenticate,
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
+    validate(rejectDonationSchema),
     donationController.rejectDonation
 );
 
-router.delete(
-    "/:id",
-    authenticate,
-    donationController.deleteDonation
-);
-
 export default router;
-
