@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+﻿import { supabase } from "../lib/supabase.js";
 
 // Check duplicate request
 export const findDuplicate = async (
@@ -6,13 +6,16 @@ export const findDuplicate = async (
     requesterId,
     title
 ) => {
-    return await supabase
-        .from("requests")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .eq("requester_id", requesterId)
-        .eq("title", title)
-        .maybeSingle();
+    let query = supabase.from("requests").select("*").eq("title", title);
+    if (organizationId) {
+        query = query.eq("organization_id", organizationId);
+    }
+    if (requesterId) {
+        query = query.eq("requester_id", requesterId);
+    } else {
+        query = query.is("requester_id", null);
+    }
+    return await query.maybeSingle();
 };
 
 // Create Request
@@ -24,11 +27,24 @@ export const create = async (requestData) => {
         .single();
 };
 
+// Save Guest Contact Info
+export const createGuestContact = async (contactData) => {
+    return await supabase
+        .from("guest_request_contacts")
+        .insert([contactData])
+        .select()
+        .single();
+};
+
 // Get All Requests
 export const findAll = async () => {
     return await supabase
         .from("requests")
-        .select("*")
+        .select(`
+            *,
+            users:requester_id ( first_name, last_name, email, phone ),
+            guest_request_contacts ( contact_name, contact_phone, contact_email )
+        `)
         .order("created_at", { ascending: false });
 };
 
@@ -36,7 +52,11 @@ export const findAll = async () => {
 export const findById = async (requestId) => {
     return await supabase
         .from("requests")
-        .select("*")
+        .select(`
+            *,
+            users:requester_id ( first_name, last_name, email, phone ),
+            guest_request_contacts ( contact_name, contact_phone, contact_email )
+        `)
         .eq("request_id", requestId)
         .maybeSingle();
 };

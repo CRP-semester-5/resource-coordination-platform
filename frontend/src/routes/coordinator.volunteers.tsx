@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { volunteersAPI } from "@/api/real";
@@ -38,7 +38,7 @@ function VolunteersPage() {
       volunteers.filter(
         (v: any) =>
           search === "" ||
-          [v.users?.name, v.users?.email, v.phone_number]
+          [v.users?.name, v.users?.email, v.users?.phone]
             .join(" ")
             .toLowerCase()
             .includes(search.toLowerCase()),
@@ -79,25 +79,28 @@ function VolunteersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Availability</TableHead>
-                <TableHead>Skills</TableHead>
+                <TableHead>Skills & Experience</TableHead>
                 <TableHead className="text-right">Joined</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((v: any) => (
                 <TableRow key={v.volunteer_id}>
-                  <TableCell className="font-medium">{v.users?.name}</TableCell>
+                  <TableCell className="font-medium">{v.users?.name || "Unknown Volunteer"}</TableCell>
                   <TableCell>
                     <span className="block">{v.users?.email}</span>
-                    <span className="block text-xs text-muted-foreground">{v.phone_number || "No phone"}</span>
+                    <span className="block text-xs text-muted-foreground">{v.users?.phone || "No phone"}</span>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge value={v.is_available ? "Available" : "Unavailable"} />
+                    <StatusBadge value={v.availability_status === 'AVAILABLE' ? "Available" : "Unavailable"} />
                   </TableCell>
                   <TableCell>
+                    <span className="block">
                     {v.volunteer_skills?.length > 0 
                       ? v.volunteer_skills.map((s: any) => s.skill_name).join(", ")
                       : <span className="text-muted-foreground italic text-xs">No skills listed</span>}
+                    </span>
+                    <span className="block text-xs text-muted-foreground mt-1">Exp: {v.experience_years || 0} yrs</span>
                   </TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">
                     {new Date(v.created_at).toLocaleDateString()}
@@ -112,7 +115,7 @@ function VolunteersPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}—{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>

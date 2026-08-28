@@ -1,6 +1,7 @@
-import express from "express";
+﻿import express from "express";
 import * as requestController from "../controllers/request.controller.js";
 import { validate } from "../middleware/validate.middleware.js";
+import { optionalAuth } from "../middleware/optionalAuth.middleware.js";
 import { authenticate, requireOrgRole } from "@crp/shared-middleware";
 import {
     createRequestSchema,
@@ -9,24 +10,58 @@ import {
 
 const router = express.Router();
 
-router.use(authenticate);
+// Public / Guest / User endpoints (Optional Auth)
+router.post(
+    "/",
+    optionalAuth,
+    validate(createRequestSchema),
+    requestController.createRequest
+);
 
-router.post("/", validate(createRequestSchema),
-    requestController.createRequest);
+router.get(
+    "/",
+    optionalAuth,
+    requestController.getRequests
+);
 
-router.get("/", requestController.getRequests);
+router.get(
+    "/:id",
+    optionalAuth,
+    requestController.getRequestById
+);
 
-router.get("/:id", requestController.getRequestById);
+// Protected endpoints (Requires Login)
+router.patch(
+    "/:id",
+    authenticate,
+    validate(updateRequestSchema),
+    requestController.updateRequest
+);
 
-router.patch("/:id", validate(updateRequestSchema),
-    requestController.updateRequest);
+router.delete(
+    "/:id",
+    authenticate,
+    requestController.deleteRequest
+);
 
-router.delete("/:id", requestController.deleteRequest);
+router.patch(
+    "/:id/approve",
+    authenticate,
+    requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"),
+    requestController.approveRequest
+);
 
-router.patch("/:id/approve", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.approveRequest);
+router.patch(
+    "/:id/reject",
+    authenticate,
+    requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"),
+    requestController.rejectRequest
+);
 
-router.patch("/:id/reject", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.rejectRequest);
-
-router.patch("/:id/cancel", requestController.cancelRequest);
+router.patch(
+    "/:id/cancel",
+    authenticate,
+    requestController.cancelRequest
+);
 
 export default router;

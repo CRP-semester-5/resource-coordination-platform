@@ -4,7 +4,7 @@ export const validate = (schema) => {
 
         const {error} =
             schema.validate(req.body);
-        if(error){
+        if(error){ console.error('Validation Error:', error.details[0].message, req.body);
 
             return res.status(400).json({
                 success:false,

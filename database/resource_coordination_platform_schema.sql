@@ -1,4 +1,4 @@
--- Resource Coordination Platform for Community Resilience
+﻿-- Resource Coordination Platform for Community Resilience
 -- PostgreSQL / Supabase schema
 -- Full schema generated from the reviewed ER design.
 
@@ -100,9 +100,19 @@ CREATE TABLE requests (
  urgency urgency_level NOT NULL DEFAULT 'MEDIUM',
  status request_status NOT NULL DEFAULT 'PENDING',
  location VARCHAR(255), latitude DECIMAL(9,6), longitude DECIMAL(9,6),
+ affected_people INTEGER DEFAULT 1,
  verified_by UUID REFERENCES users(user_id) ON DELETE SET NULL,
  verified_at TIMESTAMPTZ, rejection_reason TEXT, fulfilled_at TIMESTAMPTZ,
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE guest_request_contacts (
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ request_id UUID NOT NULL REFERENCES requests(request_id) ON DELETE CASCADE,
+ contact_name VARCHAR(255) NOT NULL,
+ contact_phone VARCHAR(50),
+ contact_email VARCHAR(255),
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE request_attachments (
@@ -178,6 +188,7 @@ CREATE TABLE donations (
  resource_name VARCHAR(200) NOT NULL, category VARCHAR(100),
  quantity INTEGER NOT NULL CHECK(quantity>0), unit VARCHAR(50) NOT NULL,
  delivery_method delivery_method NOT NULL, pickup_address TEXT, donation_notes TEXT,
+ item_condition VARCHAR(50), expiry_date DATE,
  status donation_status NOT NULL DEFAULT 'PENDING',
  verified_by UUID REFERENCES users(user_id) ON DELETE SET NULL,
  verified_at TIMESTAMPTZ, rejection_reason TEXT, received_at TIMESTAMPTZ,
@@ -282,14 +293,14 @@ CREATE TRIGGER resources_updated    BEFORE UPDATE ON resources               FOR
 CREATE TRIGGER donations_updated    BEFORE UPDATE ON donations               FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER tasks_updated        BEFORE UPDATE ON tasks                   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- ─────────────────────────────────────────────────────────────────────────────
+
 -- Auto-assign USER role on registration
 --
 -- Every new row in the users table automatically gets the USER global role.
--- This mirrors the mobile app behavior: register → you are USER immediately.
+-- This mirrors the mobile app behavior: register â†’ you are USER immediately.
 -- No manual step needed in application code (but auth.service.js also does it
 -- as a redundant safety net).
--- ─────────────────────────────────────────────────────────────────────────────
+
 CREATE OR REPLACE FUNCTION assign_default_user_role()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -304,3 +315,4 @@ CREATE TRIGGER users_assign_default_role
     AFTER INSERT ON users
     FOR EACH ROW
     EXECUTE FUNCTION assign_default_user_role();
+

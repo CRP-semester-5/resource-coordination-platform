@@ -77,14 +77,14 @@ function DonationsPage() {
     return donationsRaw.map((d: any) => ({
       id: d.donation_id,
       code: d.donation_id.split("-")[0].toUpperCase(),
-      donorName: d.donor_name,
-      donorPhone: d.donor_email, // Using email as phone is missing
-      resource: d.resource_categories?.name || "Unknown",
-      category: d.resource_categories?.name || "Unknown",
+      donorName: (d.users?.first_name ? d.users.first_name + ' ' + d.users.last_name : null) || d.donor_name || "Unknown Donor",
+      donorPhone: d.users?.email || d.donor_email || "N/A",
+      resource: d.resource_name || "Unknown",
+      category: d.category || "Unknown",
       quantity: d.quantity,
-      unit: d.resource_categories?.unit_of_measure || "units",
-      pickupLocation: "N/A", // Not stored
-      expiryDate: null,
+      unit: d.unit || "units",
+      pickupLocation: d.pickup_address || "N/A",
+      expiryDate: d.expiry_date || null,
       status: d.status.charAt(0).toUpperCase() + d.status.slice(1).toLowerCase(),
       rejectionReason: d.notes || "",
     }));
@@ -292,3 +292,5 @@ function DonationsPage() {
     </>
   );
 }
+
+
