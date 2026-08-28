@@ -37,9 +37,12 @@ export const createDonation = async(req,res)=>{
 export const getDonations = async(req,res)=>{
 
     try{
+        const organizationId = req.orgMembership.org_id;
 
         const donations =
-            await donationService.getDonations();
+            await donationService.getDonations(
+                organizationId
+            );
 
         return res.json({
             success:true,

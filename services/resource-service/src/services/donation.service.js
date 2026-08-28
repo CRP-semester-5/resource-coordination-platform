@@ -14,10 +14,10 @@ export const createDonation = async(donationData)=>{
 
 };
 
-export const getDonations = async()=>{
+export const getDonations = async(organization_id)=>{
 
     const {data,error} =
-        await donationRepository.findAll();
+        await donationRepository.findAll(organization_id);
 
     if(error){
         throw new Error(error.message);

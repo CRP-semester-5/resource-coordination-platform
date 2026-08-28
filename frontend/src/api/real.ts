@@ -30,14 +30,16 @@ export const requestsAPI = {
   reject: (id: string, rejection_reason: string) =>
     http.patch(`/api/v1/requests/${id}/reject`, { rejection_reason }),
   cancel: (id: string) => http.patch(`/api/v1/requests/${id}/cancel`),
+  fulfill: (id: string) => http.patch(`/api/v1/requests/${id}/fulfill`),
+  markInProgress: (id: string) => http.patch(`/api/v1/requests/${id}/progress`),
 };
 
 /* --------------------------------------------------------------- Logistics */
 
 export const donationsAPI = {
-  getAll: () => http.get("/api/v1/donations"),
+  getAll: (orgId: string) => http.get("/api/v1/donations", { headers: { "x-organization-id": orgId } }),
   approve: (id: string) => http.patch(`/api/v1/donations/${id}/approve`),
-  reject: (id: string) => http.patch(`/api/v1/donations/${id}/reject`),
+  reject: (id: string, reason?: string) => http.patch(`/api/v1/donations/${id}/reject`, { reason }),
 };
 
 export const categoriesAPI = {

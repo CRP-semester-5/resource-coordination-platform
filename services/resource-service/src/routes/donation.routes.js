@@ -6,6 +6,8 @@ import {
     updateDonationSchema
 } from "../validators/donation.validator.js";
 
+import { authenticate, requireOrgRole } from "@crp/shared-middleware";
+
 const router = express.Router();
 
 router.post(
@@ -16,6 +18,8 @@ router.post(
 
 router.get(
     "/",
+    authenticate,
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
     donationController.getDonations
 );
 

@@ -1,13 +1,11 @@
 import { supabase } from "../lib/supabase.js";
 
 
-export const findAll = async () => {
+export const findAll = async (organization_id) => {
     return await supabase
         .from("donations")
-        .select(`
-            *,
-            resource_categories (name, unit_of_measure)
-        `)
+        .select("*, users!donor_id(first_name, last_name)")
+        .eq("organization_id",organization_id)
         .order("created_at", { ascending: false });
 };
 

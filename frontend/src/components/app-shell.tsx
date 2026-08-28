@@ -37,15 +37,15 @@ function NotificationsBell() {
   });
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = itemsRaw.map((n: any) => ({
-    id: n.notification_id,
-    title: n.type.replace(/_/g, ' '),
-    description: n.message,
-    read: n.is_read,
-    at: n.created_at,
+  const items: { id: string; title: string; description: string; read: boolean; at: string }[] = itemsRaw.map((n: any) => ({
+    id: String(n.notification_id),
+    title: String(n.type || "Notification").replace(/_/g, ' '),
+    description: String(n.message),
+    read: Boolean(n.is_read),
+    at: String(n.created_at),
   }));
   
-  const unread = items.filter((n: any) => !n.read).length;
+  const unread = items.filter((n) => !n.read).length;
 
   const readOne = useMutation({
     mutationFn: (id: string) => notificationsAPI.markRead(id),

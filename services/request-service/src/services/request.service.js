@@ -221,15 +221,45 @@ export const fulfillRequest = async (requestId) => {
 
     if (
         existing.data.status !== "IN_PROGRESS" &&
-        existing.data.status !== "ASSIGNED"
+        existing.data.status !== "ASSIGNED" &&
+        existing.data.status !== "VERIFIED"
     ) {
         throw new Error(
-            "Only assigned or in-progress requests can be fulfilled."
+            "Only verified, assigned or in-progress requests can be fulfilled."
         );
     }
 
     const { data, error } =
         await requestRepository.fulfill(requestId);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+export const markInProgress = async (requestId) => {
+
+    const existing =
+        await requestRepository.findById(requestId);
+
+    if (!existing.data) {
+        throw new Error("Request not found.");
+    }
+
+    if (
+        existing.data.status !== "VERIFIED" &&
+        existing.data.status !== "ASSIGNED" &&
+        existing.data.status !== "PENDING" // In case it gets immediately started
+    ) {
+        throw new Error(
+            "Only pending, verified or assigned requests can be marked in progress."
+        );
+    }
+
+    const { data, error } =
+        await requestRepository.inProgress(requestId);
 
     if (error) {
         throw new Error(error.message);
