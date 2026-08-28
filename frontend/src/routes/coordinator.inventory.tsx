@@ -58,7 +58,7 @@ function InventoryPage() {
     }
   });
 
-  const items = useMemo(() => {
+  const items: InventoryItem[] = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return itemsRaw.map((i: any) => ({
       id: i.inventory_id,

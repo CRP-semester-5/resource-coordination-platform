@@ -18,10 +18,25 @@ export const registerVolunteer = async (userId, data) => {
     return created;
 };
 
+const formatVolunteer = (v) => {
+    if (!v) return v;
+    const formatted = { ...v };
+    if (formatted.users) {
+        formatted.users.name = `${formatted.users.first_name} ${formatted.users.last_name}`.trim();
+    }
+    if (formatted.volunteer_skills) {
+        formatted.volunteer_skills = formatted.volunteer_skills.map(vs => ({
+            ...vs,
+            skill_name: vs.skills?.skill_name
+        }));
+    }
+    return formatted;
+};
+
 export const getVolunteers = async () => {
     const { data, error } = await volunteerRepo.getVolunteers();
     if (error) throw new AppError(500, error.message);
-    return data;
+    return data.map(formatVolunteer);
 };
 
 export const getVolunteerById = async (id) => {
@@ -30,7 +45,7 @@ export const getVolunteerById = async (id) => {
         if (error.code === 'PGRST116') throw new AppError(404, "Volunteer not found");
         throw new AppError(500, error.message);
     }
-    return data;
+    return formatVolunteer(data);
 };
 
 export const addSkill = async (volunteerId, skillName) => {

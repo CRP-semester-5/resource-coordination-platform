@@ -326,7 +326,7 @@ function RequestsPage() {
                 <div>
                   <p className="text-sm font-semibold">Status timeline</p>
                   <ol className="mt-3 space-y-4 border-l border-border pl-4">
-                    {detail.timeline.map((t, i) => (
+                    {detail.timeline.map((t: { status: string; at: string; note?: string }, i: number) => (
                       <li key={i} className="relative">
                         <span className="absolute top-1.5 -left-[21px] size-2 rounded-full bg-primary" />
                         <StatusBadge value={t.status} />
