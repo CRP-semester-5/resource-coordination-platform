@@ -1,38 +1,53 @@
-import express from "express";
+﻿import express from "express";
 import * as donationController from "../controllers/donation.controller.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
     createDonationSchema,
-    updateDonationSchema
+    rejectDonationSchema
 } from "../validators/donation.validator.js";
+import { authenticate, requireOrgRole } from "@crp/shared-middleware";
 
 const router = express.Router();
 
 router.post(
     "/",
+    authenticate,
     validate(createDonationSchema),
     donationController.createDonation
 );
 
 router.get(
     "/",
+    authenticate,
     donationController.getDonations
 );
 
 router.get(
     "/:id",
+    authenticate,
     donationController.getDonationById
 );
 
 router.patch(
-    "/:id",
-    validate(updateDonationSchema),
-    donationController.updateDonation
+    "/:id/verify",
+    authenticate,
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
+    donationController.verifyDonation
 );
 
-router.delete(
-    "/:id",
-    donationController.deleteDonation
+router.patch(
+    "/:id/approve",
+    authenticate,
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
+    donationController.approveDonation
+);
+
+router.patch(
+    "/:id/reject",
+    authenticate,
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
+    validate(rejectDonationSchema),
+    donationController.rejectDonation
 );
 
 export default router;

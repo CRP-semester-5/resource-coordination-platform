@@ -5,6 +5,6 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/requests", requestRoutes);
+app.use("/api/v1/requests", requestRoutes);
 
 export default app;

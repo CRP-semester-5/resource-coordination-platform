@@ -1,20 +1,35 @@
-FROM node:20-alpine AS deps
+# Build context is the repo ROOT (set in docker-compose.yml)
+# so all paths below are relative to the monorepo root.
+
+# ── Stage 1: Install dependencies ────────────────────────────
+FROM node:22-alpine AS deps
 WORKDIR /app
 
+# Copy root lockfile + package.jsons
+COPY packages/shared-middleware/package.json ./packages/shared-middleware/package.json
+COPY package.json package-lock.json ./
+COPY services/volunteer-service/package.json ./services/volunteer-service/package.json
 
-COPY package-lock.json ./
-COPY services/volunteer-service/package.json ./package.json
+RUN npm ci \
+    --workspace=packages/shared-middleware \
+    --workspace=services/volunteer-service \
+    --omit=dev \
+    --ignore-scripts
 
-RUN npm ci --only=production
-
-
-FROM node:20-alpine
+# ── Stage 2: Runtime ──────────────────────────────────────────
+FROM node:22-alpine
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 
+# Copy source files
+COPY packages/shared-middleware/ ./packages/shared-middleware/
+COPY services/volunteer-service/ ./services/volunteer-service/
 
-COPY services/volunteer-service/ .
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+WORKDIR /app/services/volunteer-service
 
 EXPOSE 3006
 CMD ["node", "src/index.js"]

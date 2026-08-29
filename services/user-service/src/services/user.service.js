@@ -4,7 +4,19 @@ import * as userRepo from '../repositaries/user.repository.js'
  * Get the authenticated user's own full profile.
  */
 export async function getMyProfile(userId) {
-    return userRepo.findUserById(userId)
+    const user = await userRepo.findUserById(userId);
+    
+    // Fetch global roles
+    const globalRoles = await userRepo.findUserGlobalRoles(userId);
+    
+    // Fetch org roles
+    const orgMemberships = await userRepo.findUserOrgMemberships(userId);
+    const orgRoles = orgMemberships.map(m => m.role);
+    
+    // Combine unique roles
+    const roles = [...new Set([...globalRoles, ...orgRoles])];
+    
+    return { ...user, roles, globalRoles };
 }
 
 /**

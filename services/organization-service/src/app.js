@@ -5,6 +5,6 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/organizations", organizationRoutes);
+app.use("/api/v1/organizations", organizationRoutes);
 
 export default app;

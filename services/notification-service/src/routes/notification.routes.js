@@ -1,21 +1,14 @@
-import express from 'express'
-import { authenticate } from '@crp/shared-middleware'
-import {
-  getNotifications,
-  markAsRead,
-  markAllAsRead,
-  createInternalNotification
-} from '../controllers/notification.controller.js'
+import express from "express";
+import * as notificationController from "../controllers/notification.controller.js";
+import { authenticate } from "@crp/shared-middleware";
 
-const router = express.Router()
+const router = express.Router();
 
+router.use(authenticate); // All routes require authentication
 
-router.post('/internal', createInternalNotification)
+router.get("/", notificationController.getNotifications);
+router.get("/unread-count", notificationController.getUnreadCount);
+router.patch("/:id/read", notificationController.markAsRead);
+router.post("/mark-all-read", notificationController.markAllAsRead);
 
-router.use(authenticate)
-
-router.get('/', getNotifications)
-router.patch('/read-all', markAllAsRead)
-router.patch('/:notificationId/read', markAsRead)
-
-export default router
+export default router;

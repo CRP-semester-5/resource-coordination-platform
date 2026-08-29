@@ -30,6 +30,11 @@ export async function register({ firstName, lastName, email, password }) {
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
     const user = await userRepo.createUser({ firstName, lastName, email, passwordHash })
 
+    // Safety-net: assign the USER global role.
+    // The DB trigger does this automatically, but we do it here too
+    // in case the trigger hasn't been applied to the Supabase instance yet.
+    await userRepo.assignDefaultRole(user.user_id)
+
     // Generate and store email verification token
     const token = generateToken()
     const expiresAt = tokenExpiresAt(env.emailVerificationExpiresMinutes)
@@ -76,11 +81,16 @@ export async function verifyEmail(token) {
  * Login a user.
  * - Validates credentials
  * - Blocks PENDING (unverified), SUSPENDED, INACTIVE accounts
- * - Fetches all active org memberships for multi-tenant role context
- * - Signs and returns a JWT embedding all roles
+ * - Fetches global roles from user_roles table
+ * - Signs and returns a JWT with globalRoles in the payload
  *
  * JWT payload:
- *   { sub: uuid, email, roles: [{ org_id, role }, ...], iat, exp }
+ *   { sub: uuid, email, globalRoles: ['USER', 'VOLUNTEER'], iat, exp }
+ *
+ * Organization roles (COORDINATOR, ORGANIZATION_ADMIN) are NOT embedded in
+ * the JWT. They are checked from the organization_members table by each
+ * service's authorization middleware on every request. This ensures that
+ * role changes (e.g. removing a coordinator) take effect immediately.
  */
 export async function login({ email, password }) {
     const user = await userRepo.findUserByEmail(email)
@@ -115,21 +125,27 @@ export async function login({ email, password }) {
         throw err
     }
 
-    // Fetch all active org memberships (multi-tenant roles)
-    const roles = await userRepo.findUserMemberships(user.user_id)
+    // Fetch global roles from user_roles table
+    // (org roles like COORDINATOR are checked from DB per request, not in JWT)
+    const globalRoles = await userRepo.findUserGlobalRoles(user.user_id)
 
     const payload = {
-        sub: user.user_id,
-        email: user.email,
-        roles, // [{ org_id, role }, ...] — [] for brand-new/unjoined users
+        sub:         user.user_id,
+        email:       user.email,
+        globalRoles, // e.g. ['USER'] or ['USER', 'VOLUNTEER']
     }
 
     const token = jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn })
 
     return {
         token,
-        userId: user.user_id,
-        roles,
+        user: {
+            user_id:    user.user_id,
+            email:      user.email,
+            first_name: user.first_name,
+            last_name:  user.last_name,
+            globalRoles,
+        }
     }
 }
 

@@ -4,7 +4,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand",
+    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage --runInBand",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
@@ -23,5 +24,12 @@
     "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
   }
 }

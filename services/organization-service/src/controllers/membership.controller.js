@@ -7,7 +7,8 @@ export const createMembership = async (req, res) => {
         const membership =
             await membershipService.createMembership(
                 req.params.organizationId,
-                req.body
+                req.body,
+                req.user.sub
             );
 
         return res.status(201).json({

@@ -1,6 +1,7 @@
 import * as organizationRepository from "../repositories/organization.repository.js";
+import * as membershipRepository from "../repositories/membership.repository.js";
 
-export const createOrganization = async (organizationData) => {
+export const createOrganization = async (organizationData, applicantId) => {
 
     const existing = await organizationRepository.findByName(
         organizationData.organization_name
@@ -9,6 +10,9 @@ export const createOrganization = async (organizationData) => {
     if (existing.data) {
         throw new Error("Organization already exists.");
     }
+
+    organizationData.applicant_id = applicantId;
+    organizationData.status = "PENDING";
 
     const { data, error } =
         await organizationRepository.create(organizationData);
@@ -30,6 +34,23 @@ export const getOrganizations = async () => {
     }
 
     return data;
+};
+
+export const getPendingOrganizations = async () => {
+    const { data, error } = await organizationRepository.findPending();
+    if(error) throw new Error(error.message);
+    return data;
+};
+
+export const getMyOrganizations = async (userId) => {
+    const { data, error } = await organizationRepository.findUserOrganizations(userId);
+    if(error) throw new Error(error.message);
+    
+    // Format the response nicely: { org_id, org_name, my_role: 'COORDINATOR' }
+    return data.map(row => ({
+        ...row.organizations,
+        my_role: row.role
+    }));
 };
 
 export const getOrganizationById = async (organizationId) => {
@@ -82,6 +103,12 @@ export const deleteOrganization = async (organizationId) => {
 
 export const approveOrganization = async (organizationId) => {
 
+    // 1. Get the org to find the applicant_id
+    const { data: org, error: fetchErr } = await organizationRepository.findById(organizationId);
+    if (fetchErr) throw new Error(fetchErr.message);
+    if (!org) throw new Error("Organization not found");
+
+    // 2. Set to ACTIVE
     const { data, error } =
         await organizationRepository.updateStatus(
             organizationId,
@@ -92,6 +119,20 @@ export const approveOrganization = async (organizationId) => {
         throw new Error(error.message);
     }
 
+    // 3. Auto-assign the applicant as ORGANIZATION_ADMIN
+    if (org.applicant_id) {
+        // Check if already a member to prevent unique constraint error on double-click
+        const existing = await membershipRepository.findExistingMembership(organizationId, org.applicant_id);
+        if (!existing.data) {
+            await membershipRepository.createMembership({
+                organization_id: organizationId,
+                user_id: org.applicant_id,
+                role: 'ORGANIZATION_ADMIN',
+                status: 'ACTIVE'
+            });
+        }
+    }
+
     return data;
 };
 
@@ -100,7 +141,7 @@ export const rejectOrganization = async (organizationId) => {
     const { data, error } =
         await organizationRepository.updateStatus(
             organizationId,
-            "SUSPENDED"
+            "REJECTED"
         );
 
     if(error){

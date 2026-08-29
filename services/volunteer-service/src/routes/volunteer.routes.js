@@ -1,47 +1,38 @@
-import express from 'express'
-import { authenticate, requireRole } from '@crp/shared-middleware'
-import {
-  createVolunteerProfile,
-  getVolunteers,
-  getVolunteerById,
-  updateVolunteerProfile,
-  addSkillToVolunteer,
-  removeSkillFromVolunteer,
-  addAvailability,
-  getAvailability,
-  updateAvailability,
-  addCertification,
-  getCertifications,
-  updateCertification,
-  deleteCertification,
-  updateVerificationStatus
-} from '../controllers/volunteer.controller.js'
+import express from "express";
+import * as volunteerController from "../controllers/volunteer.controller.js";
+import { authenticate, requireRole } from "@crp/shared-middleware";
 
-const router = express.Router()
+const router = express.Router();
 
-//all volunteer routes authentication
-router.use(authenticate)
+router.post(
+    "/",
+    authenticate,
+    volunteerController.registerVolunteer
+);
 
-//volunteer profile
-router.post('/', createVolunteerProfile)
-router.get('/', getVolunteers)
-router.get('/:volunteerId', getVolunteerById)
-router.patch('/:volunteerId', updateVolunteerProfile)
-router.patch('/:volunteerId/verify', requireRole('COORDINATOR', 'ORGANIZATION_ADMIN'), updateVerificationStatus)
+router.get(
+    "/",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN", "SUPER_ADMIN"]),
+    volunteerController.getVolunteers
+);
 
-//volunteer skills
-router.post('/:volunteerId/skills', addSkillToVolunteer)
-router.delete('/:volunteerId/skills/:skillId', removeSkillFromVolunteer)
+router.get(
+    "/me",
+    authenticate,
+    volunteerController.getMyVolunteerProfile
+);
 
-//volunteer availability
-router.post('/:volunteerId/availability', addAvailability)
-router.get('/:volunteerId/availability', getAvailability)
-router.patch('/:volunteerId/availability/:availabilityId', updateAvailability)
+router.get(
+    "/:id",
+    authenticate,
+    volunteerController.getVolunteerById
+);
 
-//volunteer certifications
-router.post('/:volunteerId/certifications', addCertification)
-router.get('/:volunteerId/certifications', getCertifications)
-router.patch('/:volunteerId/certifications/:certificationId', updateCertification)
-router.delete('/:volunteerId/certifications/:certificationId', deleteCertification)
+router.post(
+    "/:id/skills",
+    authenticate,
+    volunteerController.addSkill
+);
 
-export default router
+export default router;

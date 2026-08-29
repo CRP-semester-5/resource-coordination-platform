@@ -6,13 +6,16 @@ export const findDuplicate = async (
     requesterId,
     title
 ) => {
-    return await supabase
-        .from("requests")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .eq("requester_id", requesterId)
-        .eq("title", title)
-        .maybeSingle();
+    let query = supabase.from("requests").select("*").eq("title", title);
+    if (organizationId) {
+        query = query.eq("organization_id", organizationId);
+    }
+    if (requesterId) {
+        query = query.eq("requester_id", requesterId);
+    } else {
+        query = query.is("requester_id", null);
+    }
+    return await query.maybeSingle();
 };
 
 // Create Request
@@ -24,19 +27,44 @@ export const create = async (requestData) => {
         .single();
 };
 
-// Get All Requests
-export const findAll = async () => {
+// Save Guest Contact Info
+export const createGuestContact = async (contactData) => {
     return await supabase
-        .from("requests")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from("guest_request_contacts")
+        .insert([contactData])
+        .select()
+        .single();
 };
+
+// Get All Requests — returns all PENDING (unassigned) + all requests owned by this org
+export const findAll = async (orgId = null) => {
+    let query = supabase
+        .from("requests")
+        .select(`
+            *,
+            users:requester_id ( first_name, last_name, email, phone ),
+            guest_request_contacts ( contact_name, contact_phone, contact_email )
+        `)
+        .order("created_at", { ascending: false });
+
+    if (orgId) {
+        // All PENDING (no org yet, open for any coordinator) OR belong to this org
+        query = query.or(`status.eq.PENDING,organization_id.eq.${orgId}`);
+    }
+
+    return await query;
+};
+
 
 // Get Request By ID
 export const findById = async (requestId) => {
     return await supabase
         .from("requests")
-        .select("*")
+        .select(`
+            *,
+            users:requester_id ( first_name, last_name, email, phone ),
+            guest_request_contacts ( contact_name, contact_phone, contact_email )
+        `)
         .eq("request_id", requestId)
         .maybeSingle();
 };
@@ -69,7 +97,8 @@ export const cancel = async (requestId) => {
 // Verify / Approve Request
 export const verify = async (
     requestId,
-    verifiedBy
+    verifiedBy,
+    orgId
 ) => {
     return await supabase
         .from("requests")
@@ -77,6 +106,7 @@ export const verify = async (
             status: "VERIFIED",
             verified_by: verifiedBy,
             verified_at: new Date().toISOString(),
+            organization_id: orgId,
             rejection_reason: null
         })
         .eq("request_id", requestId)
@@ -88,7 +118,8 @@ export const verify = async (
 export const reject = async (
     requestId,
     verifiedBy,
-    reason
+    reason,
+    orgId
 ) => {
     return await supabase
         .from("requests")
@@ -96,6 +127,7 @@ export const reject = async (
             status: "REJECTED",
             verified_by: verifiedBy,
             verified_at: new Date().toISOString(),
+            organization_id: orgId,
             rejection_reason: reason
         })
         .eq("request_id", requestId)
@@ -110,6 +142,18 @@ export const fulfill = async (requestId) => {
         .update({
             status: "FULFILLED",
             fulfilled_at: new Date().toISOString()
+        })
+        .eq("request_id", requestId)
+        .select()
+        .single();
+};
+
+// Mark as In Progress
+export const inProgress = async (requestId) => {
+    return await supabase
+        .from("requests")
+        .update({
+            status: "IN_PROGRESS"
         })
         .eq("request_id", requestId)
         .select()

@@ -1,136 +1,50 @@
-import { supabase } from '../lib/supabase.js'
+import { supabase } from "../lib/supabase.js";
 
-export class TaskRepository {
-  static async createTask(taskData) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert([taskData])
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
+export const createTask = async (taskData) => {
+    return await supabase
+        .from("tasks")
+        .insert([taskData])
+        .select()
+        .single();
+};
 
-  static async getTasksByOrg(organizationId) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select(`
+export const getTasks = async (organizationId) => {
+    let query = supabase.from("tasks").select(`
         *,
-        requests (title, urgency, category, status),
-        users (first_name, last_name, email)
-      `)
-      .eq('organization_id', organizationId)
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    return data
-  }
+        task_assignments ( volunteer_id )
+    `);
 
-  static async getTaskById(taskId, organizationId) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select(`
-        *,
-        requests (title, urgency, category, status),
-        users (first_name, last_name, email),
-        task_assignments (
-          assignment_id,
-          assignment_status,
-          assigned_at,
-          volunteers (
-            volunteer_id,
-            availability_status,
-            users (first_name, last_name, email, phone)
-          )
-        ),
-        task_progress (
-          progress_id,
-          progress_percent,
-          remarks,
-          updated_at,
-          users (first_name, last_name)
-        )
-      `)
-      .eq('task_id', taskId)
-      .eq('organization_id', organizationId)
-      .single()
-    if (error) throw error
-    return data
-  }
+    if (organizationId) {
+        query = query.eq("organization_id", organizationId);
+    }
 
-  static async updateTask(taskId, organizationId, updateData) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .update(updateData)
-      .eq('task_id', taskId)
-      .eq('organization_id', organizationId)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
+    return await query;
+};
 
-  static async updateTaskStatus(taskId, organizationId, status) {
-    const updateData = { status }
-    if (status === 'COMPLETED') updateData.completed_at = new Date().toISOString()
-    
-    const { data, error } = await supabase
-      .from('tasks')
-      .update(updateData)
-      .eq('task_id', taskId)
-      .eq('organization_id', organizationId)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
+export const getTaskById = async (taskId) => {
+    return await supabase
+        .from("tasks")
+        .select(`
+            *,
+            task_assignments ( volunteer_id )
+        `)
+        .eq("task_id", taskId)
+        .single();
+};
 
-  // Volunteer Assignments
-  static async assignVolunteer(assignmentData) {
-    const { data, error } = await supabase
-      .from('task_assignments')
-      .insert([assignmentData])
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
+export const updateTask = async (taskId, taskData) => {
+    return await supabase
+        .from("tasks")
+        .update(taskData)
+        .eq("task_id", taskId)
+        .select()
+        .single();
+};
 
-  static async updateAssignmentStatus(assignmentId, taskId, status) {
-    const updateData = { assignment_status: status, responded_at: new Date().toISOString() }
-    if (status === 'COMPLETED') updateData.completed_at = new Date().toISOString()
-
-    const { data, error } = await supabase
-      .from('task_assignments')
-      .update(updateData)
-      .eq('assignment_id', assignmentId)
-      .eq('task_id', taskId)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-
-  // Task Progress
-  static async addProgress(progressData) {
-    const { data, error } = await supabase
-      .from('task_progress')
-      .insert([progressData])
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-
-  static async getTaskProgress(taskId) {
-    const { data, error } = await supabase
-      .from('task_progress')
-      .select(`
-        *,
-        users (first_name, last_name)
-      `)
-      .eq('task_id', taskId)
-      .order('updated_at', { ascending: false })
-    if (error) throw error
-    return data
-  }
-}
+export const assignTask = async (taskId, volunteerId) => {
+    return await supabase
+        .from("task_assignments")
+        .insert([{ task_id: taskId, volunteer_id: volunteerId }])
+        .select()
+        .single();
+};

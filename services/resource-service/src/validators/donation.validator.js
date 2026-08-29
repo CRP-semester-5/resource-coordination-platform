@@ -1,13 +1,9 @@
 import Joi from "joi";
 
 export const createDonationSchema = Joi.object({
-    organization_id: Joi.string()
-        .uuid()
-        .required(),
+    organization_id: Joi.string().uuid().optional(),
 
-    donor_id: Joi.string()
-        .uuid()
-        .required(),
+    donor_id: Joi.string().uuid().optional(),
 
     resource_id: Joi.string()
         .uuid()
@@ -46,7 +42,7 @@ export const createDonationSchema = Joi.object({
     donation_notes: Joi.string()
         .optional()
         .allow("")
-});
+}).unknown(true);
 
 export const updateDonationSchema = Joi.object({
     resource_name: Joi.string()
@@ -81,4 +77,13 @@ export const updateDonationSchema = Joi.object({
     donation_notes: Joi.string()
         .optional()
         .allow("")
-}).min(1);
+}).min(1).unknown(true);
+
+export const rejectDonationSchema = Joi.object({
+    rejection_reason: Joi.string()
+        .required()
+        .messages({
+            'any.required': 'Rejection reason is required',
+            'string.empty': 'Rejection reason cannot be empty'
+        })
+}).unknown(true);

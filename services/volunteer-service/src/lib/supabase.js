@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
-import { env } from '../config/env.js'
 
-export const supabase = createClient(env.supabaseUrl, env.supabaseKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-})
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY
+
+if (!supabaseUrl || !supabaseSecretKey) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY env variables.")
+};
+
+export const supabase = createClient(supabaseUrl, supabaseSecretKey);
