@@ -17,7 +17,10 @@
     "@supabase/supabase-js": "^2.110.8",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
-  },
-  "type": "module"
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "joi": "^18.2.5",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.8.3"
+  }
 }
