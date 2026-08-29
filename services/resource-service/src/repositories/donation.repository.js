@@ -13,7 +13,7 @@ export const create = createDonation;
 export const findAll = async (organization_id, user_id) => {
     let query = supabase
         .from("donations")
-        .select("*, users!donor_id(first_name, last_name, email, phone)");
+        .select("*, users!donor_id(first_name, last_name)");
 
     if (organization_id) {
         query = query.eq("organization_id", organization_id);

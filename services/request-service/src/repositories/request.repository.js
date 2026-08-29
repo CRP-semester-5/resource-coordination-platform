@@ -1,4 +1,4 @@
-﻿import { supabase } from "../lib/supabase.js";
+import { supabase } from "../lib/supabase.js";
 
 // Check duplicate request
 export const findDuplicate = async (
@@ -36,9 +36,9 @@ export const createGuestContact = async (contactData) => {
         .single();
 };
 
-// Get All Requests
-export const findAll = async () => {
-    return await supabase
+// Get All Requests — returns all PENDING (unassigned) + all requests owned by this org
+export const findAll = async (orgId = null) => {
+    let query = supabase
         .from("requests")
         .select(`
             *,
@@ -46,7 +46,15 @@ export const findAll = async () => {
             guest_request_contacts ( contact_name, contact_phone, contact_email )
         `)
         .order("created_at", { ascending: false });
+
+    if (orgId) {
+        // All PENDING (no org yet, open for any coordinator) OR belong to this org
+        query = query.or(`status.eq.PENDING,organization_id.eq.${orgId}`);
+    }
+
+    return await query;
 };
+
 
 // Get Request By ID
 export const findById = async (requestId) => {

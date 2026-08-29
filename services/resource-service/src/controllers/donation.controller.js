@@ -69,6 +69,24 @@ export const verifyDonation = async(req,res)=>{
     }
 };
 
+export const approveDonation = async(req,res)=>{
+    try{
+        const approvedBy = req.user.sub;
+        const donation = await donationService.approveDonation(req.params.id, approvedBy);
+
+        return res.json({
+            success:true,
+            message:"Donation verified successfully",
+            data:donation
+        });
+    }catch(error){
+        return res.status(400).json({
+            success:false,
+            message:error.message
+        });
+    }
+};
+
 export const rejectDonation = async(req,res)=>{
     try{
         const verifiedBy = req.user.sub;

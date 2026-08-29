@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -35,12 +35,12 @@ import {
 export const Route = createFileRoute("/coordinator/donations")({
   head: () => ({
     meta: [
-      { title: "Donations â€” ResQ Hub Coordinator" },
+      { title: "Donations - ResQ Hub Coordinator" },
       {
         name: "description",
         content: "Verify donor offers, accept resources into inventory or reject them with a recorded reason.",
       },
-      { property: "og:title", content: "Donations â€” ResQ Hub Coordinator" },
+      { property: "og:title", content: "Donations - ResQ Hub Coordinator" },
       { property: "og:description", content: "Review and verify community donations before they enter relief inventory." },
     ],
   }),
@@ -77,10 +77,10 @@ function DonationsPage() {
     return donationsRaw.map((d: any) => ({
       id: d.donation_id,
       code: d.donation_id.split("-")[0].toUpperCase(),
-      donorName: (d.users?.first_name ? ${d.users.first_name} .trim() : null) || d.donor_name || "Unknown Donor",
-      donorPhone: d.users?.phone || d.users?.email || d.donor_email || "N/A",
+      donorName: (d.users?.first_name ? d.users.first_name + ' ' + d.users.last_name : null) || d.donor_name || "Unknown Donor",
+      donorPhone: d.donor_email, // Using email as phone is missing
       resource: d.resource_name || "Unknown",
-      category: d.category || "Unknown",
+      // category: d.category_name || "Unknown",
       quantity: d.quantity,
       unit: d.unit || "units",
       pickupLocation: d.pickup_address || "N/A",
@@ -222,7 +222,7 @@ function DonationsPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}â€“{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}-{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>

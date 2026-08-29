@@ -1,4 +1,4 @@
-﻿import * as requestService from "../services/request.service.js";
+import * as requestService from "../services/request.service.js";
 
 export const createRequest = async (req, res) => {
     try {
@@ -20,7 +20,9 @@ export const createRequest = async (req, res) => {
 
 export const getRequests = async (req, res) => {
     try {
-        const requests = await requestService.getRequests();
+        // Prefer header (sent by frontend), fall back to JWT membership
+        const orgId = req.headers['x-organization-id'] || req.orgMembership?.org_id || null;
+        const requests = await requestService.getRequests(orgId);
         return res.status(200).json({
             success: true,
             data: requests

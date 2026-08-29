@@ -1,4 +1,4 @@
-﻿import * as requestRepository from "../repositories/request.repository.js";
+import * as requestRepository from "../repositories/request.repository.js";
 import { supabase } from "../lib/supabase.js";
 
 const formatRequest = (r) => {
@@ -120,8 +120,8 @@ export const createRequest = async (requestData, userId = null) => {
     return formatRequest(await getRequestById(data.request_id));
 };
 
-export const getRequests = async () => {
-    const { data, error } = await requestRepository.findAll();
+export const getRequests = async (orgId = null) => {
+    const { data, error } = await requestRepository.findAll(orgId);
     if (error) {
         throw new Error(error.message);
     }
@@ -235,7 +235,6 @@ export const fulfillRequest = async (requestId) => {
         throw new Error(
             "Only verified, assigned or in-progress requests can be fulfilled."
         );
-    }
     }
 
     const { data, error } = await requestRepository.fulfill(requestId);

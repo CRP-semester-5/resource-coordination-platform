@@ -97,14 +97,15 @@ function RequestsPage() {
   const { data: rawRequests = [], isLoading } = useQuery({
     queryKey: ["requests", orgId],
     queryFn: async () => {
-      const res = await requestsAPI.getAll();
+      const res = await requestsAPI.getAll(orgId);
       const list = res.data?.data ?? res.data ?? [];
       // Normalize backend shape to UI shape
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return list.map((r: any) => ({
         id: r.request_id ?? r.id,
-        code: r.request_id?.slice(0, 8) ?? r.id?.slice(0, 8) ?? "—",
+        // code: r.request_id?.slice(0, 8) ?? r.id?.slice(0, 8) ?? "—",
         orgId: r.organization_id ?? "",
+        // orgName: r.organization_name ?? "",
         requester: r.requester_name ?? r.requester ?? "Unknown",
         requesterPhone: r.requester_phone ?? "",
         category: r.category ?? "General",
@@ -201,7 +202,7 @@ function RequestsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Request</TableHead>
+                {/* <TableHead>Organization</TableHead> */}
                 <TableHead>Requester</TableHead>
                 <TableHead>Resource</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
@@ -215,7 +216,7 @@ function RequestsPage() {
             <TableBody>
               {rows.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.code}</TableCell>
+                  {/* <TableCell className="font-medium">{orgName}</TableCell> */}
                   <TableCell>{r.requester}</TableCell>
                   <TableCell>
                     <span className="block">{r.resourceType}</span>

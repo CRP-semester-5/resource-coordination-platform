@@ -36,6 +36,13 @@ router.patch(
 );
 
 router.patch(
+    "/:id/approve",
+    authenticate,
+    requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
+    donationController.approveDonation
+);
+
+router.patch(
     "/:id/reject",
     authenticate,
     requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),

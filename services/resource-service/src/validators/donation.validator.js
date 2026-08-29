@@ -78,3 +78,12 @@ export const updateDonationSchema = Joi.object({
         .optional()
         .allow("")
 }).min(1).unknown(true);
+
+export const rejectDonationSchema = Joi.object({
+    rejection_reason: Joi.string()
+        .required()
+        .messages({
+            'any.required': 'Rejection reason is required',
+            'string.empty': 'Rejection reason cannot be empty'
+        })
+}).unknown(true);

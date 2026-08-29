@@ -84,3 +84,28 @@ export const updateQuantityById = async (inventoryId, newQuantity) => {
         .select()
         .single();
 };
+
+/**
+ * Upsert inventory from an approved donation.
+ * Looks up the category by name, then calls increaseInventory.
+ * If the category name doesn't match any record, creates the inventory entry with a null category_id fallback.
+ */
+export const upsertFromDonation = async ({ organization_id, category, quantity }) => {
+    // 1. Look up category_id by name in resource_categories
+    const { data: cat } = await supabase
+        .from("resource_categories")
+        .select("category_id")
+        .ilike("name", category || "")
+        .maybeSingle();
+
+    const categoryId = cat?.category_id ?? null;
+
+    if (!categoryId) {
+        console.warn(`No resource_category found for name "${category}" — inventory not updated`);
+        return { data: null, error: { message: `Category "${category}" not found in resource_categories` } };
+    }
+
+    // 2. Delegate to increaseInventory (handles create-or-update)
+    return await increaseInventory(organization_id, categoryId, quantity);
+};
+

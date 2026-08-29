@@ -23,8 +23,8 @@ export const orgsAPI = {
 /* --------------------------------------------------------------- Requests */
 
 export const requestsAPI = {
-  getAll: (params?: Record<string, string | number>) =>
-    http.get("/api/v1/requests", { params }),
+  getAll: (orgId?: string) =>
+    http.get("/api/v1/requests", orgId ? { headers: { "x-organization-id": orgId } } : {}),
   getById: (id: string) => http.get(`/api/v1/requests/${id}`),
   approve: (id: string) => http.patch(`/api/v1/requests/${id}/approve`),
   reject: (id: string, rejection_reason: string) =>
@@ -39,7 +39,7 @@ export const requestsAPI = {
 export const donationsAPI = {
   getAll: (orgId: string) => http.get("/api/v1/donations", { headers: { "x-organization-id": orgId } }),
   approve: (id: string) => http.patch(`/api/v1/donations/${id}/approve`),
-  reject: (id: string, reason?: string) => http.patch(`/api/v1/donations/${id}/reject`, { reason }),
+  reject: (id: string, reason?: string) => http.patch(`/api/v1/donations/${id}/reject`, { rejection_reason: reason }),
 };
 
 export const categoriesAPI = {
