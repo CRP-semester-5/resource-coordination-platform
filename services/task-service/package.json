@@ -2,6 +2,7 @@
   "name": "task-service",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/index.js",
@@ -12,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@crp/shared-middleware": "^1.0.0",
     "@supabase/supabase-js": "^2.110.8",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
