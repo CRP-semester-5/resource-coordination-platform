@@ -1,5 +1,7 @@
 import * as requestRepository from "../repositories/request.repository.js";
 import { supabase } from "../lib/supabase.js";
+import { notify } from "../lib/notify.js";
+
 
 const formatRequest = (r) => {
     if (!r) return r;
@@ -181,7 +183,20 @@ export const cancelRequest = async (requestId) => {
     if (error) {
         throw new Error(error.message);
     }
-    return formatRequest(data);
+    const result = formatRequest(data);
+
+    // Notify the requester (if not a guest)
+    if (result.requester_id) {
+        await notify({
+            userId: result.requester_id,
+            type: 'REQUEST_STATUS_CHANGED',
+            message: `Your request "${result.title}" has been cancelled.`,
+            organizationId: result.organization_id,
+            link: `/requests/${requestId}`,
+        });
+    }
+
+    return result;
 };
 
 export const approveRequest = async (requestId, verifiedBy, orgId) => {
@@ -200,7 +215,20 @@ export const approveRequest = async (requestId, verifiedBy, orgId) => {
     if (error) {
         throw new Error(error.message);
     }
-    return formatRequest(data);
+    const result = formatRequest(data);
+
+    // Notify the requester (if not a guest)
+    if (result.requester_id) {
+        await notify({
+            userId: result.requester_id,
+            type: 'REQUEST_STATUS_CHANGED',
+            message: `Your request "${result.title}" has been approved and is now verified.`,
+            organizationId: orgId,
+            link: `/requests/${requestId}`,
+        });
+    }
+
+    return result;
 };
 
 export const rejectRequest = async (requestId, verifiedBy, reason, orgId) => {
@@ -219,7 +247,22 @@ export const rejectRequest = async (requestId, verifiedBy, reason, orgId) => {
     if (error) {
         throw new Error(error.message);
     }
-    return formatRequest(data);
+    const result = formatRequest(data);
+
+    // Notify the requester (if not a guest)
+    if (result.requester_id) {
+        await notify({
+            userId: result.requester_id,
+            type: 'REQUEST_STATUS_CHANGED',
+            message: `Your request "${result.title}" was rejected.${
+                reason ? ` Reason: ${reason}` : ''
+            }`,
+            organizationId: orgId,
+            link: `/requests/${requestId}`,
+        });
+    }
+
+    return result;
 };
 
 export const fulfillRequest = async (requestId) => {
@@ -241,13 +284,24 @@ export const fulfillRequest = async (requestId) => {
     if (error) {
         throw new Error(error.message);
     }
-    return formatRequest(data);
+    const result = formatRequest(data);
+
+    // Notify the requester (if not a guest)
+    if (result.requester_id) {
+        await notify({
+            userId: result.requester_id,
+            type: 'REQUEST_STATUS_CHANGED',
+            message: `Great news! Your request "${result.title}" has been fulfilled.`,
+            organizationId: result.organization_id,
+            link: `/requests/${requestId}`,
+        });
+    }
+
+    return result;
 };
 
 export const markInProgress = async (requestId) => {
-
-    const existing =
-        await requestRepository.findById(requestId);
+    const existing = await requestRepository.findById(requestId);
 
     if (!existing.data) {
         throw new Error("Request not found.");
@@ -263,13 +317,25 @@ export const markInProgress = async (requestId) => {
         );
     }
 
-    const { data, error } =
-        await requestRepository.inProgress(requestId);
+    const { data, error } = await requestRepository.inProgress(requestId);
 
     if (error) {
         throw new Error(error.message);
     }
 
-    return data;
+    const result = formatRequest(await getRequestById(requestId));
+
+    // Notify the requester (if not a guest)
+    if (result.requester_id) {
+        await notify({
+            userId: result.requester_id,
+            type: 'REQUEST_STATUS_CHANGED',
+            message: `Your request "${result.title}" is now in progress.`,
+            organizationId: result.organization_id,
+            link: `/requests/${requestId}`,
+        });
+    }
+
+    return result;
 };
 

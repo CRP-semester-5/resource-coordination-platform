@@ -1,4 +1,4 @@
-﻿-- Resource Coordination Platform for Community Resilience
+-- Resource Coordination Platform for Community Resilience
 -- PostgreSQL / Supabase schema
 -- Full schema generated from the reviewed ER design.
 
@@ -19,7 +19,7 @@ CREATE TYPE delivery_method AS ENUM ('DONOR_DELIVERY','ORGANIZATION_PICKUP','VOL
 CREATE TYPE inventory_transaction_type AS ENUM ('STOCK_IN','STOCK_OUT','ADJUSTMENT','RESERVATION','RELEASE');
 CREATE TYPE availability_status AS ENUM ('AVAILABLE','BUSY','UNAVAILABLE');
 CREATE TYPE verification_status AS ENUM ('PENDING','VERIFIED','REJECTED');
-CREATE TYPE notification_status AS ENUM ('UNREAD','READ','ARCHIVED');
+CREATE TYPE notification_type AS ENUM ('TASK_ASSIGNED','TASK_STATUS_CHANGED','NEW_DONATION','DONATION_STATUS_CHANGED','INVENTORY_ALERT','REQUEST_STATUS_CHANGED','NEW_REQUEST');
 
 CREATE TABLE organizations (
  organization_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -239,14 +239,14 @@ CREATE TABLE task_progress (
 );
 
 CREATE TABLE notifications (
- notification_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- organization_id UUID NOT NULL REFERENCES organizations(organization_id) ON DELETE RESTRICT,
- user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
- title VARCHAR(255) NOT NULL, message TEXT NOT NULL,
- type VARCHAR(50) NOT NULL DEFAULT 'GENERAL',
- status notification_status NOT NULL DEFAULT 'UNREAD',
- reference_type VARCHAR(50), reference_id UUID, read_at TIMESTAMPTZ,
- created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+ notification_id UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+ user_id         UUID        NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+ organization_id UUID        REFERENCES organizations(organization_id) ON DELETE CASCADE,
+ type            notification_type NOT NULL,
+ message         TEXT        NOT NULL,
+ is_read         BOOLEAN     NOT NULL DEFAULT false,
+ link            VARCHAR(255),
+ created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE audit_logs (
