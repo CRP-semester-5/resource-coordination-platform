@@ -1,4 +1,4 @@
-﻿import * as donationService from "../services/donation.service.js";
+import * as donationService from "../services/donation.service.js";
 
 export const createDonation = async(req,res)=>{
     try{
@@ -102,6 +102,22 @@ export const rejectDonation = async(req,res)=>{
         return res.status(400).json({
             success:false,
             message:error.message
+        });
+    }
+};
+
+export const regeneratePin = async(req, res) => {
+    try {
+        const result = await donationService.regeneratePin(req.params.id);
+        return res.json({
+            success: true,
+            message: "Donation handover PIN regenerated successfully",
+            data: result
+        });
+    } catch(error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
         });
     }
 };

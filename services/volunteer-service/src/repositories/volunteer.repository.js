@@ -14,6 +14,7 @@ export const getVolunteers = async () => {
         .select(`
             *,
             users ( first_name, last_name, email, phone ),
+            organizations ( organization_id, organization_name, address, email, phone ),
             volunteer_skills ( skills ( skill_name ) )
         `);
 };
@@ -24,6 +25,7 @@ export const getVolunteerById = async (id) => {
         .select(`
             *,
             users ( first_name, last_name, email, phone ),
+            organizations ( organization_id, organization_name, address, email, phone ),
             volunteer_skills ( skills ( skill_name ) )
         `)
         .eq("volunteer_id", id)
@@ -36,6 +38,7 @@ export const getVolunteerByUserId = async (userId) => {
         .select(`
             *,
             users ( first_name, last_name, email, phone ),
+            organizations ( organization_id, organization_name, address, email, phone ),
             volunteer_skills ( skills ( skill_name ) )
         `)
         .eq("user_id", userId)

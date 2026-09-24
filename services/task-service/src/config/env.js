@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env') })
 export const config = {
   port: process.env.TASK_SERVICE_PORT || 3004,
   supabaseUrl: process.env.SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_SECRET_KEY,
+  supabaseKey: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
   jwtSecret: process.env.JWT_SECRET
 }
 
