@@ -48,12 +48,14 @@ export const categoriesAPI = {
 };
 
 export const inventoryAPI = {
-  getAll: () => http.get("/api/v1/inventory"),
-  getTransactions: () => http.get("/api/v1/inventory/transactions"),
-  checkStock: (category: string, quantity: number) => http.post("/api/v1/inventory/check-stock", { category, quantity }),
-  add: (category_id: string, quantity: number) => http.post("/api/v1/inventory", { category_id, quantity }),
+  getAll: (orgId?: string) => http.get("/api/v1/inventory", orgId ? { headers: { "x-organization-id": orgId } } : {}),
+  getTransactions: (orgId?: string) => http.get("/api/v1/inventory/transactions", orgId ? { headers: { "x-organization-id": orgId } } : {}),
+  checkStock: (category: string, quantity: number, orgId?: string) => http.post("/api/v1/inventory/check-stock", { category, quantity }, orgId ? { headers: { "x-organization-id": orgId } } : {}),
+  add: (category_id: string, quantity: number, orgId?: string) => http.post("/api/v1/inventory", { category_id, quantity }, orgId ? { headers: { "x-organization-id": orgId } } : {}),
   restock: (id: string, quantity: number) => http.post(`/api/v1/inventory/${id}/restock`, { quantity }),
   allocate: (id: string, quantity: number, code: string) => http.post(`/api/v1/inventory/${id}/allocate`, { quantity, request_code: code }),
+  deduct: (data: { category_id?: string; category_name?: string; quantity: number; request_id?: string; request_code?: string; item_name?: string; requester_name?: string }, orgId?: string) =>
+    http.post("/api/v1/inventory/deduct", data, orgId ? { headers: { "x-organization-id": orgId } } : {}),
 };
 
 export const volunteersAPI = {
@@ -67,6 +69,9 @@ export const tasksAPI = {
   create: (data: any) => http.post("/api/v1/tasks", data),
   update: (id: string, data: any) => http.patch(`/api/v1/tasks/${id}`, data),
   assign: (id: string, volunteer_id: string) => http.post(`/api/v1/tasks/${id}/assign`, { volunteer_id }),
+  verifyWarehousePickup: (id: string, pin: string) => http.post(`/api/v1/tasks/${id}/verify-warehouse-pickup`, { pin }),
+  verifyHandover: (id: string, pin: string) => http.post(`/api/v1/tasks/${id}/verify-handover`, { pin }),
+  regeneratePin: (id: string) => http.post(`/api/v1/tasks/${id}/regenerate-pin`),
 };
 
 export const notificationsAPI = {

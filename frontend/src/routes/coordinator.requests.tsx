@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -13,7 +13,7 @@ import {
   Copy,
   MapPin,
   Calendar,
-  Package,
+  Package, PackageCheck, Boxes, ArrowUpRight,
   User,
   AlertCircle,
   ExternalLink,
@@ -28,6 +28,7 @@ import {
   HeartHandshake,
   AlertTriangle,
   Loader2,
+  KeyRound,
 } from "lucide-react";
 import { requestsAPI, tasksAPI, inventoryAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
@@ -132,6 +133,7 @@ interface NormalizedRequest {
 }
 
 function RequestsPage() {
+  const navigate = useNavigate();
   const { orgId } = useOrganization();
   const qc = useQueryClient();
 
@@ -144,10 +146,43 @@ function RequestsPage() {
   // Selected request for Preview Modal
   const [previewRequestId, setPreviewRequestId] = useState<string | null>(null);
 
+  // Saved Resource Allocations from Inventory
+  const [savedAllocations, setSavedAllocations] = useState<Record<string, any>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("resq_hub_allocations") || "{}");
+    } catch (_) {
+      return {};
+    }
+  });
+
+  const handleStartAllocation = (request: any) => {
+    if (!request) return;
+    const allocPayload = {
+      requestId: request.id,
+      requestCode: request.code,
+      category: request.category || "Food",
+      item: request.resourceType || request.category || "Relief Supplies",
+      quantity: request.quantity || 1,
+      unit: request.unit || "units",
+      requester: request.requester || "Citizen",
+      location: request.location || "",
+      priority: request.priority,
+    };
+    try {
+      localStorage.setItem("resq_hub_active_allocation", JSON.stringify(allocPayload));
+    } catch (_) {}
+    toast.info("🎯 Opening Inventory Allocation Sorter...", {
+      description: `Navigating to ${request.category || 'Relief'} shelves to select variant.`,
+    });
+    setPreviewRequestId(null);
+    navigate({ to: "/coordinator/inventory" });
+  };
+
   // Accept & Reject Dialog states
   const [approving, setApproving] = useState<NormalizedRequest | null>(null);
   const [rejecting, setRejecting] = useState<NormalizedRequest | null>(null);
   const [reason, setReason] = useState("");
+  const [revealedDispatchPins, setRevealedDispatchPins] = useState<Record<string, boolean>>({});
   const [copiedPhone, setCopiedPhone] = useState(false);
 
   // Create Task from Request state
@@ -234,10 +269,41 @@ function RequestsPage() {
     });
   }, [rawRequests, orgId]);
 
-  const previewRequest = useMemo(() => {
+    const previewRequest = useMemo(() => {
     if (!previewRequestId) return null;
     return requests.find((r) => r.id === previewRequestId) || null;
   }, [requests, previewRequestId]);
+
+  // Auto-open Request Preview Popup after allocating resource from inventory
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromUrl = urlParams.get("allocatedRequestId");
+      const fromStorage = localStorage.getItem("resq_hub_auto_open_request_id");
+      const targetReqId = fromUrl || fromStorage;
+
+      if (targetReqId) {
+        setPreviewRequestId(targetReqId);
+        localStorage.removeItem("resq_hub_auto_open_request_id");
+        const existing = JSON.parse(localStorage.getItem("resq_hub_allocations") || "{}");
+        setSavedAllocations(existing);
+        if (fromUrl) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    } catch (err) {
+      console.warn("Auto-open effect:", err);
+    }
+  }, [requests]);
+
+  // Sync allocations whenever preview is opened
+  useEffect(() => {
+    if (previewRequestId) {
+      try {
+        setSavedAllocations(JSON.parse(localStorage.getItem("resq_hub_allocations") || "{}"));
+      } catch (_) {}
+    }
+  }, [previewRequestId]);
 
   // Robust matching helper to link a volunteer delivery task to a request
   const getLinkedTask = (r: NormalizedRequest) => {
@@ -635,6 +701,162 @@ function RequestsPage() {
                         </div>
                       )}
 
+                      
+                      {/* Dual-Leg Security PINs Verification Box */}
+                      {(() => {
+                        const isWarehouseDone = (detailedTask.task_progress || []).some(
+                          (p: any) => (p.remarks || '').toLowerCase().includes('warehouse') || (p.progress_percent || 0) >= 50
+                        ) || detailedTask.status === 'COMPLETED';
+                        const isCompleted = detailedTask.status === 'COMPLETED';
+                        const isAssigned = detailedTask.status === 'ASSIGNED' || detailedTask.status === 'IN_PROGRESS';
+                        const warehousePin = detailedTask.warehouse_pickup_pin || '8421';
+                        const isPinRevealed = revealedDispatchPins[detailedTask.id || detailedTask.task_id || ''] || false;
+
+                        return (
+                          <div className="mt-3 rounded-lg border border-primary/25 bg-background/90 p-3 text-xs space-y-2.5 shadow-xs">
+                            <div className="flex items-center justify-between font-semibold text-foreground border-b border-border/50 pb-1.5">
+                              <span className="flex items-center gap-1.5 text-primary font-bold">
+                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN Lifecycle
+                              </span>
+                              <span className="text-[10px] text-muted-foreground font-medium">Stage-by-Stage Verification</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {/* Stage 1: Warehouse Dispatch PIN (Disappears after entered) */}
+                              <div className={`rounded-md p-2.5 border flex flex-col justify-between ${
+                                isWarehouseDone
+                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
+                                  : isAssigned
+                                  ? 'bg-primary/5 border-primary/30 text-foreground'
+                                  : 'bg-muted/30 border-dashed border-border text-muted-foreground'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-[11px]">📦 Stage 1: Warehouse Dispatch PIN</span>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    isWarehouseDone
+                                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                                      : isAssigned
+                                      ? 'bg-primary/20 text-primary animate-pulse'
+                                      : 'bg-slate-500/10 text-slate-500'
+                                  }`}>
+                                    {isWarehouseDone ? 'RELEASED & CLOSED' : isAssigned ? 'ACTIVE FOR STAFF' : 'PENDING ASSIGNMENT'}
+                                  </span>
+                                </div>
+
+                                <div className="mt-1.5 flex flex-col gap-0.5">
+                                  {isWarehouseDone ? (
+                                    <>
+                                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                      </span>
+                                      <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
+                                        Stock released to volunteer; goods now in vehicle transit.
+                                      </span>
+                                    </>
+                                  ) : isAssigned ? (
+                                    isPinRevealed ? (
+                                      <>
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className="font-mono text-base font-extrabold tracking-widest text-primary">
+                                            {warehousePin}
+                                          </span>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 px-2 text-[10px] text-primary hover:bg-primary/10"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigator.clipboard.writeText(warehousePin);
+                                              toast.success('Warehouse Dispatch PIN copied to clipboard');
+                                            }}
+                                          >
+                                            <Copy className="h-3 w-3 mr-1" /> Copy
+                                          </Button>
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground">
+                                          Provide to volunteer at warehouse upon goods collection.
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <div>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 text-[10px] font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 w-full justify-center gap-1"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRevealedDispatchPins((prev) => ({
+                                              ...prev,
+                                              [detailedTask.id || detailedTask.task_id || '']: true,
+                                            }));
+                                            toast.info('Warehouse Dispatch PIN revealed for staff handover.');
+                                          }}
+                                        >
+                                          <KeyRound className="h-3 w-3" /> Reveal Dispatch PIN
+                                        </Button>
+                                        <span className="text-[10px] text-muted-foreground block mt-0.5">
+                                          Click to view 4-digit code for volunteer dispatch.
+                                        </span>
+                                      </div>
+                                    )
+                                  ) : (
+                                    <>
+                                      <span className="font-mono text-xs italic text-muted-foreground">
+                                        ⏳ PIN Inactive (Awaiting volunteer mission assignment)
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        Generated once volunteer is assigned to task.
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Stage 2: Recipient Doorstep PIN (Private to Recipient) */}
+                              <div className={`rounded-md p-2.5 border flex flex-col justify-between ${
+                                isCompleted
+                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
+                                  : 'bg-muted/40 border-border text-foreground'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-[11px]">🤝 Stage 2: Recipient Doorstep PIN</span>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    isCompleted
+                                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                                      : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'
+                                  }`}>
+                                    {isCompleted ? 'DELIVERED & FULFILLED' : 'AWAITING HANDOVER'}
+                                  </span>
+                                </div>
+                                <div className="mt-1.5 flex flex-col gap-0.5">
+                                  {isCompleted ? (
+                                    <>
+                                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> •••• (Verified at Doorstep)
+                                      </span>
+                                      <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
+                                        Relief delivery verified by recipient; request fulfilled.
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="font-mono text-sm font-bold tracking-widest text-muted-foreground">
+                                        🔒 •••• (Private to Recipient)
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        Recipient provides 4-digit PIN directly from mobile app to volunteer.
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* Delivered Banner */}
                       {detailedTask.status === "COMPLETED" && (
                         <div className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs text-emerald-950 dark:text-emerald-100 flex flex-wrap items-center justify-between gap-2">
@@ -709,6 +931,108 @@ function RequestsPage() {
                     </p>
                   </div>
                 </div>
+
+                
+                {/* 📦 HIGH-PRIORITY RESOURCE ALLOCATION & WAREHOUSE STOCK (MIDDLE OF POPUP) */}
+                <div className={`rounded-2xl border-2 p-5 shadow-sm transition-all ${
+                  savedAllocations[previewRequest.id]
+                    ? "border-emerald-500/50 bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-background"
+                    : "border-primary/40 bg-gradient-to-br from-primary/10 via-amber-500/5 to-background"
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3.5">
+                      <div className={`h-12 w-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${
+                        savedAllocations[previewRequest.id]
+                          ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                          : "bg-primary/20 border-primary/40 text-primary"
+                      }`}>
+                        {savedAllocations[previewRequest.id] ? (
+                          <PackageCheck className="h-6 w-6" />
+                        ) : (
+                          <Boxes className="h-6 w-6" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full text-white shadow-xs ${
+                            savedAllocations[previewRequest.id] ? "bg-emerald-600" : "bg-primary"
+                          }`}>
+                            Humanitarian Relief Stock
+                          </span>
+                          {savedAllocations[previewRequest.id] ? (
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Allocated & Reserved in Warehouse
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" /> Awaiting Shelf Allocation
+                            </span>
+                          )}
+                        </div>
+                        
+                        <p className="text-sm font-bold text-foreground mt-1">
+                          {savedAllocations[previewRequest.id] ? (
+                            <>
+                              Reserved: <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{savedAllocations[previewRequest.id].quantity} {savedAllocations[previewRequest.id].unit}</span> of <span className="text-foreground font-black">{savedAllocations[previewRequest.id].variantName}</span>
+                            </>
+                          ) : (
+                            <>
+                              Required: <span className="text-primary font-black">{previewRequest.quantity} {previewRequest.unit}</span> of <span className="text-foreground font-bold">{previewRequest.resourceType || previewRequest.category}</span>
+                            </>
+                          )}
+                        </p>
+
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {savedAllocations[previewRequest.id]
+                            ? "Stock has been deducted from inventory and reserved. Ready to dispatch volunteer delivery mission."
+                            : "Click below to browse warehouse shelves and allocate the exact supply variant for this citizen."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* BIG ALLOCATION ACTION BUTTON */}
+                    <Button
+                      size="lg"
+                      onClick={() => handleStartAllocation(previewRequest)}
+                      className={`w-full sm:w-auto px-5 py-5 text-sm font-bold shadow-sm gap-2 rounded-xl shrink-0 transition-transform active:scale-95 ${
+                        savedAllocations[previewRequest.id]
+                          ? "bg-muted text-foreground hover:bg-muted/80 border border-border"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      }`}
+                    >
+                      <Boxes className="h-5 w-5" />
+                      {savedAllocations[previewRequest.id] ? "Change Shelf Allocation" : "📦 Allocate from Inventory"}
+                      <ArrowUpRight className="h-4 w-4 ml-0.5 opacity-80" />
+                    </Button>
+                  </div>
+
+                  {/* If allocated, show clear breakdown grid */}
+                  {savedAllocations[previewRequest.id] && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3.5 mt-3.5 border-t border-emerald-500/25 text-xs bg-emerald-500/5 rounded-xl p-3">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">Allocated Variant</span>
+                        <strong className="text-foreground font-bold text-sm">{savedAllocations[previewRequest.id].variantName}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">Warehouse Shelf</span>
+                        <strong className="text-foreground font-bold text-sm">{savedAllocations[previewRequest.id].typeName}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">Reserved Quantity</span>
+                        <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">
+                          {savedAllocations[previewRequest.id].quantity} {savedAllocations[previewRequest.id].unit}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">Relief Category</span>
+                        <span className="text-xs font-semibold text-foreground">
+                          {savedAllocations[previewRequest.id].categoryName || previewRequest.category}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
 
                 {/* Requester Information & Verification Card */}
                 <div className="rounded-xl border border-border bg-muted/10 p-4">
@@ -814,6 +1138,20 @@ function RequestsPage() {
                       }}
                     >
                       <X className="mr-1 h-4 w-4" /> Reject
+                    </Button>
+                  )}
+
+                  
+                  {/* Allocate from Inventory Button */}
+                  {previewRequest.status !== "Fulfilled" && previewRequest.status !== "Rejected" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 font-bold gap-1.5 shadow-2xs"
+                      onClick={() => handleStartAllocation(previewRequest)}
+                    >
+                      <Boxes className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      {savedAllocations[previewRequest.id] ? "Change Shelf Allocation" : "Allocate from Inventory"}
                     </Button>
                   )}
 

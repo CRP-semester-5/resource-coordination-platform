@@ -103,6 +103,32 @@ export const getTaskProgress = async (req, res, next) => {
 };
 
 
+export const verifyDonorPickup = async (req, res, next) => {
+    try {
+        const { pin } = req.body;
+        if (!pin) {
+            return res.status(400).json({ success: false, message: "Donor Handover PIN is required" });
+        }
+        const result = await taskService.verifyDonorPickup(req.params.id, req.user.sub, pin);
+        return res.status(200).json({ success: true, message: "Donation collection from donor verified!", data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
+export const verifyWarehousePickup = async (req, res, next) => {
+    try {
+        const { pin } = req.body;
+        if (!pin) {
+            return res.status(400).json({ success: false, message: "Warehouse Dispatch PIN is required" });
+        }
+        const result = await taskService.verifyWarehousePickup(req.params.id, req.user.sub, pin);
+        return res.status(200).json({ success: true, message: "Supplies collected from warehouse verified!", data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
 export const verifyHandover = async (req, res, next) => {
     try {
         const { pin } = req.body;

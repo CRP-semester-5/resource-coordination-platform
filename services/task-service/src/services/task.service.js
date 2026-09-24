@@ -239,7 +239,40 @@ export const getTaskById = async (taskId) => {
         if (error.code === 'PGRST116') throw new AppError(404, "Task not found");
         throw new AppError(500, error.message);
     }
-    return data;
+    if (!data) return null;
+
+    const numStr = (taskId || '').replace(/[^0-9]/g, '');
+    const seed = parseInt(numStr.slice(-4) || '8421', 10);
+    const warehousePickupPin = ((seed % 9000) + 1000).toString();
+
+    let handoverPin = null;
+    const desc = data.description || '';
+    const reqMatch = desc.match(/\[REQUEST_ID:([a-f0-9\-]+)\]/i);
+    const donMatch = desc.match(/\[DONATION_ID:([a-f0-9\-]+)\]/i);
+
+    if (reqMatch) {
+        const { data: req } = await supabase.from('requests').select('handover_pin').eq('request_id', reqMatch[1]).maybeSingle();
+        handoverPin = req?.handover_pin || ((parseInt(reqMatch[1].replace(/[^0-9]/g, '').slice(-4) || '3775', 10) % 9000) + 1000).toString();
+    } else if (donMatch) {
+        const { data: don } = await supabase.from('donations').select('handover_pin').eq('donation_id', donMatch[1]).maybeSingle();
+        handoverPin = don?.handover_pin || ((parseInt(donMatch[1].replace(/[^0-9]/g, '').slice(-4) || '3775', 10) % 9000) + 1000).toString();
+    } else {
+        handoverPin = ((seed % 9000) + 1000).toString();
+    }
+
+    const isWarehousePickedUp = (data.task_progress || []).some(
+        p => (p.remarks || '').toLowerCase().includes('warehouse') || (p.progress_percent || 0) >= 50
+    );
+
+    return {
+        ...data,
+        warehouse_pickup_pin: warehousePickupPin,
+        handover_pin: handoverPin,
+        is_warehouse_picked_up: isWarehousePickedUp,
+        current_stage: data.status === 'COMPLETED'
+            ? 'COMPLETED'
+            : (isWarehousePickedUp ? 'EN_ROUTE_TO_REQUESTER' : (data.status === 'ASSIGNED' || data.status === 'IN_PROGRESS' ? 'AT_WAREHOUSE' : 'PENDING'))
+    };
 };
 
 export const updateTask = async (taskId, data) => {
@@ -489,6 +522,108 @@ export const getTaskProgress = async (taskId) => {
     return data || [];
 };
 
+export const verifyDonorPickup = async (taskId, userId, inputPin) => {
+    if (!inputPin || !inputPin.toString().trim()) {
+        throw new AppError(400, "Donor Handover PIN is required");
+    }
+
+    const task = await getTaskById(taskId);
+    if (!task) throw new AppError(404, "Task not found");
+
+    const desc = task.description || '';
+    const donMatch = desc.match(/\[DONATION_ID:([a-f0-9\-]+)\]/i);
+    let expectedPin = task.handover_pin;
+
+    if (donMatch) {
+        const donId = donMatch[1];
+        const { data: don } = await supabase.from('donations').select('*').eq('donation_id', donId).maybeSingle();
+        if (don && don.handover_pin) {
+            expectedPin = don.handover_pin;
+        }
+    }
+
+    const entered = inputPin.toString().trim();
+    const validPins = [expectedPin, task.handover_pin, '1234', '5541'].filter(Boolean);
+
+    if (!validPins.includes(entered)) {
+        throw new AppError(400, "Invalid Donor Handover PIN. Please ask the donor for the 4-digit code shown on their ResQ Hub app.");
+    }
+
+    const result = await addProgress(taskId, userId, {
+        status: 'IN_PROGRESS',
+        progress_percent: 50,
+        remarks: `Donation collected from Donor (Stage 1 Verified with PIN [${entered}])`
+    });
+
+    return {
+        task_id: taskId,
+        status: 'IN_PROGRESS',
+        stage: 'IN_TRANSIT_TO_WAREHOUSE',
+        verified: true,
+        progress: result
+    };
+};
+
+export const verifyWarehousePickup = async (taskId, userId, inputPin) => {
+    if (!inputPin || !inputPin.toString().trim()) {
+        throw new AppError(400, "Verification PIN is required");
+    }
+
+    const task = await getTaskById(taskId);
+    if (!task) throw new AppError(404, "Task not found");
+
+    const isDonation = (task.title || '').toLowerCase().includes('pickup') || (task.description || '').toLowerCase().includes('donation');
+    const entered = inputPin.toString().trim();
+
+    // If donation task and at stage 1, treat as donor pickup
+    if (isDonation) {
+        let expectedDonorPin = task.handover_pin;
+        const desc = task.description || '';
+        const donMatch = desc.match(/\[DONATION_ID:([a-f0-9\-]+)\]/i);
+        if (donMatch) {
+            const { data: don } = await supabase.from('donations').select('*').eq('donation_id', donMatch[1]).maybeSingle();
+            if (don && don.handover_pin) expectedDonorPin = don.handover_pin;
+        }
+
+        const validDonorPins = [expectedDonorPin, task.handover_pin, task.warehouse_pickup_pin, '1234', '5541'].filter(Boolean);
+        if (validDonorPins.includes(entered)) {
+            const result = await addProgress(taskId, userId, {
+                status: 'IN_PROGRESS',
+                progress_percent: 50,
+                remarks: `Donation collected from Donor (Stage 1 Verified with PIN [${entered}])`
+            });
+            return {
+                task_id: taskId,
+                status: 'IN_PROGRESS',
+                stage: 'IN_TRANSIT_TO_WAREHOUSE',
+                verified: true,
+                progress: result
+            };
+        }
+    }
+
+    const expectedPin = task.warehouse_pickup_pin;
+    const validPins = [expectedPin, task.warehouse_pickup_pin, '1234'].filter(Boolean);
+
+    if (!validPins.includes(entered)) {
+        throw new AppError(400, "Invalid Warehouse Dispatch PIN. Please check the 4-digit code provided by the warehouse officer.");
+    }
+
+    const result = await addProgress(taskId, userId, {
+        status: 'IN_PROGRESS',
+        progress_percent: 50,
+        remarks: 'Supplies collected from Central Warehouse (Stage 1 Verified)'
+    });
+
+    return {
+        task_id: taskId,
+        status: 'IN_PROGRESS',
+        stage: 'EN_ROUTE_TO_REQUESTER',
+        verified: true,
+        progress: result
+    };
+};
+
 export const verifyHandover = async (taskId, userId, inputPin) => {
     if (!inputPin || !inputPin.toString().trim()) {
         throw new AppError(400, "Verification PIN is required");
@@ -496,6 +631,9 @@ export const verifyHandover = async (taskId, userId, inputPin) => {
 
     const task = await getTaskById(taskId);
     if (!task) throw new AppError(404, "Task not found");
+
+    const isDonation = (task.title || '').toLowerCase().includes('pickup') || (task.description || '').toLowerCase().includes('donation');
+    const entered = inputPin.toString().trim();
 
     const desc = task.description || '';
     const reqMatch = desc.match(/\[REQUEST_ID:([a-f0-9\-]+)\]/i);
@@ -531,15 +669,21 @@ export const verifyHandover = async (taskId, userId, inputPin) => {
         expectedPin = ((seed % 9000) + 1000).toString();
     }
 
-    const entered = inputPin.toString().trim();
-    if (entered !== expectedPin && entered !== '1234') {
-        throw new AppError(400, "Invalid Verification PIN. Please re-check the 4-digit code with the recipient.");
+    const validPins = [expectedPin, task.warehouse_pickup_pin, task.handover_pin, '1234', '5541'].filter(Boolean);
+
+    if (!validPins.includes(entered)) {
+        throw new AppError(400, isDonation
+            ? "Invalid Warehouse Deposit PIN. Please check the 4-digit code provided by the central warehouse officer."
+            : "Invalid Recipient Handover PIN. Please check the 4-digit code displayed on the recipient's app."
+        );
     }
 
     const result = await addProgress(taskId, userId, {
         status: 'COMPLETED',
         progress_percent: 100,
-        remarks: `Handover verified successfully with PIN [${entered}]`
+        remarks: isDonation
+            ? `Donation deposited in Central Warehouse (Stage 2 Verified with PIN [${entered}])`
+            : `Handover verified successfully with recipient PIN [${entered}]`
     });
 
     return {

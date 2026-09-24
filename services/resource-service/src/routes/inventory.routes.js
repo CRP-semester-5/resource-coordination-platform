@@ -40,6 +40,13 @@ router.post(
 );
 
 router.post(
+    "/deduct",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.deductInventory
+);
+
+router.post(
     "/:id/allocate",
     authenticate,
     requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),

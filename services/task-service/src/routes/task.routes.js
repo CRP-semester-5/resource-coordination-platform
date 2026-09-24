@@ -54,6 +54,18 @@ router.get(
     taskController.getTaskProgress
 );
 router.post(
+    "/:id/verify-donor-pickup",
+    authenticate,
+    taskController.verifyDonorPickup
+);
+
+router.post(
+    "/:id/verify-warehouse-pickup",
+    authenticate,
+    taskController.verifyWarehousePickup
+);
+
+router.post(
     "/:id/verify-handover",
     authenticate,
     taskController.verifyHandover
