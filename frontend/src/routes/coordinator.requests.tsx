@@ -1,9 +1,35 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Eye, X } from "lucide-react";
-import { requestsAPI } from "@/api/real";
+import {
+  RotateCcw,
+  Eye,
+  Check,
+  X,
+  Truck,
+  Phone,
+  PhoneCall,
+  Copy,
+  MapPin,
+  Calendar,
+  Package,
+  User,
+  AlertCircle,
+  ExternalLink,
+  PlusCircle,
+  Users,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  ClipboardList,
+  Activity,
+  ShieldCheck,
+  HeartHandshake,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import { requestsAPI, tasksAPI, inventoryAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
 import { Toolbar, EmptyState } from "@/components/toolbar";
@@ -11,8 +37,11 @@ import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,10 +67,10 @@ export const Route = createFileRoute("/coordinator/requests")({
       { title: "Help Requests — ResQ Hub Coordinator" },
       {
         name: "description",
-        content: "Review, approve or reject community help requests and follow each request through its status timeline.",
+        content: "Review, approve and dispatch volunteer relief delivery missions for community help requests.",
       },
       { property: "og:title", content: "Help Requests — ResQ Hub Coordinator" },
-      { property: "og:description", content: "Approve, reject and track disaster relief requests submitted by the community." },
+      { property: "og:description", content: "Approve, reject and dispatch volunteer response for disaster relief requests." },
     ],
   }),
   component: RequestsPage,
@@ -49,10 +78,11 @@ export const Route = createFileRoute("/coordinator/requests")({
 
 const STATUSES = ["Pending", "Under Review", "Approved", "Partially Fulfilled", "Fulfilled", "Rejected", "Cancelled"];
 const PRIORITIES = ["Critical", "High", "Medium", "Low"];
+const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 const PAGE_SIZE = 8;
 
-/** Map backend status strings → UI display strings */
-function mapStatus(s: string): string {
+function mapStatus(s?: string): string {
+  if (!s) return "Pending";
   const m: Record<string, string> = {
     PENDING: "Pending",
     VERIFIED: "Approved",
@@ -76,6 +106,30 @@ function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s;
 }
 
+function cleanAddress(addr?: string): string {
+  if (!addr) return "";
+  return addr.trim().replace(/,\s*$/, "");
+}
+
+interface NormalizedRequest {
+  id: string;
+  code: string;
+  orgId: string;
+  requester: string;
+  requesterPhone: string;
+  requesterEmail: string;
+  category: string;
+  resourceType: string;
+  quantity: number;
+  unit: string;
+  priority: string;
+  location: string;
+  requiredDate: string;
+  createdAt: string;
+  description: string;
+  status: string;
+  rejectionReason?: string | undefined;
+}
 
 function RequestsPage() {
   const { orgId } = useOrganization();
@@ -86,59 +140,166 @@ function RequestsPage() {
   const [priority, setPriority] = useState("all");
   const [category, setCategory] = useState("all");
   const [page, setPage] = useState(1);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [detail, setDetail] = useState<any | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [approving, setApproving] = useState<any | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [rejecting, setRejecting] = useState<any | null>(null);
-  const [reason, setReason] = useState("");
 
+  // Selected request for Preview Modal
+  const [previewRequestId, setPreviewRequestId] = useState<string | null>(null);
+
+  // Accept & Reject Dialog states
+  const [approving, setApproving] = useState<NormalizedRequest | null>(null);
+  const [rejecting, setRejecting] = useState<NormalizedRequest | null>(null);
+  const [reason, setReason] = useState("");
+  const [copiedPhone, setCopiedPhone] = useState(false);
+
+  // Create Task from Request state
+  const [taskCreatingRequest, setTaskCreatingRequest] = useState<NormalizedRequest | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskLocation, setTaskLocation] = useState("");
+  const [taskPriority, setTaskPriority] = useState("HIGH");
+  const [taskSkill, setTaskSkill] = useState("Logistics & Transport");
+  const [taskType, setTaskType] = useState<"INDIVIDUAL" | "TEAM">("INDIVIDUAL");
+  const [volunteersRequired, setVolunteersRequired] = useState<number>(1);
+
+  // 1. Fetch Requests
   const { data: rawRequests = [], isLoading } = useQuery({
     queryKey: ["requests", orgId],
     queryFn: async () => {
-      const res = await requestsAPI.getAll(orgId);
-      const list = res.data?.data ?? res.data ?? [];
-      // Normalize backend shape to UI shape
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return list.map((r: any) => ({
-        id: r.request_id ?? r.id,
-        // code: r.request_id?.slice(0, 8) ?? r.id?.slice(0, 8) ?? "—",
-        orgId: r.organization_id ?? "",
-        // orgName: r.organization_name ?? "",
-        requester: r.requester_name ?? r.requester ?? "Unknown",
-        requesterPhone: r.requester_phone ?? "",
-        category: r.category ?? "General",
-        resourceType: r.title ?? r.resource_type ?? r.resource_name ?? "",
-        quantity: r.quantity_required ?? r.quantity ?? 0,
-        unit: r.unit ?? "",
-        priority: capitalize(r.urgency ?? r.priority ?? "medium"),
-        location: r.location ?? "",
-        requiredDate: r.required_date ?? r.needed_by ?? "",
-        createdAt: r.created_at ?? "",
-        description: r.description ?? "",
-        status: mapStatus(r.status),
-        rejectionReason: r.rejection_reason,
-        timeline: r.timeline ?? [
-          { status: mapStatus(r.status), at: r.created_at ?? "", note: undefined },
-        ],
-      }));
+      try {
+        const res = await requestsAPI.getAll(orgId);
+        const list = res.data?.data ?? res.data ?? [];
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        console.error("Failed to fetch requests:", err);
+        return [];
+      }
     },
+    refetchInterval: 3000,
     enabled: !!orgId,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const requests: any[] = rawRequests;
+  // 2. Fetch Tasks for linking volunteer delivery progress
+  const { data: tasksRes } = useQuery({
+    queryKey: ["tasks", orgId],
+    queryFn: () => tasksAPI.getAll(),
+    refetchInterval: 2500,
+  });
+
+  const allTasks: any[] = useMemo(() => {
+    const list = tasksRes?.data?.data ?? tasksRes?.data ?? [];
+    return Array.isArray(list) ? list : [];
+  }, [tasksRes]);
+
+  const requests: NormalizedRequest[] = useMemo(() => {
+    if (!Array.isArray(rawRequests)) return [];
+    return rawRequests.map((r: any) => {
+      const u = r.users || {};
+      const g = (r.guest_request_contacts && r.guest_request_contacts[0]) || {};
+      const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ");
+      const requester = fullName || g.contact_name || r.requester_name || r.requester || "Citizen in Need";
+      const requesterPhone = u.phone || g.contact_phone || r.requester_phone || r.contact_phone || "";
+      const requesterEmail = u.email || g.contact_email || r.requester_email || "";
+      const reqId = r.request_id || r.id || "";
+      const resourceType = r.title || r.resource_type || r.resource_name || r.category || "Relief Supplies";
+      const cat = r.category || "General";
+      const quantity = Number(r.quantity_required ?? r.quantity ?? 1);
+      const unit = r.unit || "units";
+      const prio = capitalize(r.urgency || r.priority || "Medium");
+      const loc = cleanAddress(r.location || r.delivery_address || "");
+      const requiredDate = r.required_date || r.needed_by || "";
+      const createdAt = r.created_at || new Date().toISOString();
+      const desc = r.description || "";
+      const stat = mapStatus(r.status);
+      const rejectionReason = r.rejection_reason || undefined;
+      const code = reqId.length > 8 ? reqId.slice(0, 8).toUpperCase() : reqId;
+
+      return {
+        id: reqId,
+        code,
+        orgId: r.organization_id || orgId || "",
+        requester,
+        requesterPhone,
+        requesterEmail,
+        category: cat,
+        resourceType,
+        quantity,
+        unit,
+        priority: prio,
+        location: loc,
+        requiredDate,
+        createdAt,
+        description: desc,
+        status: stat,
+        rejectionReason,
+      };
+    });
+  }, [rawRequests, orgId]);
+
+  const previewRequest = useMemo(() => {
+    if (!previewRequestId) return null;
+    return requests.find((r) => r.id === previewRequestId) || null;
+  }, [requests, previewRequestId]);
+
+  // Robust matching helper to link a volunteer delivery task to a request
+  const getLinkedTask = (r: NormalizedRequest) => {
+    const cleanReqLoc = cleanAddress(r.location).toLowerCase();
+    const cleanResource = r.resourceType.toLowerCase().trim();
+    const cleanRequester = r.requester.toLowerCase().trim();
+    const rId = (r.id || "").toLowerCase();
+    const rCode = (r.code || "").toLowerCase();
+
+    return allTasks.find((t: any) => {
+      const desc = (t.description || "").toLowerCase();
+      const title = (t.title || "").toLowerCase();
+      const taskLoc = cleanAddress(t.location || "").toLowerCase();
+      const tReqId = (t.request_id || "").toLowerCase();
+
+      // 1. Explicit ID / Code Tag match (EXACT)
+      if (rId && (tReqId === rId || desc.includes(`[request_id:${rId}]`) || desc.includes(rId))) return true;
+      if (rCode && (desc.includes(`[request_code:${rCode}]`) || desc.includes(rCode) || title.includes(rCode))) return true;
+
+      // 2. If this task has a tag explicitly for a DIFFERENT request, NEVER link it to this request!
+      const hasExplicitOtherTag = desc.includes("[request_id:") || desc.includes("[request_code:") || (tReqId && tReqId !== rId);
+      if (hasExplicitOtherTag) return false;
+
+      // 3. Fallback only for untagged legacy tasks: must match requester AND resource AND exact quantity
+      if (title.includes("deliver") && (title.includes(cleanResource) || desc.includes(cleanResource))) {
+        if (cleanRequester && (desc.includes(cleanRequester) || title.includes(cleanRequester))) {
+          if (r.quantity && (title.includes(String(r.quantity)) || desc.includes(String(r.quantity)))) return true;
+        }
+      }
+
+      return false;
+    });
+  };
+
+  const previewLinkedTask = previewRequest ? getLinkedTask(previewRequest) : null;
+  const linkedTaskId = previewLinkedTask?.task_id || previewLinkedTask?.id || null;
+
+  // Live Task Details Query (polls every 2s while preview is open and task is linked)
+  const { data: liveTaskDetailRes } = useQuery({
+    queryKey: ["task-details", linkedTaskId],
+    queryFn: () => (linkedTaskId ? tasksAPI.getById(linkedTaskId) : null),
+    enabled: !!linkedTaskId && !!previewRequestId,
+    refetchInterval: 2000,
+  });
+
+  const detailedTask = liveTaskDetailRes?.data?.data || previewLinkedTask;
 
   const decide = useMutation({
-    mutationFn: async ({ id, decision, note }: { id: string; decision: "Approved" | "Rejected"; note?: string }) => {
-      if (decision === "Approved") return requestsAPI.approve(id);
-      return requestsAPI.reject(id, note ?? "");
+    mutationFn: async ({ id, decision, note }: { id: string; decision: "Approved" | "Rejected" | "Unapprove"; note?: string }) => {
+      if (decision === "Approved") return requestsAPI.approve(id, orgId);
+      if (decision === "Unapprove") return requestsAPI.unapprove(id, orgId);
+      return requestsAPI.reject(id, note ?? "", orgId);
     },
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: ["requests", orgId] });
-      qc.invalidateQueries({ queryKey: ["dashboard", orgId] });
-      toast.success(`Request ${vars.decision.toLowerCase()}`);
+      qc.invalidateQueries({ queryKey: ["requests"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      if (vars.decision === "Unapprove") {
+        toast.success("Request approval undone. Reset to pending.");
+      } else {
+        toast.success(`Request ${vars.decision.toLowerCase()} successfully`);
+      }
     },
     onError: (err: unknown) => {
       const msg =
@@ -148,7 +309,73 @@ function RequestsPage() {
     },
   });
 
-  const categories = useMemo(() => [...new Set(requests.map((r) => r.category))], [requests]);
+  
+  // Real-time stock check for task dispatch modal
+  const { data: stockCheckRes, isLoading: isCheckingStock } = useQuery({
+    queryKey: ["check-stock", orgId, taskCreatingRequest?.category, taskCreatingRequest?.quantity],
+    queryFn: () => inventoryAPI.checkStock(taskCreatingRequest?.category || "", taskCreatingRequest?.quantity || 1),
+    enabled: !!taskCreatingRequest && !!taskCreatingRequest.category,
+  });
+  const stockCheck = stockCheckRes?.data?.data || stockCheckRes?.data;
+  const isStockInsufficient = stockCheck ? !stockCheck.isSufficient : false;
+
+  const createTaskMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await tasksAPI.create(data);
+      // Auto-approve request if pending
+      if (taskCreatingRequest && (taskCreatingRequest.status === "Pending" || taskCreatingRequest.status === "Under Review")) {
+        try {
+          await requestsAPI.approve(taskCreatingRequest.id);
+        } catch (e) {
+          console.warn("Auto-approve request note:", e);
+        }
+      }
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["requests"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Volunteer delivery task dispatched successfully!");
+      setTaskCreatingRequest(null);
+    },
+    onError: (err: any) => {
+      console.error("Create task error:", err);
+      const msg = err?.response?.data?.message || err?.message || "Failed to create delivery task";
+      toast.error(msg);
+    },
+  });
+
+  const openTaskCreateForRequest = (r: NormalizedRequest) => {
+    setTaskCreatingRequest(r);
+    setTaskTitle(`Deliver Aid: ${r.resourceType} (${r.quantity} ${r.unit}) to ${r.requester}`);
+    setTaskDescription(
+      `[REQUEST_ID:${r.id}] [REQUEST_CODE:${r.code}] Volunteer relief distribution mission for ${r.quantity} ${r.unit} of ${r.resourceType}.\n` +
+      `Requester: ${r.requester} (${r.requesterPhone || "Contact in App"})\n` +
+      `Delivery Location: ${r.location || "Contact requester for exact address"}\n` +
+      `Needed By: ${r.requiredDate ? new Date(r.requiredDate).toLocaleDateString() : "Immediate"}\n` +
+      `Reason/Situation: ${r.description || "Emergency disaster relief assistance."}`
+    );
+    setTaskLocation(r.location || "");
+    const upPriority = r.priority.toUpperCase();
+    setTaskPriority(TASK_PRIORITIES.includes(upPriority) ? upPriority : "HIGH");
+    setTaskSkill("Logistics & Transport");
+    setTaskType("INDIVIDUAL");
+    setVolunteersRequired(1);
+  };
+
+  const handleCopyPhone = (phone: string) => {
+    if (!phone || phone === "Not provided") {
+      toast.error("No phone number available");
+      return;
+    }
+    navigator.clipboard.writeText(phone);
+    setCopiedPhone(true);
+    toast.success("Requester phone copied to clipboard");
+    setTimeout(() => setCopiedPhone(false), 2500);
+  };
+
+  const categories = useMemo(() => [...new Set(requests.map((r) => r.category).filter(Boolean))], [requests]);
 
   const filtered = useMemo(
     () =>
@@ -158,7 +385,7 @@ function RequestsPage() {
           (priority === "all" || r.priority === priority) &&
           (category === "all" || r.category === category) &&
           (search === "" ||
-            [r.code, r.requester, r.resourceType, r.location].join(" ").toLowerCase().includes(search.toLowerCase())),
+            [r.code, r.requester, r.resourceType, r.location, r.requesterPhone].join(" ").toLowerCase().includes(search.toLowerCase())),
       ),
     [requests, status, priority, category, search],
   );
@@ -171,8 +398,8 @@ function RequestsPage() {
   return (
     <>
       <PageHeader
-        title="Help requests"
-        description={`${pendingCount} request${pendingCount === 1 ? "" : "s"} awaiting your review.`}
+        title="Help Requests"
+        description={`${pendingCount} request${pendingCount === 1 ? "" : "s"} awaiting review and volunteer dispatch.`}
       />
 
       <Toolbar
@@ -181,7 +408,7 @@ function RequestsPage() {
           setSearch(v);
           setPage(1);
         }}
-        placeholder="Search by code, requester, resource or location"
+        placeholder="Search by requester, resource, phone or location"
         filters={[
           { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
           { label: "Priority", value: priority, options: PRIORITIES, onChange: (v) => { setPriority(v); setPage(1); } },
@@ -189,7 +416,7 @@ function RequestsPage() {
         ]}
       />
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -197,78 +424,92 @@ function RequestsPage() {
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <EmptyState message="No requests match the current filters." />
+          <EmptyState message="No help requests match the current filters." />
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                {/* <TableHead>Organization</TableHead> */}
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
                 <TableHead>Requester</TableHead>
                 <TableHead>Resource</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead>Priority</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Required</TableHead>
+                <TableHead>Delivery Location</TableHead>
+                <TableHead>Volunteer Mission</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  {/* <TableCell className="font-medium">{orgName}</TableCell> */}
-                  <TableCell>{r.requester}</TableCell>
-                  <TableCell>
-                    <span className="block">{r.resourceType}</span>
-                    <span className="block text-xs text-muted-foreground">{r.category}</span>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {r.quantity} {r.unit}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge value={r.priority} />
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{r.location}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(r.requiredDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge value={r.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" aria-label="View request" onClick={() => setDetail(r)}>
-                        <Eye className="size-4" />
-                      </Button>
-                      {(r.status === "Pending" || r.status === "Under Review") && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Approve request"
-                            className="text-status-success-foreground hover:bg-status-success-muted"
-                            onClick={() => setApproving(r)}
-                          >
-                            <Check className="size-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Reject request"
-                            className="text-status-danger-foreground hover:bg-status-danger-muted"
-                            onClick={() => {
-                              setReason("");
-                              setRejecting(r);
-                            }}
-                          >
-                            <X className="size-4" />
-                          </Button>
-                        </>
+              {rows.map((r) => {
+                const linkedTask = getLinkedTask(r);
+                return (
+                  <TableRow
+                    key={r.id || Math.random().toString()}
+                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                    onClick={() => setPreviewRequestId(r.id)}
+                  >
+                    <TableCell>
+                      <span className="block font-medium text-foreground">{r.requester}</span>
+                      <span className="block text-xs font-mono text-muted-foreground">{r.requesterPhone || "Contact in App"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="block font-semibold text-foreground">{r.resourceType}</span>
+                      <span className="block text-xs text-muted-foreground">{r.category}</span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-semibold">
+                      {r.quantity} {r.unit}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge value={r.priority} />
+                    </TableCell>
+                    <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                        <span className="truncate">{r.location || "Contact requester for location"}</span>
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {linkedTask ? (
+                        <div className="flex items-center gap-1.5">
+                          {linkedTask.status === "COMPLETED" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle2 className="h-3 w-3" /> Fulfilled
+                            </span>
+                          ) : linkedTask.status === "IN_PROGRESS" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                              <Activity className="h-3 w-3 animate-pulse" /> Delivering
+                            </span>
+                          ) : linkedTask.status === "ASSIGNED" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-400">
+                              <User className="h-3 w-3" /> Assigned
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                              <Clock className="h-3 w-3" /> Dispatched
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge value={r.status} />
+                    </TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={() => setPreviewRequestId(r.id)}
+                      >
+                        <Eye className="size-3.5" />
+                        Preview
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -290,92 +531,566 @@ function RequestsPage() {
         </div>
       )}
 
-      <Sheet open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          {detail && (
-            <>
-              <SheetHeader>
-                <SheetTitle>{detail.code}</SheetTitle>
-                <SheetDescription>{detail.description}</SheetDescription>
-              </SheetHeader>
-              <div className="space-y-6 px-4 pb-6">
-                <dl className="grid grid-cols-2 gap-4 text-sm">
-                  {[
-                    ["Requester", detail.requester],
-                    ["Contact", detail.requesterPhone],
-                    ["Category", detail.category],
-                    ["Resource", detail.resourceType],
-                    ["Quantity", `${detail.quantity} ${detail.unit}`],
-                    ["Location", detail.location],
-                    ["Required by", new Date(detail.requiredDate).toLocaleDateString()],
-                    ["Submitted", new Date(detail.createdAt).toLocaleDateString()],
-                  ].map(([k, v]) => (
-                    <div key={k}>
-                      <dt className="text-xs text-muted-foreground">{k}</dt>
-                      <dd className="mt-0.5 font-medium">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
+      {/* 👁️ PREVIEW & VERIFICATION MODAL */}
+      <Dialog open={!!previewRequest} onOpenChange={(open) => !open && setPreviewRequestId(null)}>
+        <DialogContent className="max-w-2xl overflow-hidden p-0">
+          {previewRequest && (
+            <div>
+              {/* Header */}
+              <div className="border-b border-border bg-muted/30 p-6">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                      {previewRequest.category}
+                    </span>
+                    <StatusBadge value={previewRequest.priority} />
+                    <span className="text-xs text-muted-foreground">
+                      #{previewRequest.code}
+                    </span>
+                  </div>
+                  <StatusBadge value={previewRequest.status} />
+                </div>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+                  {previewRequest.resourceType}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Requested on {new Date(previewRequest.createdAt).toLocaleDateString()} • Needed by:{" "}
+                  <strong className="text-foreground">
+                    {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
+                  </strong>
+                </p>
+              </div>
 
-                {detail.rejectionReason && (
-                  <div className="rounded-lg border border-status-danger/30 bg-status-danger-muted p-3 text-sm text-status-danger-foreground">
-                    <p className="font-medium">Rejection reason</p>
-                    <p className="mt-1">{detail.rejectionReason}</p>
+              {/* Body Content */}
+              <div className="space-y-5 p-6 max-h-[70vh] overflow-y-auto">
+                {/* 🚚 LIVE VOLUNTEER TASK PROGRESS BANNER */}
+                {detailedTask ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                          <Truck className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Volunteer Relief Delivery Mission
+                          </span>
+                          <h4 className="text-sm font-bold text-foreground">{detailedTask.title}</h4>
+                        </div>
+                      </div>
+                      <Link
+                        to="/coordinator/tasks"
+                        className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-background px-2.5 py-1 text-xs font-semibold text-primary shadow-xs hover:bg-primary/10 transition-colors"
+                      >
+                        View in Tasks <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+
+                    {/* Progress Bar & Status details */}
+                    <div className="mt-3 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-foreground">Mission Status:</span>
+                        {detailedTask.status === "COMPLETED" ? (
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> 100% Delivered to Requester
+                          </span>
+                        ) : detailedTask.status === "IN_PROGRESS" ? (
+                          <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                            <Activity className="h-3.5 w-3.5 animate-pulse" /> Volunteer Delivering Supplies
+                          </span>
+                        ) : detailedTask.status === "ASSIGNED" ? (
+                          <span className="font-bold text-purple-600 dark:text-purple-400">
+                            Volunteer Assigned (En Route)
+                          </span>
+                        ) : (
+                          <span className="font-bold text-amber-600 dark:text-amber-400">
+                            Dispatched (Waiting for Volunteer)
+                          </span>
+                        )}
+                      </div>
+
+                      <Progress
+                        value={
+                          detailedTask.status === "COMPLETED"
+                            ? 100
+                            : detailedTask.status === "IN_PROGRESS"
+                            ? 60
+                            : detailedTask.status === "ASSIGNED"
+                            ? 30
+                            : 10
+                        }
+                        className="h-2"
+                      />
+
+                      {/* Assigned Volunteer list if available */}
+                      {detailedTask.volunteers && detailedTask.volunteers.length > 0 && (
+                        <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+                          <Users className="h-3.5 w-3.5 text-primary" />
+                          <span>
+                            Assigned Responder:{" "}
+                            <strong className="text-foreground">
+                              {detailedTask.volunteers.map((v: any) => v.name || v.first_name || "Volunteer").join(", ")}
+                            </strong>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Delivered Banner */}
+                      {detailedTask.status === "COMPLETED" && (
+                        <div className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs text-emerald-950 dark:text-emerald-100 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>
+                              <strong>Aid Delivered:</strong> Volunteer has delivered relief items to the requester.
+                            </span>
+                          </div>
+                          {previewRequest.status !== "Fulfilled" && (
+                            <Button
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-7 text-xs px-3 shadow-xs"
+                              onClick={() => {
+                                decide.mutate({ id: previewRequest.id, decision: "Approved" });
+                              }}
+                            >
+                              Mark Request Fulfilled
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/10 p-3.5 text-xs text-muted-foreground flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-muted-foreground" />
+                      No volunteer delivery mission dispatched yet.
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-primary/40 text-primary hover:bg-primary/10 h-7 text-xs font-semibold"
+                      onClick={() => openTaskCreateForRequest(previewRequest)}
+                    >
+                      <PlusCircle className="mr-1 h-3.5 w-3.5" />
+                      Dispatch Delivery Task
+                    </Button>
                   </div>
                 )}
 
-                <div>
-                  <p className="text-sm font-semibold">Status timeline</p>
-                  <ol className="mt-3 space-y-4 border-l border-border pl-4">
-                    {detail.timeline.map((t: { status: string; at: string; note?: string }, i: number) => (
-                      <li key={i} className="relative">
-                        <span className="absolute top-1.5 -left-[21px] size-2 rounded-full bg-primary" />
-                        <StatusBadge value={t.status} />
-                        <p className="mt-1 text-xs text-muted-foreground">{new Date(t.at).toLocaleString()}</p>
-                        {t.note && <p className="mt-0.5 text-sm">{t.note}</p>}
-                      </li>
-                    ))}
-                  </ol>
+                {/* Rejection notice if rejected */}
+                {previewRequest.status === "Rejected" && previewRequest.rejectionReason && (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-sm text-destructive">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <AlertCircle className="h-4 w-4" />
+                      Rejection Reason
+                    </div>
+                    <p className="mt-1 text-xs">{previewRequest.rejectionReason}</p>
+                  </div>
+                )}
+
+                {/* Request Spec Cards */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                    <span className="text-xs font-medium text-muted-foreground">Quantity Needed</span>
+                    <p className="mt-1 text-lg font-bold text-foreground">
+                      {previewRequest.quantity} <span className="text-sm font-normal text-muted-foreground">{previewRequest.unit}</span>
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                    <span className="text-xs font-medium text-muted-foreground">Urgency Priority</span>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {previewRequest.priority} Priority
+                    </p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-card p-3 shadow-sm">
+                    <span className="text-xs font-medium text-muted-foreground">Required By</span>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Requester Information & Verification Card */}
+                <div className="rounded-xl border border-border bg-muted/10 p-4">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <User className="h-4 w-4 text-primary" />
+                    Requester Contact & Verification
+                  </h3>
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Requester Name</span>
+                      <p className="text-sm font-semibold text-foreground">{previewRequest.requester}</p>
+                      {previewRequest.requesterEmail && (
+                        <p className="text-xs text-muted-foreground">{previewRequest.requesterEmail}</p>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Contact Phone</span>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className="font-mono text-sm font-semibold text-foreground">
+                          {previewRequest.requesterPhone || "Contact in App"}
+                        </span>
+                        {previewRequest.requesterPhone && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            title="Copy phone number"
+                            onClick={() => handleCopyPhone(previewRequest.requesterPhone)}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delivery Location & Maps Link */}
+                  <div className="mt-3 border-t border-border/60 pt-3">
+                    <span className="text-xs text-muted-foreground">Delivery / Relief Location</span>
+                    <div className="mt-1 flex items-start justify-between gap-2">
+                      <p className="flex items-start gap-1.5 text-sm text-foreground">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                        <span className="font-medium">
+                          {previewRequest.location || "Contact requester for exact location coordinates"}
+                        </span>
+                      </p>
+                      {previewRequest.location && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(previewRequest.location)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-2.5 py-1 text-xs font-medium text-primary hover:underline shadow-xs"
+                        >
+                          Maps <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Coordinator Phone Call Verification Aid */}
+                  {previewRequest.requesterPhone && (
+                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-950 dark:text-emerald-200">
+                      <div className="flex items-center gap-2">
+                        <PhoneCall className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Call citizen to confirm emergency needs and location:</span>
+                      </div>
+                      <a
+                        href={`tel:${previewRequest.requesterPhone}`}
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
+                      >
+                        <Phone className="h-3 w-3" />
+                        Call {previewRequest.requesterPhone}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Requester Reason / Description */}
+                {previewRequest.description && (
+                  <div className="rounded-lg border border-border bg-card p-3.5">
+                    <span className="text-xs font-medium text-muted-foreground">Situation & Request Details</span>
+                    <p className="mt-1 text-sm text-foreground/90 italic">"{previewRequest.description}"</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Action Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/20 p-4">
+                <Button variant="ghost" size="sm" onClick={() => setPreviewRequestId(null)}>
+                  Close
+                </Button>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {(previewRequest.status === "Pending" || previewRequest.status === "Under Review") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        setReason("");
+                        setRejecting(previewRequest);
+                      }}
+                    >
+                      <X className="mr-1 h-4 w-4" /> Reject
+                    </Button>
+                  )}
+
+                  {/* Create or View Volunteer Delivery Task button */}
+                  {detailedTask ? (
+                    <Link to="/coordinator/tasks">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-primary/40 bg-primary/5 text-primary hover:bg-primary/15 font-semibold gap-1.5"
+                      >
+                        <Truck className="h-4 w-4 text-primary" />
+                        View Task ({detailedTask.status})
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-primary/40 bg-primary/5 text-primary hover:bg-primary/15 font-semibold gap-1.5"
+                      onClick={() => openTaskCreateForRequest(previewRequest)}
+                    >
+                      <Truck className="h-4 w-4 text-primary" />
+                      Create Volunteer Delivery Task
+                    </Button>
+                  )}
+
+                  {previewRequest.status === "Pending" && (
+                    <Button
+                      size="sm"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold shadow-xs"
+                      onClick={() => setApproving(previewRequest)}
+                    >
+                      <Check className="h-4 w-4" /> Approve Request
+                    </Button>
+                  )}
+
+                  {(previewRequest.status === "Approved" || previewRequest.status === "Under Review") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 font-semibold gap-1.5"
+                      onClick={() => {
+                        decide.mutate({ id: previewRequest.id, decision: "Unapprove" });
+                      }}
+                      disabled={decide.isPending}
+                    >
+                      <RotateCcw className="h-4 w-4" /> Disapprove Request
+                    </Button>
+                  )}
                 </div>
               </div>
-            </>
+            </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
+      {/* 🚚 CREATE VOLUNTEER DELIVERY TASK DIALOG */}
+      <Dialog open={!!taskCreatingRequest} onOpenChange={(open) => !open && setTaskCreatingRequest(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Truck className="h-5 w-5" />
+              Create Volunteer Delivery Task
+            </DialogTitle>
+            <DialogDescription>
+              Dispatch this relief supply delivery mission to volunteers. They can accept and complete it via their mobile app.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-xs font-semibold">Task Title</Label>
+              <Input
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                placeholder="e.g., Deliver 10 Packs Food Ration"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold">Delivery Location / Address</Label>
+              <Input
+                value={taskLocation}
+                onChange={(e) => setTaskLocation(e.target.value)}
+                placeholder="e.g., Relief Camp, Galle"
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold">Priority</Label>
+                <Select value={taskPriority} onValueChange={setTaskPriority}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_PRIORITIES.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold">Required Skill</Label>
+                <Input
+                  value={taskSkill}
+                  onChange={(e) => setTaskSkill(e.target.value)}
+                  placeholder="e.g., Logistics & Transport"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            {/* Assignment Mode: Individual vs Team */}
+            <div className="rounded-lg border border-border bg-muted/20 p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Assignment Mode</Label>
+                <span className="text-xs text-muted-foreground">Who executes this?</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={taskType === "INDIVIDUAL" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    setTaskType("INDIVIDUAL");
+                    setVolunteersRequired(1);
+                  }}
+                >
+                  <User className="h-4 w-4" /> Individual (1 Volunteer)
+                </Button>
+                <Button
+                  type="button"
+                  variant={taskType === "TEAM" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    setTaskType("TEAM");
+                    if (volunteersRequired < 2) setVolunteersRequired(3);
+                  }}
+                >
+                  <Users className="h-4 w-4" /> Team Mission
+                </Button>
+              </div>
+
+              {taskType === "TEAM" && (
+                <div className="pt-2 border-t border-border">
+                  <Label className="text-xs font-semibold">Number of Volunteers Needed</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={20}
+                    value={volunteersRequired}
+                    onChange={(e) => setVolunteersRequired(Math.max(2, parseInt(e.target.value) || 2))}
+                    className="mt-1"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Multiple volunteers can join and contribute to this mission.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold">Mission Instructions & Details</Label>
+              <Textarea
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                rows={4}
+                className="mt-1 font-mono text-xs"
+              />
+            </div>
+
+            {/* Live Warehouse Stock Verification Banner */}
+            {isCheckingStock ? (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                Checking warehouse inventory availability...
+              </div>
+            ) : stockCheck ? (
+              stockCheck.isSufficient ? (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div>
+                      <span className="font-semibold">Warehouse Stock Available:</span> In Stock: <strong>{stockCheck.available}</strong> units (Requested: {stockCheck.required} units).
+                    </div>
+                  </div>
+                  <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                    SUFFICIENT
+                  </span>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-800 dark:text-red-300 space-y-1">
+                  <div className="flex items-center justify-between font-bold text-red-700 dark:text-red-400">
+                    <span className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                      INSUFFICIENT WAREHOUSE STOCK
+                    </span>
+                    <span className="rounded bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-300">
+                      SHORTAGE: -{stockCheck.shortage} units
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-red-600 dark:text-red-300">
+                    Warehouse only has <strong>{stockCheck.available}</strong> units in stock, but this citizen request requires <strong>{stockCheck.required}</strong> units. Please restock warehouse before dispatching task.
+                  </p>
+                </div>
+              )
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTaskCreatingRequest(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold"
+              disabled={!taskTitle.trim() || createTaskMutation.isPending || isStockInsufficient}
+              onClick={() => {
+                const tag = taskCreatingRequest ? `[REQUEST_ID:${taskCreatingRequest.id}] [REQUEST_CODE:${taskCreatingRequest.code}] ` : '';
+                createTaskMutation.mutate({
+                  title: taskTitle.trim(),
+                  description: `${tag}${taskDescription.trim()}`,
+                  priority: taskPriority,
+                  required_skill: taskSkill.trim() || undefined,
+                  task_type: taskType,
+                  volunteers_required: volunteersRequired,
+                  location: taskLocation.trim() || undefined,
+                });
+              }}
+            >
+              {createTaskMutation.isPending ? "Dispatching..." : isStockInsufficient ? "Insufficient Warehouse Stock" : "Dispatch Task to Volunteers"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ APPROVE CONFIRMATION DIALOG */}
       <AlertDialog open={!!approving} onOpenChange={(o) => !o && setApproving(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve {approving?.code}?</AlertDialogTitle>
+            <AlertDialogTitle>Approve Request {approving?.code}?</AlertDialogTitle>
             <AlertDialogDescription>
-              {approving?.quantity} {approving?.unit} of {approving?.resourceType} will be reserved for{" "}
-              {approving?.requester}. The requester is notified immediately.
+              {approving?.quantity} {approving?.unit} of {approving?.resourceType} requested by {approving?.requester} will be approved for fulfillment.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={() => {
                 if (approving) decide.mutate({ id: approving.id, decision: "Approved" });
                 setApproving(null);
               }}
             >
-              Approve request
+              Confirm Approval
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* ❌ REJECT WITH MANDATORY REASON DIALOG */}
       <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject {rejecting?.code}</DialogTitle>
-            <DialogDescription>A reason is mandatory and is shared with the requester.</DialogDescription>
+            <DialogTitle>Reject Request</DialogTitle>
+            <DialogDescription>A reason is mandatory and will be visible to the requester.</DialogDescription>
           </DialogHeader>
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Explain why this request cannot be fulfilled..."
+            placeholder="Explain why this request cannot be fulfilled (e.g., duplicated, outside coverage area, or insufficient resources)..."
             rows={4}
           />
           <DialogFooter>
@@ -384,13 +1099,13 @@ function RequestsPage() {
             </Button>
             <Button
               variant="destructive"
-              disabled={reason.trim().length < 5}
+              disabled={reason.trim().length < 5 || decide.isPending}
               onClick={() => {
                 if (rejecting) decide.mutate({ id: rejecting.id, decision: "Rejected", note: reason.trim() });
                 setRejecting(null);
               }}
             >
-              Reject request
+              {decide.isPending ? "Rejecting..." : "Reject Request"}
             </Button>
           </DialogFooter>
         </DialogContent>

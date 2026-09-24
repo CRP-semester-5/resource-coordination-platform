@@ -26,9 +26,9 @@ export const requestsAPI = {
   getAll: (orgId?: string) =>
     http.get("/api/v1/requests", orgId ? { headers: { "x-organization-id": orgId } } : {}),
   getById: (id: string) => http.get(`/api/v1/requests/${id}`),
-  approve: (id: string) => http.patch(`/api/v1/requests/${id}/approve`),
-  reject: (id: string, rejection_reason: string) =>
-    http.patch(`/api/v1/requests/${id}/reject`, { rejection_reason }),
+  approve: (id: string, orgId?: string) => http.patch(`/api/v1/requests/${id}/approve`, {}, orgId ? { headers: { "x-organization-id": orgId } } : {}),
+  unapprove: (id: string, orgId?: string) => http.patch(`/api/v1/requests/${id}/unapprove`, {}, orgId ? { headers: { "x-organization-id": orgId } } : {}),
+  reject: (id: string, rejection_reason: string, orgId?: string) => http.patch(`/api/v1/requests/${id}/reject`, { rejection_reason }, orgId ? { headers: { "x-organization-id": orgId } } : {}),
   cancel: (id: string) => http.patch(`/api/v1/requests/${id}/cancel`),
   fulfill: (id: string) => http.patch(`/api/v1/requests/${id}/fulfill`),
   markInProgress: (id: string) => http.patch(`/api/v1/requests/${id}/progress`),
@@ -49,6 +49,8 @@ export const categoriesAPI = {
 
 export const inventoryAPI = {
   getAll: () => http.get("/api/v1/inventory"),
+  getTransactions: () => http.get("/api/v1/inventory/transactions"),
+  checkStock: (category: string, quantity: number) => http.post("/api/v1/inventory/check-stock", { category, quantity }),
   add: (category_id: string, quantity: number) => http.post("/api/v1/inventory", { category_id, quantity }),
   restock: (id: string, quantity: number) => http.post(`/api/v1/inventory/${id}/restock`, { quantity }),
   allocate: (id: string, quantity: number, code: string) => http.post(`/api/v1/inventory/${id}/allocate`, { quantity, request_code: code }),
