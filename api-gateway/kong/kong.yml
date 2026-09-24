@@ -1,8 +1,8 @@
-_format_version: "3.0"
+﻿_format_version: "3.0"
 _transform: true
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  ResQ Hub — Kong Gateway Declarative Configuration
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+#  ResQ Hub â€” Kong Gateway Declarative Configuration
 #
 #  Mode: DB-less (no Kong database required)
 #  File loaded by Kong at startup via KONG_DECLARATIVE_CONFIG env var.
@@ -12,10 +12,10 @@ _transform: true
 #
 #  Internal service URLs use Docker Compose service names as hostnames.
 #  Kong and all microservices are on the same Docker network (crp-network).
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 services:
-  # ── User Service ─────────────────────────────────────────────────────────────
+  # â”€â”€ User Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: user-service
     url: http://user-service:3001
     connect_timeout: 10000
@@ -23,21 +23,21 @@ services:
     write_timeout: 30000
 
     routes:
-      # Auth routes — public and protected auth endpoints
+      # Auth routes â€” public and protected auth endpoints
       - name: user-service-auth
         paths:
           - /api/v1/auth
         strip_path: false
         preserve_host: false
 
-      # User routes — profile and address management
+      # User routes â€” profile and address management
       - name: user-service-users
         paths:
           - /api/v1/users
         strip_path: false
         preserve_host: false
 
-  # ── Organization Service ──────────────────────────────────────────────────────
+  # â”€â”€ Organization Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: organization-service
     url: http://organization-service:3002
     connect_timeout: 10000
@@ -51,7 +51,7 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── Request Service ───────────────────────────────────────────────────────────
+  # â”€â”€ Request Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: request-service
     url: http://request-service:3004
     connect_timeout: 10000
@@ -65,7 +65,7 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── Resource Service ──────────────────────────────────────────────────────────
+  # â”€â”€ Resource Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: resource-service
     url: http://resource-service:3003
     connect_timeout: 10000
@@ -97,7 +97,7 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── Task Service ──────────────────────────────────────────────────────────────
+  # â”€â”€ Task Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: task-service
     url: http://task-service:3005
     connect_timeout: 10000
@@ -111,7 +111,7 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── Volunteer Service ─────────────────────────────────────────────────────────
+  # â”€â”€ Volunteer Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: volunteer-service
     url: http://volunteer-service:3006
     connect_timeout: 10000
@@ -125,7 +125,7 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── Notification Service ──────────────────────────────────────────────────────
+  # â”€â”€ Notification Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: notification-service
     url: http://notification-service:3007
     connect_timeout: 10000
@@ -139,17 +139,15 @@ services:
         strip_path: false
         preserve_host: false
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Global Plugins — applied to all routes
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+#  Global Plugins â€” applied to all routes
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 plugins:
-  # ── CORS ──────────────────────────────────────────────────────────────────────
+  # â”€â”€ CORS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   - name: cors
     config:
       origins:
-        - "http://localhost:5173"   # Vite dev server (web frontend)
-        - "http://localhost:5174"   # Vite dev server (fallback)
-        - "http://localhost:3000"   # Kong itself (for browser testing)
+        - ".*"
       methods:
         - GET
         - POST
@@ -169,7 +167,7 @@ plugins:
       credentials: true
       max_age: 3600
 
-  # ── Correlation ID ────────────────────────────────────────────────────────────
+  # â”€â”€ Correlation ID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   # Adds X-Correlation-ID to every request for distributed tracing
   - name: correlation-id
     config:
@@ -177,14 +175,14 @@ plugins:
       generator: uuid
       echo_downstream: true
 
-  # ── Request Size Limiting ─────────────────────────────────────────────────────
+  # â”€â”€ Request Size Limiting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   # Reject request bodies larger than 5MB
   - name: request-size-limiting
     config:
       allowed_payload_size: 5
       size_unit: megabytes
 
-  # ── Rate Limiting (default — all routes) ─────────────────────────────────────
+  # â”€â”€ Rate Limiting (default â€” all routes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   # Conservative default: 300 requests per minute per IP
   - name: rate-limiting
     config:
@@ -192,9 +190,9 @@ plugins:
       policy: local
       error_message: "Rate limit exceeded. Please slow down."
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Route-Level Plugins — stricter limits on abuse-prone auth endpoints
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+#  Route-Level Plugins â€” stricter limits on abuse-prone auth endpoints
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Apply tighter rate limiting on auth endpoints (login, register, password reset)
 # This overrides the global rate-limiting plugin for these specific routes.
 # Uncomment and adjust as needed:
@@ -205,3 +203,5 @@ plugins:
 #     minute: 20
 #     policy: local
 #     error_message: "Too many authentication attempts. Please try again later."
+
+
