@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import * as donationController from "../controllers/donation.controller.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
@@ -48,6 +48,12 @@ router.patch(
     requireOrgRole('COORDINATOR', 'ORGANIZATION_ADMIN'),
     validate(rejectDonationSchema),
     donationController.rejectDonation
+);
+
+router.post(
+    "/:id/regenerate-pin",
+    authenticate,
+    donationController.regeneratePin
 );
 
 export default router;
