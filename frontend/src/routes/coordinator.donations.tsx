@@ -24,6 +24,7 @@ import {
   ClipboardList,
   Activity,
   ShieldCheck,
+  KeyRound,
 } from "lucide-react";
 import { donationsAPI, tasksAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
@@ -128,6 +129,7 @@ function DonationsPage() {
   const [accepting, setAccepting] = useState<NormalizedDonation | null>(null);
   const [rejecting, setRejecting] = useState<NormalizedDonation | null>(null);
   const [reason, setReason] = useState("");
+  const [revealedDepositPins, setRevealedDepositPins] = useState<Record<string, boolean>>({});
   const [copiedPhone, setCopiedPhone] = useState(false);
 
   // Create Task from Donation state
@@ -153,14 +155,16 @@ function DonationsPage() {
         return [];
       }
     },
-    refetchInterval: 3000,
+    enabled: !!orgId,
+    refetchInterval: 4000,
   });
 
   // 2. Fetch Tasks for linking volunteer progress
   const { data: tasksRes } = useQuery({
     queryKey: ["tasks", orgId],
     queryFn: () => tasksAPI.getAll(),
-    refetchInterval: 2500,
+    enabled: !!orgId,
+    refetchInterval: 4000,
   });
 
   const allTasks: any[] = useMemo(() => {
@@ -536,19 +540,19 @@ function DonationsPage() {
                         <span className="font-semibold text-foreground">Mission Status:</span>
                         {detailedTask.status === "COMPLETED" ? (
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> 100% Delivered to Store
+                            <CheckCircle2 className="h-3.5 w-3.5" /> 100% Deposited in Warehouse
                           </span>
                         ) : detailedTask.status === "IN_PROGRESS" ? (
                           <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                            <Activity className="h-3.5 w-3.5 animate-pulse" /> Volunteer On The Way
+                            <Activity className="h-3.5 w-3.5 animate-pulse" /> In Transit to Warehouse (50%)
                           </span>
                         ) : detailedTask.status === "ASSIGNED" ? (
                           <span className="font-bold text-purple-600 dark:text-purple-400">
-                            Volunteer Assigned (Preparing)
+                            Volunteer Assigned (En Route to Donor)
                           </span>
                         ) : (
                           <span className="font-bold text-amber-600 dark:text-amber-400">
-                            Dispatched (Waiting for Volunteer)
+                            Dispatched (Awaiting Volunteer)
                           </span>
                         )}
                       </div>
@@ -579,13 +583,137 @@ function DonationsPage() {
                         </div>
                       )}
 
+                      {/* Dual-Leg Security PINs Verification Box */}
+                      {(() => {
+                        const taskSeed = (parseInt((detailedTask.task_id || detailedTask.id || '').replace(/[^0-9]/g, '').slice(-4) || '8421', 10) % 9000) + 1000;
+                        const warehousePin = detailedTask.warehouse_pickup_pin || taskSeed.toString();
+                        const isDelivered = detailedTask.status === "COMPLETED";
+                        const isPickedUp = isDelivered || detailedTask.status === "IN_PROGRESS";
+
+                        return (
+                          <div className="mt-3 rounded-lg border border-primary/20 bg-background/80 p-3 text-xs space-y-2.5">
+                            <div className="flex items-center justify-between font-semibold text-foreground">
+                              <span className="flex items-center gap-1.5 text-primary font-bold">
+                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN Lifecycle
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">Central Warehouse Verification</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {/* Stage 1: Donor Collection (Private to Donor - Hidden from Admin) */}
+                              <div className={`rounded-md p-2.5 border ${isPickedUp ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : 'bg-muted/40 border-border text-foreground'}`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-[11px]">Stage 1: Donor Collection</span>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isPickedUp ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'}`}>
+                                    {isPickedUp ? 'COLLECTED' : 'AWAITING PICKUP'}
+                                  </span>
+                                </div>
+                                <div className="mt-1.5 flex flex-col gap-0.5">
+                                  <span className="font-mono text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-1">
+                                    {isPickedUp ? (
+                                      <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> •••• (Verified)</>
+                                    ) : (
+                                      <>🔒 •••• (Private to Donor)</>
+                                    )}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {isPickedUp
+                                      ? "Volunteer verified donor's app PIN at collection"
+                                      : "Donor displays 4-digit PIN on mobile app to volunteer"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Stage 2: Warehouse Store Deposit (Active only during drop-off, Disappears when entered) */}
+                              <div className={`rounded-md p-2.5 border ${isDelivered ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : isPickedUp ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200' : 'bg-muted/30 border-dashed border-border text-muted-foreground'}`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-[11px]">Stage 2: Warehouse Deposit PIN</span>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isDelivered ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : isPickedUp ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse' : 'bg-slate-500/10 text-slate-500'}`}>
+                                    {isDelivered ? 'IN STOCK & CLOSED' : isPickedUp ? 'ACTIVE FOR STORE STAFF' : 'PENDING STAGE 1'}
+                                  </span>
+                                </div>
+                                <div className="mt-1.5 flex flex-col gap-0.5">
+                                  {isDelivered ? (
+                                    <>
+                                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                      </span>
+                                      <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
+                                        Stock automatically credited to relief inventory
+                                      </span>
+                                    </>
+                                  ) : isPickedUp ? (
+                                    revealedDepositPins[detailedTask.id || detailedTask.task_id || ''] ? (
+                                      <>
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-mono text-base font-extrabold tracking-widest text-indigo-600 dark:text-indigo-400">
+                                            {warehousePin}
+                                          </span>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 px-2 text-[10px] text-indigo-600 hover:bg-indigo-500/10"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigator.clipboard.writeText(warehousePin);
+                                              toast.success('Warehouse Deposit PIN copied!');
+                                            }}
+                                          >
+                                            <Copy className="h-3 w-3 mr-1" /> Copy
+                                          </Button>
+                                        </div>
+                                        <span className="text-[10px] text-indigo-700/80 dark:text-indigo-300 font-medium">
+                                          Active Code: Warehouse staff provide to volunteer to store goods
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <div>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 text-[10px] font-semibold border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 w-full justify-center gap-1"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRevealedDepositPins((prev) => ({
+                                              ...prev,
+                                              [detailedTask.id || detailedTask.task_id || '']: true,
+                                            }));
+                                            toast.info('Warehouse Deposit PIN revealed for store staff.');
+                                          }}
+                                        >
+                                          <KeyRound className="h-3 w-3" /> Reveal Deposit PIN
+                                        </Button>
+                                        <span className="text-[10px] text-muted-foreground block mt-0.5">
+                                          Click to view code for volunteer drop-off receipt.
+                                        </span>
+                                      </div>
+                                    )
+                                  ) : (
+                                    <>
+                                      <span className="font-mono text-xs italic text-muted-foreground">
+                                        ⏳ PIN Inactive (Activates when volunteer collects items)
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        Generated once volunteer completes Stage 1
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* Delivered Banner */}
                       {detailedTask.status === "COMPLETED" && (
                         <div className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs text-emerald-950 dark:text-emerald-100 flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             <span>
-                              <strong>Package Delivered:</strong> Volunteer has delivered items to the relief store.
+                              <strong>Package Delivered:</strong> Volunteer has deposited items at the central relief store.
                             </span>
                           </div>
                           {previewDonation.status === "Pending" && (

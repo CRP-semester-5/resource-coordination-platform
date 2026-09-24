@@ -582,6 +582,234 @@ function TasksPage() {
                 )}
               </div>
 
+              {/* SECTION: DUAL-LEG SECURITY VERIFICATION PINS */}
+              {(() => {
+                const isWarehouseDone = (selectedTask.task_progress || []).some(
+                  (p: any) => (p.remarks || '').toLowerCase().includes('warehouse') || (p.progress_percent || 0) >= 50
+                ) || selectedTask.status === 'COMPLETED';
+                const isCompleted = selectedTask.status === 'COMPLETED';
+                const isAssigned = selectedTask.status === 'ASSIGNED' || selectedTask.status === 'IN_PROGRESS';
+                const warehousePin = selectedTask.warehouse_pickup_pin || '8421';
+                const isPinRevealed = revealedTaskPins[selectedTask.id || selectedTask.task_id || ''] || false;
+                const isDonation = (selectedTask.title || '').toLowerCase().includes('pickup') || (selectedTask.description || '').toLowerCase().includes('donation');
+
+                return (
+                  <div className="p-3.5 bg-background rounded-xl border border-border shadow-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                      <span className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                        <ShieldCheck className="h-4 w-4 text-primary" /> Multi-Stage Security PIN Lifecycle
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-medium">Stage-by-Stage Verification</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Stage 1 Box */}
+                      <div className={`p-3 rounded-lg border flex flex-col justify-between ${
+                        isWarehouseDone
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
+                          : isAssigned
+                          ? 'bg-primary/5 border-primary/30 text-foreground'
+                          : 'bg-muted/30 border-dashed border-border text-muted-foreground'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold">
+                            {isDonation ? '🎁 Stage 1: Donor Collection PIN' : '📦 Stage 1: Warehouse Dispatch PIN'}
+                          </span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            isWarehouseDone
+                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                              : isAssigned
+                              ? 'bg-primary/20 text-primary animate-pulse'
+                              : 'bg-slate-500/10 text-slate-500'
+                          }`}>
+                            {isWarehouseDone ? 'VERIFIED & CLOSED' : isAssigned ? 'ACTIVE FOR STAFF' : 'PENDING ASSIGNMENT'}
+                          </span>
+                        </div>
+
+                        <div className="mt-2">
+                          {isWarehouseDone ? (
+                            <div>
+                              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                              </span>
+                              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300 mt-0.5">
+                                {isDonation
+                                  ? "Items collected from donor; en route to Central Warehouse."
+                                  : "Stock released to volunteer; goods now in vehicle transit."}
+                              </p>
+                            </div>
+                          ) : isDonation ? (
+                            <div>
+                              <span className="text-sm font-bold tracking-widest text-muted-foreground font-mono block">
+                                🔒 •••• (Private to Donor)
+                              </span>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Donor provides 4-digit code directly from mobile app to volunteer.
+                              </p>
+                            </div>
+                          ) : isAssigned ? (
+                            isPinRevealed ? (
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xl font-black tracking-widest text-primary font-mono block">
+                                    {warehousePin}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-[10px] text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(warehousePin);
+                                      toast.success('Warehouse Dispatch PIN copied!');
+                                    }}
+                                  >
+                                    <Copy className="h-3 w-3 mr-1" /> Copy
+                                  </Button>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Provide to volunteer at warehouse upon goods collection.
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 w-full justify-center gap-1.5"
+                                  onClick={() => {
+                                    setRevealedTaskPins((prev) => ({
+                                      ...prev,
+                                      [selectedTask.id || selectedTask.task_id || '']: true,
+                                    }));
+                                    toast.info('Warehouse Dispatch PIN revealed for staff.');
+                                  }}
+                                >
+                                  <KeyRound className="h-3.5 w-3.5" /> Reveal Warehouse PIN
+                                </Button>
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                  Click to display 4-digit code for volunteer collection.
+                                </p>
+                              </div>
+                            )
+                          ) : (
+                            <div>
+                              <span className="text-xs italic text-muted-foreground block">
+                                ⏳ Inactive (Activates when volunteer accepts mission)
+                              </span>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Awaiting volunteer assignment.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Stage 2 Box */}
+                      <div className={`p-3 rounded-lg border flex flex-col justify-between ${
+                        isCompleted
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
+                          : isWarehouseDone && isDonation
+                          ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200'
+                          : 'bg-muted/40 border-border text-foreground'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold">
+                            {isDonation ? '🏛️ Stage 2: Warehouse Deposit PIN' : '🤝 Stage 2: Recipient Doorstep PIN'}
+                          </span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            isCompleted
+                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                              : isWarehouseDone && isDonation
+                              ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse'
+                              : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'
+                          }`}>
+                            {isCompleted
+                              ? 'COMPLETED & CLOSED'
+                              : isWarehouseDone && isDonation
+                              ? 'ACTIVE FOR STORE'
+                              : 'AWAITING STAGE 1'}
+                          </span>
+                        </div>
+
+                        <div className="mt-2">
+                          {isCompleted ? (
+                            <div>
+                              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                              </span>
+                              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300 mt-0.5">
+                                {isDonation
+                                  ? "Items safely deposited and credited to emergency relief inventory."
+                                  : "Relief delivery verified by recipient; mission fulfilled."}
+                              </p>
+                            </div>
+                          ) : isDonation && isWarehouseDone ? (
+                            isPinRevealed ? (
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xl font-black tracking-widest text-indigo-600 dark:text-indigo-400 font-mono block">
+                                    {warehousePin}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-[10px] text-indigo-600 hover:bg-indigo-500/10"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(warehousePin);
+                                      toast.success('Warehouse Deposit PIN copied!');
+                                    }}
+                                  >
+                                    <Copy className="h-3 w-3 mr-1" /> Copy
+                                  </Button>
+                                </div>
+                                <p className="text-[10px] text-indigo-700/80 dark:text-indigo-300 mt-0.5">
+                                  Store staff provide to volunteer to confirm inventory receipt.
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs font-semibold border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 w-full justify-center gap-1.5"
+                                  onClick={() => {
+                                    setRevealedTaskPins((prev) => ({
+                                      ...prev,
+                                      [selectedTask.id || selectedTask.task_id || '']: true,
+                                    }));
+                                    toast.info('Warehouse Deposit PIN revealed for store staff.');
+                                  }}
+                                >
+                                  <KeyRound className="h-3.5 w-3.5" /> Reveal Store Deposit PIN
+                                </Button>
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                  Click to display code for inventory inward receipt.
+                                </p>
+                              </div>
+                            )
+                          ) : (
+                            <div>
+                              <span className="text-sm font-bold tracking-widest text-muted-foreground font-mono block">
+                                🔒 •••• ({isDonation ? 'Pending Stage 1 Collection' : 'Private to Recipient'})
+                              </span>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {isDonation
+                                  ? "Activates once volunteer completes Stage 1 collection from donor."
+                                  : "Recipient provides 4-digit PIN directly from mobile app to volunteer."}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* SECTION B: LIVE PROGRESS & SITREP LOG */}
               <div className="space-y-3 border-t border-border pt-4">
                 <div className="flex items-center gap-2">
