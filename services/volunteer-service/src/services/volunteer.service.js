@@ -12,19 +12,34 @@ export const registerVolunteer = async (userId, data) => {
         }
     }
 
+    let orgId = data.organization_id;
+    if (!orgId) {
+        const { data: orgData } = await supabase.from("organizations").select("organization_id").limit(1);
+        if (orgData && orgData.length > 0) {
+            orgId = orgData[0].organization_id;
+        } else {
+            throw new AppError(400, "No organizations found to join.");
+        }
+    }
+
     let volunteerRecord;
     // Check if already registered
     const { data: existing, error: existError } = await volunteerRepo.getVolunteerByUserId(userId);
     
     if (!existError && existing) {
         // Update existing volunteer application
+        const updatePayload = {
+            availability_status: data.is_available === false ? 'UNAVAILABLE' : 'AVAILABLE',
+            experience_years: data.experience_years || 0,
+            updated_at: new Date().toISOString()
+        };
+        if (orgId) {
+            updatePayload.organization_id = orgId;
+        }
+
         const { data: updated, error: updateErr } = await supabase
             .from("volunteers")
-            .update({
-                availability_status: data.is_available === false ? 'UNAVAILABLE' : 'AVAILABLE',
-                experience_years: data.experience_years || 0,
-                updated_at: new Date().toISOString()
-            })
+            .update(updatePayload)
             .eq("volunteer_id", existing.volunteer_id)
             .select()
             .single();
@@ -35,16 +50,6 @@ export const registerVolunteer = async (userId, data) => {
         // Clear existing skills to re-sync
         await supabase.from("volunteer_skills").delete().eq("volunteer_id", existing.volunteer_id);
     } else {
-        let orgId = data.organization_id;
-        if (!orgId) {
-            const { data: orgData } = await supabase.from("organizations").select("organization_id").limit(1);
-            if (orgData && orgData.length > 0) {
-                orgId = orgData[0].organization_id;
-            } else {
-                throw new AppError(400, "No organizations found to join.");
-            }
-        }
-
         const { data: created, error } = await volunteerRepo.createVolunteer({
             user_id: userId,
             organization_id: orgId,
@@ -54,6 +59,29 @@ export const registerVolunteer = async (userId, data) => {
 
         if (error) throw new AppError(500, error.message);
         volunteerRecord = created;
+    }
+
+    // Automatically link volunteer into organization_members table
+    if (orgId) {
+        try {
+            const { data: existingMember } = await supabase
+                .from("organization_members")
+                .select("organization_member_id")
+                .eq("organization_id", orgId)
+                .eq("user_id", userId)
+                .maybeSingle();
+
+            if (!existingMember) {
+                await supabase.from("organization_members").insert([{
+                    organization_id: orgId,
+                    user_id: userId,
+                    role: 'COORDINATOR',
+                    status: 'ACTIVE'
+                }]);
+            }
+        } catch (orgMemberErr) {
+            console.error("Warning: Failed to create organization_members entry:", orgMemberErr);
+        }
     }
 
     // Save skills
