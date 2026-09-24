@@ -36,8 +36,8 @@ export const createGuestContact = async (contactData) => {
         .single();
 };
 
-// Get All Requests — returns all PENDING (unassigned) + all requests owned by this org
-export const findAll = async (orgId = null) => {
+// Get All Requests — returns all requests for coordination, optionally filtered by user
+export const findAll = async (orgId = null, userId = null, myRequestsOnly = false) => {
     let query = supabase
         .from("requests")
         .select(`
@@ -47,9 +47,8 @@ export const findAll = async (orgId = null) => {
         `)
         .order("created_at", { ascending: false });
 
-    if (orgId) {
-        // All PENDING (no org yet, open for any coordinator) OR belong to this org
-        query = query.or(`status.eq.PENDING,organization_id.eq.${orgId}`);
+    if (myRequestsOnly && userId) {
+        query = query.eq("requester_id", userId);
     }
 
     return await query;
@@ -166,4 +165,20 @@ export const deleteRequest = async (requestId) => {
         .from("requests")
         .delete()
         .eq("request_id", requestId);
+};
+
+
+// Unverify / Revert Request to PENDING
+export const unverify = async (requestId) => {
+    return await supabase
+        .from("requests")
+        .update({
+            status: "PENDING",
+            verified_by: null,
+            verified_at: null,
+            rejection_reason: null
+        })
+        .eq("request_id", requestId)
+        .select()
+        .single();
 };

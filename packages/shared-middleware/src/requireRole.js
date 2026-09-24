@@ -125,6 +125,23 @@ export function requireOrgRole(...args) {
                     || req.body?.organization_id
 
         if (!orgId) {
+            try {
+                const supabase = getSupabase()
+                const { data: memberOrgs } = await supabase
+                    .from('organization_members')
+                    .select('organization_id, role, status')
+                    .eq('user_id', userId)
+                    .eq('status', 'ACTIVE')
+
+                const matching = memberOrgs?.find(m => allowedRoles.includes(m.role))
+                if (matching) {
+                    req.orgMembership = { org_id: matching.organization_id, role: matching.role }
+                    return next()
+                }
+            } catch (fallbackErr) {
+                console.warn('[requireOrgRole] fallback lookup error:', fallbackErr.message)
+            }
+
             return res.status(400).json({
                 message: 'Organization context is required. Provide x-organization-id header or organizationId param.',
             })
