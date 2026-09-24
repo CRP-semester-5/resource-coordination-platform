@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import * as requestController from "../controllers/request.controller.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { optionalAuth } from "../middleware/optionalAuth.middleware.js";
@@ -64,8 +64,8 @@ router.patch(
     requestController.cancelRequest
 );
 
-router.patch("/:id/progress", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.markInProgress);
+router.patch("/:id/progress", authenticate, requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.markInProgress);
 
-router.patch("/:id/fulfill", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.fulfillRequest);
+router.patch("/:id/fulfill", authenticate, requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.fulfillRequest);
 
 export default router;

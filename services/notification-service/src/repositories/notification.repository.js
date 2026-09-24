@@ -1,5 +1,15 @@
 import { supabase } from "../lib/supabase.js";
 
+// Insert a new notification row
+export const create = async (notificationData) => {
+    return await supabase
+        .from("notifications")
+        .insert([notificationData])
+        .select()
+        .single();
+};
+
+
 export const getNotificationsByUser = async (userId) => {
     return await supabase
         .from("notifications")

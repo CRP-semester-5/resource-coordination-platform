@@ -10,6 +10,7 @@ import { authAPI } from "@/api/auth";
 import { setToken, clearToken, getToken, setStoredOrgId, getStoredOrgId } from "@/api/http";
 import { orgsAPI } from "@/api/real";
 import { useQueryClient } from "@tanstack/react-query";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
 
 /* ------------------------------------------------------------------ types */
 
@@ -107,9 +108,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // On mount: if there's a stored token, rehydrate profile
+  // On mount: if there's a stored token, rehydrate profile and reconnect socket
   useEffect(() => {
-    if (getToken()) {
+    const storedToken = getToken();
+    if (storedToken) {
+      connectSocket(storedToken);
       fetchProfile().finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -121,7 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const res = await authAPI.login({ email, password });
-        setToken(res.data.token);
+        const token = res.data.token;
+        setToken(token);
+        // Open the WebSocket connection immediately with the fresh JWT
+        connectSocket(token);
         // Fetch fresh profile and read roles directly from the response
         // so the caller gets the resolved isSuperAdmin — not the stale closure.
         const profileRes = await authAPI.getMe();
@@ -149,6 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setMyOrgs([]);
     _setSelectedOrg(null);
+    // Tear down the WebSocket connection
+    disconnectSocket();
     // Clear ALL React Query cached data so the next user never sees
     // data that belonged to the previous session.
     queryClient.clear();
