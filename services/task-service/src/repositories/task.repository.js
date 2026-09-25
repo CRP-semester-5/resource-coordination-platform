@@ -20,14 +20,22 @@ export const formatTaskWithTeamInfo = (task) => {
     }
 
     const assignments = task.task_assignments || [];
-    const volunteers = assignments
-        .map(a => {
-            const u = a.volunteers?.users || {};
+    const sortedAssignments = [...assignments].sort(
+        (a, b) => new Date(a.assigned_at || 0) - new Date(b.assigned_at || 0)
+    );
+    const volunteers = sortedAssignments
+        .map((a, index) => {
             const vol = a.volunteers || {};
+            const u = vol.users || {};
+            const isLeader = a.is_leader === true || index === 0;
             return {
                 volunteer_id: a.volunteer_id,
+                user_id: vol.user_id,
                 assignment_id: a.assignment_id,
-                assignment_status: a.assignment_status,
+                assignment_status: a.assignment_status || 'ACCEPTED',
+                is_leader: isLeader,
+                role: isLeader ? 'LEADER' : 'MEMBER',
+                assigned_at: a.assigned_at,
                 name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Volunteer',
                 first_name: u.first_name || 'Volunteer',
                 last_name: u.last_name || '',
@@ -116,6 +124,7 @@ export const getTasks = async (organizationId) => {
             completed_at,
             volunteers (
                 volunteer_id,
+                user_id,
                 users ( first_name, last_name, email, phone )
             )
         ),
@@ -188,6 +197,7 @@ export const getTasksByUserId = async (userId) => {
                         assignment_status,
                         volunteers (
                             volunteer_id,
+                            user_id,
                             users ( first_name, last_name, email )
                         )
                     )
@@ -202,10 +212,16 @@ export const getTasksByUserId = async (userId) => {
                     const activeAssignments = (a.tasks.task_assignments || []).filter(
                         x => x.assignment_status !== 'CANCELLED' && x.assignment_status !== 'REJECTED'
                     );
+                    const myVolunteerId = a.volunteer_id;
+                    const leaderVol = (formatted.volunteers || [])[0];
+                    const isLeader = !leaderVol || leaderVol.volunteer_id === myVolunteerId || formatted.task_type === 'INDIVIDUAL';
+
                     tasksMap.set(a.tasks.task_id, {
                         ...formatted,
                         is_my_assignment: true,
                         my_assignment_status: a.assignment_status,
+                        is_leader: isLeader,
+                        my_role: isLeader ? 'LEADER' : 'MEMBER',
                         active_volunteers_count: activeAssignments.length,
                         is_full: activeAssignments.length >= formatted.volunteers_required
                     });
@@ -378,3 +394,68 @@ export const getTaskProgress = async (taskId) => {
         .eq("task_id", taskId)
         .order("updated_at", { ascending: false });
 };
+
+export const memberCheckIn = async (taskId, volunteerId) => {
+    const { data: assignment, error: assignError } = await supabase
+        .from("task_assignments")
+        .update({ assignment_status: 'REPORTED_ON_SITE' })
+        .eq("task_id", taskId)
+        .eq("volunteer_id", volunteerId)
+        .select()
+        .maybeSingle();
+
+    if (assignError) {
+        console.warn("memberCheckIn update note:", assignError.message);
+    }
+
+    const { data: vol } = await supabase
+        .from("volunteers")
+        .select("user_id, users ( first_name, last_name )")
+        .eq("volunteer_id", volunteerId)
+        .maybeSingle();
+
+    const name = vol?.users ? `${vol.users.first_name || ''} ${vol.users.last_name || ''}`.trim() : 'Team Member';
+    const userId = vol?.user_id;
+
+    await supabase.from("task_progress").insert([{
+        task_id: taskId,
+        updated_by_user_id: userId,
+        progress_percent: 25,
+        remarks: `[MEMBER_CHECKIN] ${name} reported arrived at mission site (Awaiting Leader Verification)`
+    }]);
+
+    return assignment || { task_id: taskId, volunteer_id: volunteerId, assignment_status: 'REPORTED_ON_SITE' };
+};
+
+export const verifyMemberOnSite = async (taskId, targetVolunteerId, verifiedByUserId) => {
+    const { data: assignment, error: assignError } = await supabase
+        .from("task_assignments")
+        .update({ assignment_status: 'VERIFIED_ON_SITE' })
+        .eq("task_id", taskId)
+        .eq("volunteer_id", targetVolunteerId)
+        .select()
+        .maybeSingle();
+
+    if (assignError) {
+        console.warn("verifyMemberOnSite update note:", assignError.message);
+    }
+
+    const { data: vol } = await supabase
+        .from("volunteers")
+        .select("users ( first_name, last_name )")
+        .eq("volunteer_id", targetVolunteerId)
+        .maybeSingle();
+
+    const targetName = vol?.users ? `${vol.users.first_name || ''} ${vol.users.last_name || ''}`.trim() : 'Team Member';
+
+    await supabase.from("task_progress").insert([{
+        task_id: taskId,
+        updated_by_user_id: verifiedByUserId,
+        progress_percent: 25,
+        remarks: `[LEADER_VERIFIED] Team Leader verified ${targetName} on site`
+    }]);
+
+    return assignment || { task_id: taskId, volunteer_id: targetVolunteerId, assignment_status: 'VERIFIED_ON_SITE' };
+};
+
+
