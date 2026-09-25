@@ -666,53 +666,61 @@ function TasksPage() {
                         `Volunteer #${idx + 1}`;
                       const phone = user.phone || a.volunteers?.phone_number || "No phone";
                       const email = user.email || "";
-                      const isTeam = selectedTask.task_type === 'TEAM' || (selectedTask.volunteers_required || 1) > 1;
+                      const isTeam =
+                        selectedTask.task_type === "TEAM" ||
+                        (selectedTask.volunteers_required || 1) > 1;
                       const isLeader = a.is_leader === true || idx === 0;
 
                       return (
                         <div
                           key={a.assignment_id || idx}
                           className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                            isTeam && isLeader 
-                              ? 'border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10' 
-                              : 'border-border bg-card hover:bg-muted/30'
+                            isTeam && isLeader
+                              ? "border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10"
+                              : "border-border bg-card hover:bg-muted/30"
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                              isTeam && isLeader 
-                                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/30' 
-                                : 'bg-primary/10 text-primary'
-                            }`}>
-                              {isTeam && isLeader ? '⭐' : name.substring(0, 2).toUpperCase()}
+                            <div
+                              className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                                isTeam && isLeader
+                                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/30"
+                                  : "bg-primary/10 text-primary"
+                              }`}
+                            >
+                              {isTeam && isLeader ? "⭐" : name.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-semibold text-xs text-foreground">{name}</p>
                                 {isTeam && (
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                    isLeader 
-                                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30' 
-                                      : 'bg-muted text-muted-foreground border-border'
-                                  }`}>
-                                    {isLeader ? '⭐ Team Leader' : '👥 Member'}
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                      isLeader
+                                        ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                                        : "bg-muted text-muted-foreground border-border"
+                                    }`}
+                                  >
+                                    {isLeader ? "⭐ Team Leader" : "👥 Member"}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] text-muted-foreground">{email} • {phone}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {email} • {phone}
+                              </p>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {a.assignment_status === 'VERIFIED_ON_SITE' ? (
+                            {a.assignment_status === "VERIFIED_ON_SITE" ? (
                               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                                 🟢 Verified on Site
                               </span>
-                            ) : a.assignment_status === 'REPORTED_ON_SITE' ? (
+                            ) : a.assignment_status === "REPORTED_ON_SITE" ? (
                               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
                                 🟡 Reported on Site
                               </span>
-                            ) : a.assignment_status === 'COMPLETED' ? (
+                            ) : a.assignment_status === "COMPLETED" ? (
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                                 ✅ Completed
                               </span>
