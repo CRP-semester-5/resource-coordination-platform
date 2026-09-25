@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  API Gateway CI
+# ─────────────────────────────────────────────────────────────────────────────
+name: API Gateway CI
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "api-gateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "api-gateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
+concurrency:
+  group: api-gateway-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    name: Validate Kong Config & Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validate Kong Config (deck)
+        run: |
+          curl -sL https://github.com/Kong/deck/releases/download/v1.38.0/deck_1.38.0_linux_amd64.tar.gz -o deck.tar.gz
+          tar -xf deck.tar.gz -C /usr/local/bin deck
+          deck validate -s api-gateway/kong/kong.yml
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build API Gateway Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: api-gateway
+          file: api-gateway/Dockerfile
+          push: false
+          tags: crp/api-gateway:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
