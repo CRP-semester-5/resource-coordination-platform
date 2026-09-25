@@ -1,3 +1,4 @@
+import { supabase } from "../lib/supabase.js";
 import * as taskService from "../services/task.service.js";
 
 export const createTask = async (req, res, next) => {
@@ -150,3 +151,25 @@ export const regeneratePin = async (req, res, next) => {
         return res.status(error.statusCode || 400).json({ success: false, message: error.message });
     }
 };
+
+export const memberCheckIn = async (req, res, next) => {
+    try {
+        const { volunteer_id } = req.body || {};
+        const result = await taskService.memberCheckIn(req.params.id, req.user.sub, volunteer_id);
+        return res.json({ success: true, message: "Arrival on site reported successfully", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const verifyMember = async (req, res, next) => {
+    try {
+        const { volunteer_id } = req.body || {};
+        const result = await taskService.verifyMember(req.params.id, req.user.sub, volunteer_id);
+        return res.json({ success: true, message: "Member verified on site by Team Leader", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+

@@ -726,3 +726,18 @@ export const regeneratePin = async (taskId, userId) => {
         generated_at: new Date().toISOString()
     };
 };
+
+export const memberCheckIn = async (taskId, userId, volunteerId) => {
+    let volId = volunteerId;
+    if (!volId) {
+        const vol = await getVolunteerByUserId(userId);
+        if (vol) volId = vol.volunteer_id;
+    }
+    if (!volId) throw new AppError(400, "Volunteer profile not found for user");
+    return await taskRepo.memberCheckIn(taskId, volId);
+};
+
+export const verifyMember = async (taskId, userId, targetVolunteerId) => {
+    if (!targetVolunteerId) throw new AppError(400, "Target volunteer ID is required");
+    return await taskRepo.verifyMemberOnSite(taskId, targetVolunteerId, userId);
+};

@@ -78,4 +78,17 @@ router.post(
 );
 
 
+
+router.post(
+    "/:id/member-checkin",
+    authenticate,
+    taskController.memberCheckIn
+);
+
+router.post(
+    "/:id/verify-member",
+    authenticate,
+    taskController.verifyMember
+);
+
 export default router;
