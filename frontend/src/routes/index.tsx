@@ -1,6 +1,14 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, Boxes, ClipboardList, HeartHandshake, LifeBuoy, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Boxes,
+  ClipboardList,
+  HeartHandshake,
+  LifeBuoy,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/context/auth";
 
 export const Route = createFileRoute("/")({
@@ -18,10 +26,26 @@ export const Route = createFileRoute("/")({
 });
 
 const highlights = [
-  { icon: ClipboardList, title: "Help requests", text: "Verify, approve or reject community requests with a full status trail." },
-  { icon: HeartHandshake, title: "Donations", text: "Review donor offers and move accepted items straight into inventory." },
-  { icon: Boxes, title: "Inventory", text: "Live stock levels with low-stock and expiry alerts per warehouse." },
-  { icon: Users, title: "Volunteers & tasks", text: "Approve volunteers, match skills and track relief task progress." },
+  {
+    icon: ClipboardList,
+    title: "Help requests",
+    text: "Verify, approve or reject community requests with a full status trail.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Donations",
+    text: "Review donor offers and move accepted items straight into inventory.",
+  },
+  {
+    icon: Boxes,
+    title: "Inventory",
+    text: "Live stock levels with low-stock and expiry alerts per warehouse.",
+  },
+  {
+    icon: Users,
+    title: "Volunteers & tasks",
+    text: "Approve volunteers, match skills and track relief task progress.",
+  },
 ];
 
 function Landing() {
@@ -56,8 +80,9 @@ function Landing() {
           Resource Coordination Platform for Community Resilience
         </h1>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-          ResQ Hub brings emergency requests, donations, inventory, volunteers and relief tasks into a single
-          coordinated workspace so community organizations can respond faster and with less duplication.
+          ResQ Hub brings emergency requests, donations, inventory, volunteers and relief tasks into
+          a single coordinated workspace so community organizations can respond faster and with less
+          duplication.
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -70,10 +95,12 @@ function Landing() {
             </span>
             <h2 className="mt-4 text-lg font-semibold">Coordinator workspace</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Dashboard, requests, donations, inventory, volunteers and tasks for your organizations.
+              Dashboard, requests, donations, inventory, volunteers and tasks for your
+              organizations.
             </p>
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
-              Open workspace <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              Open workspace{" "}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
 
@@ -86,10 +113,12 @@ function Landing() {
             </span>
             <h2 className="mt-4 text-lg font-semibold">Super admin console</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Verify organizations, manage users and roles, resource categories and the platform audit log.
+              Verify organizations, manage users and roles, resource categories and the platform
+              audit log.
             </p>
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
-              Open console <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              Open console{" "}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
         </div>

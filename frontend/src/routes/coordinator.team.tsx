@@ -102,7 +102,10 @@ function TeamPage() {
         <div className="mb-6">
           <Button
             id="invite-member-btn"
-            onClick={() => { setShowInvite(true); setInviteError(""); }}
+            onClick={() => {
+              setShowInvite(true);
+              setInviteError("");
+            }}
             className="gap-2"
           >
             <UserPlus className="size-4" />
@@ -126,17 +129,28 @@ function TeamPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Member</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Role</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Joined</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                  Member
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                  Role
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">
+                  Joined
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody>
               {members.map((m) => {
                 const rc = ROLE_COLORS[m.role] ?? { bg: "#F1F5F9", color: "#475569" };
                 return (
-                  <tr key={m.user_id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                  <tr
+                    key={m.user_id}
+                    className="border-b border-border last:border-0 hover:bg-muted/30"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
@@ -207,12 +221,12 @@ function TeamPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-muted-foreground">
-                Role
-              </label>
+              <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Role</label>
               <select
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as "COORDINATOR" | "ORGANIZATION_ADMIN")}
+                onChange={(e) =>
+                  setInviteRole(e.target.value as "COORDINATOR" | "ORGANIZATION_ADMIN")
+                }
                 className="w-full rounded-lg border border-input px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="COORDINATOR">Coordinator</option>
@@ -220,7 +234,10 @@ function TeamPage() {
               </select>
             </div>
             {inviteError && (
-              <div className="rounded-lg px-3 py-2.5 text-sm" style={{ background: "#FEE2E2", color: "#991B1B" }}>
+              <div
+                className="rounded-lg px-3 py-2.5 text-sm"
+                style={{ background: "#FEE2E2", color: "#991B1B" }}
+              >
                 {inviteError}
               </div>
             )}

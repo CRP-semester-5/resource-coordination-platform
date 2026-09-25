@@ -7,17 +7,29 @@ import { PageHeader } from "@/components/page-header";
 import { Toolbar, EmptyState } from "@/components/toolbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/admin/categories")({
   head: () => ({
-    meta: [
-      { title: "Resource Categories — ResQ Hub Admin" },
-    ],
+    meta: [{ title: "Resource Categories — ResQ Hub Admin" }],
   }),
   component: CategoriesPage,
 });
@@ -35,7 +47,7 @@ function CategoriesPage() {
     queryFn: () => categoriesAPI.getAll(),
   });
 
-  const categories = Array.isArray(response?.data) ? response.data : (response?.data?.data || []);
+  const categories = Array.isArray(response?.data) ? response.data : response?.data?.data || [];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => categoriesAPI.create(data),
@@ -49,23 +61,22 @@ function CategoriesPage() {
     },
     onError: () => {
       toast.error("Failed to create category");
-    }
+    },
   });
 
-  const filtered = categories.filter((c: any) =>
-    search === "" ||
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.description || "").toLowerCase().includes(search.toLowerCase())
+  const filtered = categories.filter(
+    (c: any) =>
+      search === "" ||
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.description || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <>
-      <PageHeader 
-        title="Resource Categories" 
-        description="Manage global resource categories for the platform." 
-        actions={
-          <Button onClick={() => setCreating(true)}>Create Category</Button>
-        }
+      <PageHeader
+        title="Resource Categories"
+        description="Manage global resource categories for the platform."
+        actions={<Button onClick={() => setCreating(true)}>Create Category</Button>}
       />
 
       <Toolbar
@@ -97,7 +108,9 @@ function CategoriesPage() {
               {filtered.map((c: any) => (
                 <TableRow key={c.category_id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{c.description || "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {c.description || "—"}
+                  </TableCell>
                   <TableCell>
                     <span className="bg-muted text-xs px-2 py-1 rounded">{c.unit_of_measure}</span>
                   </TableCell>
@@ -115,24 +128,43 @@ function CategoriesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Resource Category</DialogTitle>
-            <DialogDescription>Define a new resource category that organizations can track in their inventory.</DialogDescription>
+            <DialogDescription>
+              Define a new resource category that organizations can track in their inventory.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="cat-name">Category Name</Label>
-              <Input id="cat-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Bottled Water" />
+              <Input
+                id="cat-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Bottled Water"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cat-unit">Unit of Measure</Label>
-              <Input id="cat-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. bottles, boxes, kg" />
+              <Input
+                id="cat-unit"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="e.g. bottles, boxes, kg"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cat-desc">Description (Optional)</Label>
-              <Textarea id="cat-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Provide details about the category..." />
+              <Textarea
+                id="cat-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Provide details about the category..."
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreating(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setCreating(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!name.trim() || !unit.trim() || createMutation.isPending}
               onClick={() => {

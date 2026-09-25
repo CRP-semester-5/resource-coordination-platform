@@ -129,7 +129,10 @@ function AdminOrganizationsPage() {
           <button
             key={t}
             type="button"
-            onClick={() => { setTab(t); setSearch(""); }}
+            onClick={() => {
+              setTab(t);
+              setSearch("");
+            }}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
               tab === t
                 ? "bg-background shadow-sm text-foreground"
@@ -168,9 +171,7 @@ function AdminOrganizationsPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             message={
-              tab === "pending"
-                ? "No organizations pending approval."
-                : "No organizations found."
+              tab === "pending" ? "No organizations pending approval." : "No organizations found."
             }
           />
         ) : (
@@ -190,9 +191,7 @@ function AdminOrganizationsPage() {
               {filtered.map((org: any) => {
                 const id = org.organization_id ?? org.id;
                 const name = org.organization_name ?? org.name ?? "—";
-                const isPending =
-                  tab === "pending" ||
-                  org.status?.toUpperCase() === "PENDING";
+                const isPending = tab === "pending" || org.status?.toUpperCase() === "PENDING";
 
                 return (
                   <TableRow key={id}>
@@ -209,9 +208,7 @@ function AdminOrganizationsPage() {
                       </TableCell>
                     )}
                     <TableCell className="text-sm text-muted-foreground">
-                      {org.created_at
-                        ? new Date(org.created_at).toLocaleDateString()
-                        : "—"}
+                      {org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
@@ -264,19 +261,14 @@ function AdminOrganizationsPage() {
       </div>
 
       {/* Delete confirm dialog */}
-      <AlertDialog
-        open={!!confirmDelete}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-      >
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete organization?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete{" "}
-              <strong>
-                {confirmDelete?.organization_name ?? confirmDelete?.name}
-              </strong>{" "}
-              and all its associated data. This action cannot be undone.
+              <strong>{confirmDelete?.organization_name ?? confirmDelete?.name}</strong> and all its
+              associated data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -284,9 +276,7 @@ function AdminOrganizationsPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() =>
-                deleteMutation.mutate(
-                  confirmDelete?.organization_id ?? confirmDelete?.id
-                )
+                deleteMutation.mutate(confirmDelete?.organization_id ?? confirmDelete?.id)
               }
             >
               Delete

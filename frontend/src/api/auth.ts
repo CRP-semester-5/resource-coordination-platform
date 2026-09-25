@@ -54,8 +54,7 @@ export interface InvitePayload {
 
 export const authAPI = {
   /** POST /api/v1/auth/login */
-  login: (payload: LoginPayload) =>
-    http.post<LoginResponse>("/api/v1/auth/login", payload),
+  login: (payload: LoginPayload) => http.post<LoginResponse>("/api/v1/auth/login", payload),
 
   /** POST /api/v1/auth/logout */
   logout: () => http.post("/api/v1/auth/logout"),
@@ -69,8 +68,7 @@ export const authAPI = {
    * the email is already registered. The new account starts as PENDING
    * until the user clicks the verification link sent to their email.
    */
-  registerUser: (payload: RegisterUserPayload) =>
-    http.post("/api/v1/auth/register", payload),
+  registerUser: (payload: RegisterUserPayload) => http.post("/api/v1/auth/register", payload),
 
   /**
    * Login and persist the JWT in localStorage so that subsequent http calls
@@ -90,10 +88,10 @@ export const authAPI = {
   submitOrgApplication: (payload: OrgApplicationPayload) =>
     http.post("/api/v1/organizations", {
       organization_name: payload.org_name,
-      description:       payload.org_description,
-      email:             payload.org_contact_email,
-      phone:             payload.org_contact_phone,
-      address:           payload.org_district,
+      description: payload.org_description,
+      email: payload.org_contact_email,
+      phone: payload.org_contact_phone,
+      address: payload.org_district,
     }),
 
   /** @deprecated Use registerUser + loginAndStoreToken + submitOrgApplication instead.
