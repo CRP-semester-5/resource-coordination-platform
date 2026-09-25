@@ -13,7 +13,10 @@ import {
   Copy,
   MapPin,
   Calendar,
-  Package, PackageCheck, Boxes, ArrowUpRight,
+  Package,
+  PackageCheck,
+  Boxes,
+  ArrowUpRight,
   User,
   AlertCircle,
   ExternalLink,
@@ -40,8 +43,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -68,16 +84,28 @@ export const Route = createFileRoute("/coordinator/requests")({
       { title: "Help Requests — ResQ Hub Coordinator" },
       {
         name: "description",
-        content: "Review, approve and dispatch volunteer relief delivery missions for community help requests.",
+        content:
+          "Review, approve and dispatch volunteer relief delivery missions for community help requests.",
       },
       { property: "og:title", content: "Help Requests — ResQ Hub Coordinator" },
-      { property: "og:description", content: "Approve, reject and dispatch volunteer response for disaster relief requests." },
+      {
+        property: "og:description",
+        content: "Approve, reject and dispatch volunteer response for disaster relief requests.",
+      },
     ],
   }),
   component: RequestsPage,
 });
 
-const STATUSES = ["Pending", "Under Review", "Approved", "Partially Fulfilled", "Fulfilled", "Rejected", "Cancelled"];
+const STATUSES = [
+  "Pending",
+  "Under Review",
+  "Approved",
+  "Partially Fulfilled",
+  "Fulfilled",
+  "Rejected",
+  "Cancelled",
+];
 const PRIORITIES = ["Critical", "High", "Medium", "Low"];
 const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 const PAGE_SIZE = 8;
@@ -172,7 +200,7 @@ function RequestsPage() {
       localStorage.setItem("resq_hub_active_allocation", JSON.stringify(allocPayload));
     } catch (_) {}
     toast.info("🎯 Opening Inventory Allocation Sorter...", {
-      description: `Navigating to ${request.category || 'Relief'} shelves to select variant.`,
+      description: `Navigating to ${request.category || "Relief"} shelves to select variant.`,
     });
     setPreviewRequestId(null);
     navigate({ to: "/coordinator/inventory" });
@@ -230,11 +258,14 @@ function RequestsPage() {
       const u = r.users || {};
       const g = (r.guest_request_contacts && r.guest_request_contacts[0]) || {};
       const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ");
-      const requester = fullName || g.contact_name || r.requester_name || r.requester || "Citizen in Need";
-      const requesterPhone = u.phone || g.contact_phone || r.requester_phone || r.contact_phone || "";
+      const requester =
+        fullName || g.contact_name || r.requester_name || r.requester || "Citizen in Need";
+      const requesterPhone =
+        u.phone || g.contact_phone || r.requester_phone || r.contact_phone || "";
       const requesterEmail = u.email || g.contact_email || r.requester_email || "";
       const reqId = r.request_id || r.id || "";
-      const resourceType = r.title || r.resource_type || r.resource_name || r.category || "Relief Supplies";
+      const resourceType =
+        r.title || r.resource_type || r.resource_name || r.category || "Relief Supplies";
       const cat = r.category || "General";
       const quantity = Number(r.quantity_required ?? r.quantity ?? 1);
       const unit = r.unit || "units";
@@ -269,7 +300,7 @@ function RequestsPage() {
     });
   }, [rawRequests, orgId]);
 
-    const previewRequest = useMemo(() => {
+  const previewRequest = useMemo(() => {
     if (!previewRequestId) return null;
     return requests.find((r) => r.id === previewRequestId) || null;
   }, [requests, previewRequestId]);
@@ -320,17 +351,32 @@ function RequestsPage() {
       const tReqId = (t.request_id || "").toLowerCase();
 
       // 1. Explicit ID / Code Tag match (EXACT)
-      if (rId && (tReqId === rId || desc.includes(`[request_id:${rId}]`) || desc.includes(rId))) return true;
-      if (rCode && (desc.includes(`[request_code:${rCode}]`) || desc.includes(rCode) || title.includes(rCode))) return true;
+      if (rId && (tReqId === rId || desc.includes(`[request_id:${rId}]`) || desc.includes(rId)))
+        return true;
+      if (
+        rCode &&
+        (desc.includes(`[request_code:${rCode}]`) || desc.includes(rCode) || title.includes(rCode))
+      )
+        return true;
 
       // 2. If this task has a tag explicitly for a DIFFERENT request, NEVER link it to this request!
-      const hasExplicitOtherTag = desc.includes("[request_id:") || desc.includes("[request_code:") || (tReqId && tReqId !== rId);
+      const hasExplicitOtherTag =
+        desc.includes("[request_id:") ||
+        desc.includes("[request_code:") ||
+        (tReqId && tReqId !== rId);
       if (hasExplicitOtherTag) return false;
 
       // 3. Fallback only for untagged legacy tasks: must match requester AND resource AND exact quantity
-      if (title.includes("deliver") && (title.includes(cleanResource) || desc.includes(cleanResource))) {
+      if (
+        title.includes("deliver") &&
+        (title.includes(cleanResource) || desc.includes(cleanResource))
+      ) {
         if (cleanRequester && (desc.includes(cleanRequester) || title.includes(cleanRequester))) {
-          if (r.quantity && (title.includes(String(r.quantity)) || desc.includes(String(r.quantity)))) return true;
+          if (
+            r.quantity &&
+            (title.includes(String(r.quantity)) || desc.includes(String(r.quantity)))
+          )
+            return true;
         }
       }
 
@@ -352,7 +398,15 @@ function RequestsPage() {
   const detailedTask = liveTaskDetailRes?.data?.data || previewLinkedTask;
 
   const decide = useMutation({
-    mutationFn: async ({ id, decision, note }: { id: string; decision: "Approved" | "Rejected" | "Unapprove"; note?: string }) => {
+    mutationFn: async ({
+      id,
+      decision,
+      note,
+    }: {
+      id: string;
+      decision: "Approved" | "Rejected" | "Unapprove";
+      note?: string;
+    }) => {
       if (decision === "Approved") return requestsAPI.approve(id, orgId);
       if (decision === "Unapprove") return requestsAPI.unapprove(id, orgId);
       return requestsAPI.reject(id, note ?? "", orgId);
@@ -375,11 +429,14 @@ function RequestsPage() {
     },
   });
 
-  
   // Real-time stock check for task dispatch modal
   const { data: stockCheckRes, isLoading: isCheckingStock } = useQuery({
     queryKey: ["check-stock", orgId, taskCreatingRequest?.category, taskCreatingRequest?.quantity],
-    queryFn: () => inventoryAPI.checkStock(taskCreatingRequest?.category || "", taskCreatingRequest?.quantity || 1),
+    queryFn: () =>
+      inventoryAPI.checkStock(
+        taskCreatingRequest?.category || "",
+        taskCreatingRequest?.quantity || 1,
+      ),
     enabled: !!taskCreatingRequest && !!taskCreatingRequest.category,
   });
   const stockCheck = stockCheckRes?.data?.data || stockCheckRes?.data;
@@ -389,7 +446,10 @@ function RequestsPage() {
     mutationFn: async (data: any) => {
       const res = await tasksAPI.create(data);
       // Auto-approve request if pending
-      if (taskCreatingRequest && (taskCreatingRequest.status === "Pending" || taskCreatingRequest.status === "Under Review")) {
+      if (
+        taskCreatingRequest &&
+        (taskCreatingRequest.status === "Pending" || taskCreatingRequest.status === "Under Review")
+      ) {
         try {
           await requestsAPI.approve(taskCreatingRequest.id);
         } catch (e) {
@@ -417,10 +477,10 @@ function RequestsPage() {
     setTaskTitle(`Deliver Aid: ${r.resourceType} (${r.quantity} ${r.unit}) to ${r.requester}`);
     setTaskDescription(
       `[REQUEST_ID:${r.id}] [REQUEST_CODE:${r.code}] Volunteer relief distribution mission for ${r.quantity} ${r.unit} of ${r.resourceType}.\n` +
-      `Requester: ${r.requester} (${r.requesterPhone || "Contact in App"})\n` +
-      `Delivery Location: ${r.location || "Contact requester for exact address"}\n` +
-      `Needed By: ${r.requiredDate ? new Date(r.requiredDate).toLocaleDateString() : "Immediate"}\n` +
-      `Reason/Situation: ${r.description || "Emergency disaster relief assistance."}`
+        `Requester: ${r.requester} (${r.requesterPhone || "Contact in App"})\n` +
+        `Delivery Location: ${r.location || "Contact requester for exact address"}\n` +
+        `Needed By: ${r.requiredDate ? new Date(r.requiredDate).toLocaleDateString() : "Immediate"}\n` +
+        `Reason/Situation: ${r.description || "Emergency disaster relief assistance."}`,
     );
     setTaskLocation(r.location || "");
     const upPriority = r.priority.toUpperCase();
@@ -441,7 +501,10 @@ function RequestsPage() {
     setTimeout(() => setCopiedPhone(false), 2500);
   };
 
-  const categories = useMemo(() => [...new Set(requests.map((r) => r.category).filter(Boolean))], [requests]);
+  const categories = useMemo(
+    () => [...new Set(requests.map((r) => r.category).filter(Boolean))],
+    [requests],
+  );
 
   const filtered = useMemo(
     () =>
@@ -451,7 +514,10 @@ function RequestsPage() {
           (priority === "all" || r.priority === priority) &&
           (category === "all" || r.category === category) &&
           (search === "" ||
-            [r.code, r.requester, r.resourceType, r.location, r.requesterPhone].join(" ").toLowerCase().includes(search.toLowerCase())),
+            [r.code, r.requester, r.resourceType, r.location, r.requesterPhone]
+              .join(" ")
+              .toLowerCase()
+              .includes(search.toLowerCase())),
       ),
     [requests, status, priority, category, search],
   );
@@ -459,7 +525,9 @@ function RequestsPage() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
   const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const pendingCount = requests.filter((r) => r.status === "Pending" || r.status === "Under Review").length;
+  const pendingCount = requests.filter(
+    (r) => r.status === "Pending" || r.status === "Under Review",
+  ).length;
 
   return (
     <>
@@ -476,9 +544,33 @@ function RequestsPage() {
         }}
         placeholder="Search by requester, resource, phone or location"
         filters={[
-          { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
-          { label: "Priority", value: priority, options: PRIORITIES, onChange: (v) => { setPriority(v); setPage(1); } },
-          { label: "Category", value: category, options: categories, onChange: (v) => { setCategory(v); setPage(1); } },
+          {
+            label: "Status",
+            value: status,
+            options: STATUSES,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
+          },
+          {
+            label: "Priority",
+            value: priority,
+            options: PRIORITIES,
+            onChange: (v) => {
+              setPriority(v);
+              setPage(1);
+            },
+          },
+          {
+            label: "Category",
+            value: category,
+            options: categories,
+            onChange: (v) => {
+              setCategory(v);
+              setPage(1);
+            },
+          },
         ]}
       />
 
@@ -516,7 +608,9 @@ function RequestsPage() {
                   >
                     <TableCell>
                       <span className="block font-medium text-foreground">{r.requester}</span>
-                      <span className="block text-xs font-mono text-muted-foreground">{r.requesterPhone || "Contact in App"}</span>
+                      <span className="block text-xs font-mono text-muted-foreground">
+                        {r.requesterPhone || "Contact in App"}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <span className="block font-semibold text-foreground">{r.resourceType}</span>
@@ -531,7 +625,9 @@ function RequestsPage() {
                     <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                        <span className="truncate">{r.location || "Contact requester for location"}</span>
+                        <span className="truncate">
+                          {r.location || "Contact requester for location"}
+                        </span>
                       </span>
                     </TableCell>
                     <TableCell>
@@ -584,13 +680,24 @@ function RequestsPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)}{" "}
+            of {filtered.length}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current === pageCount} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === pageCount}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>
@@ -610,9 +717,7 @@ function RequestsPage() {
                       {previewRequest.category}
                     </span>
                     <StatusBadge value={previewRequest.priority} />
-                    <span className="text-xs text-muted-foreground">
-                      #{previewRequest.code}
-                    </span>
+                    <span className="text-xs text-muted-foreground">#{previewRequest.code}</span>
                   </div>
                   <StatusBadge value={previewRequest.status} />
                 </div>
@@ -620,9 +725,12 @@ function RequestsPage() {
                   {previewRequest.resourceType}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Requested on {new Date(previewRequest.createdAt).toLocaleDateString()} • Needed by:{" "}
+                  Requested on {new Date(previewRequest.createdAt).toLocaleDateString()} • Needed
+                  by:{" "}
                   <strong className="text-foreground">
-                    {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
+                    {previewRequest.requiredDate
+                      ? new Date(previewRequest.requiredDate).toLocaleDateString()
+                      : "Immediate"}
                   </strong>
                 </p>
               </div>
@@ -641,7 +749,9 @@ function RequestsPage() {
                           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Volunteer Relief Delivery Mission
                           </span>
-                          <h4 className="text-sm font-bold text-foreground">{detailedTask.title}</h4>
+                          <h4 className="text-sm font-bold text-foreground">
+                            {detailedTask.title}
+                          </h4>
                         </div>
                       </div>
                       <Link
@@ -662,7 +772,8 @@ function RequestsPage() {
                           </span>
                         ) : detailedTask.status === "IN_PROGRESS" ? (
                           <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                            <Activity className="h-3.5 w-3.5 animate-pulse" /> Volunteer Delivering Supplies
+                            <Activity className="h-3.5 w-3.5 animate-pulse" /> Volunteer Delivering
+                            Supplies
                           </span>
                         ) : detailedTask.status === "ASSIGNED" ? (
                           <span className="font-bold text-purple-600 dark:text-purple-400">
@@ -680,10 +791,10 @@ function RequestsPage() {
                           detailedTask.status === "COMPLETED"
                             ? 100
                             : detailedTask.status === "IN_PROGRESS"
-                            ? 60
-                            : detailedTask.status === "ASSIGNED"
-                            ? 30
-                            : 10
+                              ? 60
+                              : detailedTask.status === "ASSIGNED"
+                                ? 30
+                                : 10
                         }
                         className="h-2"
                       />
@@ -695,51 +806,72 @@ function RequestsPage() {
                           <span>
                             Assigned Responder:{" "}
                             <strong className="text-foreground">
-                              {detailedTask.volunteers.map((v: any) => v.name || v.first_name || "Volunteer").join(", ")}
+                              {detailedTask.volunteers
+                                .map((v: any) => v.name || v.first_name || "Volunteer")
+                                .join(", ")}
                             </strong>
                           </span>
                         </div>
                       )}
 
-                      
                       {/* Dual-Leg Security PINs Verification Box */}
                       {(() => {
-                        const isWarehouseDone = (detailedTask.task_progress || []).some(
-                          (p: any) => (p.remarks || '').toLowerCase().includes('warehouse') || (p.progress_percent || 0) >= 50
-                        ) || detailedTask.status === 'COMPLETED';
-                        const isCompleted = detailedTask.status === 'COMPLETED';
-                        const isAssigned = detailedTask.status === 'ASSIGNED' || detailedTask.status === 'IN_PROGRESS';
-                        const warehousePin = detailedTask.warehouse_pickup_pin || '8421';
-                        const isPinRevealed = revealedDispatchPins[detailedTask.id || detailedTask.task_id || ''] || false;
+                        const isWarehouseDone =
+                          (detailedTask.task_progress || []).some(
+                            (p: any) =>
+                              (p.remarks || "").toLowerCase().includes("warehouse") ||
+                              (p.progress_percent || 0) >= 50,
+                          ) || detailedTask.status === "COMPLETED";
+                        const isCompleted = detailedTask.status === "COMPLETED";
+                        const isAssigned =
+                          detailedTask.status === "ASSIGNED" ||
+                          detailedTask.status === "IN_PROGRESS";
+                        const warehousePin = detailedTask.warehouse_pickup_pin || "8421";
+                        const isPinRevealed =
+                          revealedDispatchPins[detailedTask.id || detailedTask.task_id || ""] ||
+                          false;
 
                         return (
                           <div className="mt-3 rounded-lg border border-primary/25 bg-background/90 p-3 text-xs space-y-2.5 shadow-xs">
                             <div className="flex items-center justify-between font-semibold text-foreground border-b border-border/50 pb-1.5">
                               <span className="flex items-center gap-1.5 text-primary font-bold">
-                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN Lifecycle
+                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN
+                                Lifecycle
                               </span>
-                              <span className="text-[10px] text-muted-foreground font-medium">Stage-by-Stage Verification</span>
+                              <span className="text-[10px] text-muted-foreground font-medium">
+                                Stage-by-Stage Verification
+                              </span>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               {/* Stage 1: Warehouse Dispatch PIN (Disappears after entered) */}
-                              <div className={`rounded-md p-2.5 border flex flex-col justify-between ${
-                                isWarehouseDone
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
-                                  : isAssigned
-                                  ? 'bg-primary/5 border-primary/30 text-foreground'
-                                  : 'bg-muted/30 border-dashed border-border text-muted-foreground'
-                              }`}>
+                              <div
+                                className={`rounded-md p-2.5 border flex flex-col justify-between ${
+                                  isWarehouseDone
+                                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                                    : isAssigned
+                                      ? "bg-primary/5 border-primary/30 text-foreground"
+                                      : "bg-muted/30 border-dashed border-border text-muted-foreground"
+                                }`}
+                              >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-[11px]">📦 Stage 1: Warehouse Dispatch PIN</span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                    isWarehouseDone
-                                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                                  <span className="font-bold text-[11px]">
+                                    📦 Stage 1: Warehouse Dispatch PIN
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                      isWarehouseDone
+                                        ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
+                                        : isAssigned
+                                          ? "bg-primary/20 text-primary animate-pulse"
+                                          : "bg-slate-500/10 text-slate-500"
+                                    }`}
+                                  >
+                                    {isWarehouseDone
+                                      ? "RELEASED & CLOSED"
                                       : isAssigned
-                                      ? 'bg-primary/20 text-primary animate-pulse'
-                                      : 'bg-slate-500/10 text-slate-500'
-                                  }`}>
-                                    {isWarehouseDone ? 'RELEASED & CLOSED' : isAssigned ? 'ACTIVE FOR STAFF' : 'PENDING ASSIGNMENT'}
+                                        ? "ACTIVE FOR STAFF"
+                                        : "PENDING ASSIGNMENT"}
                                   </span>
                                 </div>
 
@@ -747,7 +879,8 @@ function RequestsPage() {
                                   {isWarehouseDone ? (
                                     <>
                                       <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified &
+                                        Expired (Closed)
                                       </span>
                                       <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
                                         Stock released to volunteer; goods now in vehicle transit.
@@ -768,7 +901,9 @@ function RequestsPage() {
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               navigator.clipboard.writeText(warehousePin);
-                                              toast.success('Warehouse Dispatch PIN copied to clipboard');
+                                              toast.success(
+                                                "Warehouse Dispatch PIN copied to clipboard",
+                                              );
                                             }}
                                           >
                                             <Copy className="h-3 w-3 mr-1" /> Copy
@@ -789,9 +924,11 @@ function RequestsPage() {
                                             e.stopPropagation();
                                             setRevealedDispatchPins((prev) => ({
                                               ...prev,
-                                              [detailedTask.id || detailedTask.task_id || '']: true,
+                                              [detailedTask.id || detailedTask.task_id || ""]: true,
                                             }));
-                                            toast.info('Warehouse Dispatch PIN revealed for staff handover.');
+                                            toast.info(
+                                              "Warehouse Dispatch PIN revealed for staff handover.",
+                                            );
                                           }}
                                         >
                                           <KeyRound className="h-3 w-3" /> Reveal Dispatch PIN
@@ -815,26 +952,33 @@ function RequestsPage() {
                               </div>
 
                               {/* Stage 2: Recipient Doorstep PIN (Private to Recipient) */}
-                              <div className={`rounded-md p-2.5 border flex flex-col justify-between ${
-                                isCompleted
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
-                                  : 'bg-muted/40 border-border text-foreground'
-                              }`}>
+                              <div
+                                className={`rounded-md p-2.5 border flex flex-col justify-between ${
+                                  isCompleted
+                                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                                    : "bg-muted/40 border-border text-foreground"
+                                }`}
+                              >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-[11px]">🤝 Stage 2: Recipient Doorstep PIN</span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                    isCompleted
-                                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
-                                      : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'
-                                  }`}>
-                                    {isCompleted ? 'DELIVERED & FULFILLED' : 'AWAITING HANDOVER'}
+                                  <span className="font-bold text-[11px]">
+                                    🤝 Stage 2: Recipient Doorstep PIN
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                      isCompleted
+                                        ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
+                                        : "bg-slate-500/10 text-slate-600 dark:text-slate-300"
+                                    }`}
+                                  >
+                                    {isCompleted ? "DELIVERED & FULFILLED" : "AWAITING HANDOVER"}
                                   </span>
                                 </div>
                                 <div className="mt-1.5 flex flex-col gap-0.5">
                                   {isCompleted ? (
                                     <>
                                       <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                        <CheckCircle2 className="h-3.5 w-3.5" /> •••• (Verified at Doorstep)
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> •••• (Verified at
+                                        Doorstep)
                                       </span>
                                       <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
                                         Relief delivery verified by recipient; request fulfilled.
@@ -846,7 +990,8 @@ function RequestsPage() {
                                         🔒 •••• (Private to Recipient)
                                       </span>
                                       <span className="text-[10px] text-muted-foreground">
-                                        Recipient provides 4-digit PIN directly from mobile app to volunteer.
+                                        Recipient provides 4-digit PIN directly from mobile app to
+                                        volunteer.
                                       </span>
                                     </>
                                   )}
@@ -863,7 +1008,8 @@ function RequestsPage() {
                           <div className="flex items-center gap-2">
                             <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             <span>
-                              <strong>Aid Delivered:</strong> Volunteer has delivered relief items to the requester.
+                              <strong>Aid Delivered:</strong> Volunteer has delivered relief items
+                              to the requester.
                             </span>
                           </div>
                           {previewRequest.status !== "Fulfilled" && (
@@ -913,13 +1059,20 @@ function RequestsPage() {
                 {/* Request Spec Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Quantity Needed</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Quantity Needed
+                    </span>
                     <p className="mt-1 text-lg font-bold text-foreground">
-                      {previewRequest.quantity} <span className="text-sm font-normal text-muted-foreground">{previewRequest.unit}</span>
+                      {previewRequest.quantity}{" "}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {previewRequest.unit}
+                      </span>
                     </p>
                   </div>
                   <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Urgency Priority</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Urgency Priority
+                    </span>
                     <p className="mt-1 text-sm font-semibold text-foreground">
                       {previewRequest.priority} Priority
                     </p>
@@ -927,25 +1080,30 @@ function RequestsPage() {
                   <div className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-card p-3 shadow-sm">
                     <span className="text-xs font-medium text-muted-foreground">Required By</span>
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
+                      {previewRequest.requiredDate
+                        ? new Date(previewRequest.requiredDate).toLocaleDateString()
+                        : "Immediate"}
                     </p>
                   </div>
                 </div>
 
-                
                 {/* 📦 HIGH-PRIORITY RESOURCE ALLOCATION & WAREHOUSE STOCK (MIDDLE OF POPUP) */}
-                <div className={`rounded-2xl border-2 p-5 shadow-sm transition-all ${
-                  savedAllocations[previewRequest.id]
-                    ? "border-emerald-500/50 bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-background"
-                    : "border-primary/40 bg-gradient-to-br from-primary/10 via-amber-500/5 to-background"
-                }`}>
+                <div
+                  className={`rounded-2xl border-2 p-5 shadow-sm transition-all ${
+                    savedAllocations[previewRequest.id]
+                      ? "border-emerald-500/50 bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-background"
+                      : "border-primary/40 bg-gradient-to-br from-primary/10 via-amber-500/5 to-background"
+                  }`}
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start sm:items-center gap-3.5">
-                      <div className={`h-12 w-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${
-                        savedAllocations[previewRequest.id]
-                          ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-                          : "bg-primary/20 border-primary/40 text-primary"
-                      }`}>
+                      <div
+                        className={`h-12 w-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${
+                          savedAllocations[previewRequest.id]
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                            : "bg-primary/20 border-primary/40 text-primary"
+                        }`}
+                      >
                         {savedAllocations[previewRequest.id] ? (
                           <PackageCheck className="h-6 w-6" />
                         ) : (
@@ -954,14 +1112,17 @@ function RequestsPage() {
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full text-white shadow-xs ${
-                            savedAllocations[previewRequest.id] ? "bg-emerald-600" : "bg-primary"
-                          }`}>
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full text-white shadow-xs ${
+                              savedAllocations[previewRequest.id] ? "bg-emerald-600" : "bg-primary"
+                            }`}
+                          >
                             Humanitarian Relief Stock
                           </span>
                           {savedAllocations[previewRequest.id] ? (
                             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Allocated & Reserved in Warehouse
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Allocated & Reserved in
+                              Warehouse
                             </span>
                           ) : (
                             <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -969,15 +1130,30 @@ function RequestsPage() {
                             </span>
                           )}
                         </div>
-                        
+
                         <p className="text-sm font-bold text-foreground mt-1">
                           {savedAllocations[previewRequest.id] ? (
                             <>
-                              Reserved: <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{savedAllocations[previewRequest.id].quantity} {savedAllocations[previewRequest.id].unit}</span> of <span className="text-foreground font-black">{savedAllocations[previewRequest.id].variantName}</span>
+                              Reserved:{" "}
+                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                                {savedAllocations[previewRequest.id].quantity}{" "}
+                                {savedAllocations[previewRequest.id].unit}
+                              </span>{" "}
+                              of{" "}
+                              <span className="text-foreground font-black">
+                                {savedAllocations[previewRequest.id].variantName}
+                              </span>
                             </>
                           ) : (
                             <>
-                              Required: <span className="text-primary font-black">{previewRequest.quantity} {previewRequest.unit}</span> of <span className="text-foreground font-bold">{previewRequest.resourceType || previewRequest.category}</span>
+                              Required:{" "}
+                              <span className="text-primary font-black">
+                                {previewRequest.quantity} {previewRequest.unit}
+                              </span>{" "}
+                              of{" "}
+                              <span className="text-foreground font-bold">
+                                {previewRequest.resourceType || previewRequest.category}
+                              </span>
                             </>
                           )}
                         </p>
@@ -1001,7 +1177,9 @@ function RequestsPage() {
                       }`}
                     >
                       <Boxes className="h-5 w-5" />
-                      {savedAllocations[previewRequest.id] ? "Change Shelf Allocation" : "📦 Allocate from Inventory"}
+                      {savedAllocations[previewRequest.id]
+                        ? "Change Shelf Allocation"
+                        : "📦 Allocate from Inventory"}
                       <ArrowUpRight className="h-4 w-4 ml-0.5 opacity-80" />
                     </Button>
                   </div>
@@ -1010,29 +1188,42 @@ function RequestsPage() {
                   {savedAllocations[previewRequest.id] && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3.5 mt-3.5 border-t border-emerald-500/25 text-xs bg-emerald-500/5 rounded-xl p-3">
                       <div>
-                        <span className="text-[10px] text-muted-foreground block font-medium">Allocated Variant</span>
-                        <strong className="text-foreground font-bold text-sm">{savedAllocations[previewRequest.id].variantName}</strong>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block font-medium">Warehouse Shelf</span>
-                        <strong className="text-foreground font-bold text-sm">{savedAllocations[previewRequest.id].typeName}</strong>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block font-medium">Reserved Quantity</span>
-                        <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">
-                          {savedAllocations[previewRequest.id].quantity} {savedAllocations[previewRequest.id].unit}
+                        <span className="text-[10px] text-muted-foreground block font-medium">
+                          Allocated Variant
+                        </span>
+                        <strong className="text-foreground font-bold text-sm">
+                          {savedAllocations[previewRequest.id].variantName}
                         </strong>
                       </div>
                       <div>
-                        <span className="text-[10px] text-muted-foreground block font-medium">Relief Category</span>
+                        <span className="text-[10px] text-muted-foreground block font-medium">
+                          Warehouse Shelf
+                        </span>
+                        <strong className="text-foreground font-bold text-sm">
+                          {savedAllocations[previewRequest.id].typeName}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">
+                          Reserved Quantity
+                        </span>
+                        <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">
+                          {savedAllocations[previewRequest.id].quantity}{" "}
+                          {savedAllocations[previewRequest.id].unit}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">
+                          Relief Category
+                        </span>
                         <span className="text-xs font-semibold text-foreground">
-                          {savedAllocations[previewRequest.id].categoryName || previewRequest.category}
+                          {savedAllocations[previewRequest.id].categoryName ||
+                            previewRequest.category}
                         </span>
                       </div>
                     </div>
                   )}
                 </div>
-
 
                 {/* Requester Information & Verification Card */}
                 <div className="rounded-xl border border-border bg-muted/10 p-4">
@@ -1044,9 +1235,13 @@ function RequestsPage() {
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                       <span className="text-xs text-muted-foreground">Requester Name</span>
-                      <p className="text-sm font-semibold text-foreground">{previewRequest.requester}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {previewRequest.requester}
+                      </p>
                       {previewRequest.requesterEmail && (
-                        <p className="text-xs text-muted-foreground">{previewRequest.requesterEmail}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {previewRequest.requesterEmail}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -1072,12 +1267,15 @@ function RequestsPage() {
 
                   {/* Delivery Location & Maps Link */}
                   <div className="mt-3 border-t border-border/60 pt-3">
-                    <span className="text-xs text-muted-foreground">Delivery / Relief Location</span>
+                    <span className="text-xs text-muted-foreground">
+                      Delivery / Relief Location
+                    </span>
                     <div className="mt-1 flex items-start justify-between gap-2">
                       <p className="flex items-start gap-1.5 text-sm text-foreground">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                         <span className="font-medium">
-                          {previewRequest.location || "Contact requester for exact location coordinates"}
+                          {previewRequest.location ||
+                            "Contact requester for exact location coordinates"}
                         </span>
                       </p>
                       {previewRequest.location && (
@@ -1114,8 +1312,12 @@ function RequestsPage() {
                 {/* Requester Reason / Description */}
                 {previewRequest.description && (
                   <div className="rounded-lg border border-border bg-card p-3.5">
-                    <span className="text-xs font-medium text-muted-foreground">Situation & Request Details</span>
-                    <p className="mt-1 text-sm text-foreground/90 italic">"{previewRequest.description}"</p>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Situation & Request Details
+                    </span>
+                    <p className="mt-1 text-sm text-foreground/90 italic">
+                      "{previewRequest.description}"
+                    </p>
                   </div>
                 )}
               </div>
@@ -1127,7 +1329,8 @@ function RequestsPage() {
                 </Button>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {(previewRequest.status === "Pending" || previewRequest.status === "Under Review") && (
+                  {(previewRequest.status === "Pending" ||
+                    previewRequest.status === "Under Review") && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -1141,19 +1344,21 @@ function RequestsPage() {
                     </Button>
                   )}
 
-                  
                   {/* Allocate from Inventory Button */}
-                  {previewRequest.status !== "Fulfilled" && previewRequest.status !== "Rejected" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 font-bold gap-1.5 shadow-2xs"
-                      onClick={() => handleStartAllocation(previewRequest)}
-                    >
-                      <Boxes className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      {savedAllocations[previewRequest.id] ? "Change Shelf Allocation" : "Allocate from Inventory"}
-                    </Button>
-                  )}
+                  {previewRequest.status !== "Fulfilled" &&
+                    previewRequest.status !== "Rejected" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 font-bold gap-1.5 shadow-2xs"
+                        onClick={() => handleStartAllocation(previewRequest)}
+                      >
+                        <Boxes className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        {savedAllocations[previewRequest.id]
+                          ? "Change Shelf Allocation"
+                          : "Allocate from Inventory"}
+                      </Button>
+                    )}
 
                   {/* Create or View Volunteer Delivery Task button */}
                   {detailedTask ? (
@@ -1189,7 +1394,8 @@ function RequestsPage() {
                     </Button>
                   )}
 
-                  {(previewRequest.status === "Approved" || previewRequest.status === "Under Review") && (
+                  {(previewRequest.status === "Approved" ||
+                    previewRequest.status === "Under Review") && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -1210,7 +1416,10 @@ function RequestsPage() {
       </Dialog>
 
       {/* 🚚 CREATE VOLUNTEER DELIVERY TASK DIALOG */}
-      <Dialog open={!!taskCreatingRequest} onOpenChange={(open) => !open && setTaskCreatingRequest(null)}>
+      <Dialog
+        open={!!taskCreatingRequest}
+        onOpenChange={(open) => !open && setTaskCreatingRequest(null)}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
@@ -1218,7 +1427,8 @@ function RequestsPage() {
               Create Volunteer Delivery Task
             </DialogTitle>
             <DialogDescription>
-              Dispatch this relief supply delivery mission to volunteers. They can accept and complete it via their mobile app.
+              Dispatch this relief supply delivery mission to volunteers. They can accept and
+              complete it via their mobile app.
             </DialogDescription>
           </DialogHeader>
 
@@ -1252,7 +1462,9 @@ function RequestsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {TASK_PRIORITIES.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1310,7 +1522,9 @@ function RequestsPage() {
                     min={2}
                     max={20}
                     value={volunteersRequired}
-                    onChange={(e) => setVolunteersRequired(Math.max(2, parseInt(e.target.value) || 2))}
+                    onChange={(e) =>
+                      setVolunteersRequired(Math.max(2, parseInt(e.target.value) || 2))
+                    }
                     className="mt-1"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -1342,7 +1556,9 @@ function RequestsPage() {
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <div>
-                      <span className="font-semibold">Warehouse Stock Available:</span> In Stock: <strong>{stockCheck.available}</strong> units (Requested: {stockCheck.required} units).
+                      <span className="font-semibold">Warehouse Stock Available:</span> In Stock:{" "}
+                      <strong>{stockCheck.available}</strong> units (Requested:{" "}
+                      {stockCheck.required} units).
                     </div>
                   </div>
                   <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
@@ -1361,7 +1577,9 @@ function RequestsPage() {
                     </span>
                   </div>
                   <p className="text-[11px] text-red-600 dark:text-red-300">
-                    Warehouse only has <strong>{stockCheck.available}</strong> units in stock, but this citizen request requires <strong>{stockCheck.required}</strong> units. Please restock warehouse before dispatching task.
+                    Warehouse only has <strong>{stockCheck.available}</strong> units in stock, but
+                    this citizen request requires <strong>{stockCheck.required}</strong> units.
+                    Please restock warehouse before dispatching task.
                   </p>
                 </div>
               )
@@ -1376,7 +1594,9 @@ function RequestsPage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold"
               disabled={!taskTitle.trim() || createTaskMutation.isPending || isStockInsufficient}
               onClick={() => {
-                const tag = taskCreatingRequest ? `[REQUEST_ID:${taskCreatingRequest.id}] [REQUEST_CODE:${taskCreatingRequest.code}] ` : '';
+                const tag = taskCreatingRequest
+                  ? `[REQUEST_ID:${taskCreatingRequest.id}] [REQUEST_CODE:${taskCreatingRequest.code}] `
+                  : "";
                 createTaskMutation.mutate({
                   title: taskTitle.trim(),
                   description: `${tag}${taskDescription.trim()}`,
@@ -1388,7 +1608,11 @@ function RequestsPage() {
                 });
               }}
             >
-              {createTaskMutation.isPending ? "Dispatching..." : isStockInsufficient ? "Insufficient Warehouse Stock" : "Dispatch Task to Volunteers"}
+              {createTaskMutation.isPending
+                ? "Dispatching..."
+                : isStockInsufficient
+                  ? "Insufficient Warehouse Stock"
+                  : "Dispatch Task to Volunteers"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1400,7 +1624,8 @@ function RequestsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Approve Request {approving?.code}?</AlertDialogTitle>
             <AlertDialogDescription>
-              {approving?.quantity} {approving?.unit} of {approving?.resourceType} requested by {approving?.requester} will be approved for fulfillment.
+              {approving?.quantity} {approving?.unit} of {approving?.resourceType} requested by{" "}
+              {approving?.requester} will be approved for fulfillment.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1423,7 +1648,9 @@ function RequestsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Request</DialogTitle>
-            <DialogDescription>A reason is mandatory and will be visible to the requester.</DialogDescription>
+            <DialogDescription>
+              A reason is mandatory and will be visible to the requester.
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             value={reason}
@@ -1439,7 +1666,8 @@ function RequestsPage() {
               variant="destructive"
               disabled={reason.trim().length < 5 || decide.isPending}
               onClick={() => {
-                if (rejecting) decide.mutate({ id: rejecting.id, decision: "Rejected", note: reason.trim() });
+                if (rejecting)
+                  decide.mutate({ id: rejecting.id, decision: "Rejected", note: reason.trim() });
                 setRejecting(null);
               }}
             >

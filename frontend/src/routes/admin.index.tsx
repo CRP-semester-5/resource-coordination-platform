@@ -74,12 +74,12 @@ function AdminOverviewPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const approvedOrgs = (allOrgs as any[]).filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (o: any) => o.status === "APPROVED" || o.status === "approved"
+    (o: any) => o.status === "APPROVED" || o.status === "approved",
   ).length;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rejectedOrgs = (allOrgs as any[]).filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (o: any) => o.status === "REJECTED" || o.status === "rejected"
+    (o: any) => o.status === "REJECTED" || o.status === "rejected",
   ).length;
 
   const isLoading = orgsLoading || pendingLoading || catsLoading;

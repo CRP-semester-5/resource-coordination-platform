@@ -36,8 +36,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -64,10 +77,14 @@ export const Route = createFileRoute("/coordinator/donations")({
       { title: "Donations - ResQ Hub Coordinator" },
       {
         name: "description",
-        content: "Verify donor offers, track volunteer pickup missions, and accept resources into inventory.",
+        content:
+          "Verify donor offers, track volunteer pickup missions, and accept resources into inventory.",
       },
       { property: "og:title", content: "Donations - ResQ Hub Coordinator" },
-      { property: "og:description", content: "Review and verify community donations before they enter relief inventory." },
+      {
+        property: "og:description",
+        content: "Review and verify community donations before they enter relief inventory.",
+      },
     ],
   }),
   component: DonationsPage,
@@ -187,7 +204,8 @@ function DonationsPage() {
       const unit = d.unit || "units";
       const rawLocation = d.pickup_address || d.pickup_location || d.location || "";
       const pickupLocation = cleanAddress(rawLocation);
-      const deliveryMethod = d.delivery_method || (pickupLocation ? "ORGANIZATION_PICKUP" : "DONOR_DELIVERY");
+      const deliveryMethod =
+        d.delivery_method || (pickupLocation ? "ORGANIZATION_PICKUP" : "DONOR_DELIVERY");
       const remarks = d.donation_notes || d.remarks || d.notes || "";
       const createdAt = d.created_at || d.createdAt || new Date().toISOString();
       const status = mapStatus(d.status);
@@ -236,15 +254,23 @@ function DonationsPage() {
 
       // 1. Explicit ID / Code Tag match (EXACT)
       if (dId && (desc.includes(`[donation_id:${dId}]`) || desc.includes(dId))) return true;
-      if (dCode && (desc.includes(`[donation_code:${dCode}]`) || desc.includes(dCode) || title.includes(dCode))) return true;
+      if (
+        dCode &&
+        (desc.includes(`[donation_code:${dCode}]`) || desc.includes(dCode) || title.includes(dCode))
+      )
+        return true;
 
       // 2. If this task has a tag explicitly for a DIFFERENT donation, NEVER link it to this donation!
-      const hasExplicitOtherTag = desc.includes("[donation_id:") || desc.includes("[donation_code:");
+      const hasExplicitOtherTag =
+        desc.includes("[donation_id:") || desc.includes("[donation_code:");
       if (hasExplicitOtherTag) return false;
 
       // 3. Fallback only for untagged legacy tasks:
       if (title.includes("pickup donation") && title.includes(cleanResource)) {
-        if (d.quantity && (title.includes(String(d.quantity)) || desc.includes(String(d.quantity)))) {
+        if (
+          d.quantity &&
+          (title.includes(String(d.quantity)) || desc.includes(String(d.quantity)))
+        ) {
           if (cleanDonor && desc.includes(cleanDonor)) return true;
         }
       }
@@ -281,7 +307,8 @@ function DonationsPage() {
       toast.success(`Donation ${vars.decision.toLowerCase()} successfully`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || err?.message || "Failed to update donation status";
+      const msg =
+        err?.response?.data?.message || err?.message || "Failed to update donation status";
       toast.error(msg);
     },
   });
@@ -305,9 +332,9 @@ function DonationsPage() {
     setTaskTitle(`Pickup Donation: ${d.resource} (${d.quantity} ${d.unit})`);
     setTaskDescription(
       `Volunteer pickup mission for ${d.quantity} ${d.unit} of ${d.resource}.\n` +
-      `Donor: ${d.donorName} (${d.donorPhone || "Contact in App"})\n` +
-      `Pickup Location: ${d.pickupLocation || "Contact donor for pickup address"}\n` +
-      `Remarks: ${d.remarks || "Please verify item quality before collection."}`
+        `Donor: ${d.donorName} (${d.donorPhone || "Contact in App"})\n` +
+        `Pickup Location: ${d.pickupLocation || "Contact donor for pickup address"}\n` +
+        `Remarks: ${d.remarks || "Please verify item quality before collection."}`,
     );
     setTaskLocation(d.pickupLocation || "");
     setTaskPriority("MEDIUM");
@@ -327,8 +354,14 @@ function DonationsPage() {
     setTimeout(() => setCopiedPhone(false), 2500);
   };
 
-  const categories = useMemo(() => [...new Set(donations.map((d) => d.category).filter(Boolean))], [donations]);
-  const donors = useMemo(() => [...new Set(donations.map((d) => d.donorName).filter(Boolean))], [donations]);
+  const categories = useMemo(
+    () => [...new Set(donations.map((d) => d.category).filter(Boolean))],
+    [donations],
+  );
+  const donors = useMemo(
+    () => [...new Set(donations.map((d) => d.donorName).filter(Boolean))],
+    [donations],
+  );
 
   const filtered = useMemo(
     () =>
@@ -338,7 +371,10 @@ function DonationsPage() {
           (category === "all" || d.category === category) &&
           (donor === "all" || d.donorName === donor) &&
           (search === "" ||
-            [d.donorName, d.resource, d.pickupLocation, d.donorPhone, d.category].join(" ").toLowerCase().includes(search.toLowerCase())),
+            [d.donorName, d.resource, d.pickupLocation, d.donorPhone, d.category]
+              .join(" ")
+              .toLowerCase()
+              .includes(search.toLowerCase())),
       ),
     [donations, status, category, donor, search],
   );
@@ -363,9 +399,33 @@ function DonationsPage() {
         }}
         placeholder="Search by donor, resource, phone or pickup location"
         filters={[
-          { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
-          { label: "Category", value: category, options: categories, onChange: (v) => { setCategory(v); setPage(1); } },
-          { label: "Donor", value: donor, options: donors, onChange: (v) => { setDonor(v); setPage(1); } },
+          {
+            label: "Status",
+            value: status,
+            options: STATUSES,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
+          },
+          {
+            label: "Category",
+            value: category,
+            options: categories,
+            onChange: (v) => {
+              setCategory(v);
+              setPage(1);
+            },
+          },
+          {
+            label: "Donor",
+            value: donor,
+            options: donors,
+            onChange: (v) => {
+              setDonor(v);
+              setPage(1);
+            },
+          },
         ]}
       />
 
@@ -416,7 +476,9 @@ function DonationsPage() {
                     <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                        <span className="truncate">{d.pickupLocation || "Drop-off at relief center"}</span>
+                        <span className="truncate">
+                          {d.pickupLocation || "Drop-off at relief center"}
+                        </span>
                       </span>
                     </TableCell>
                     <TableCell>
@@ -469,13 +531,24 @@ function DonationsPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}-{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}-{Math.min(current * PAGE_SIZE, filtered.length)}{" "}
+            of {filtered.length}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current === pageCount} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === pageCount}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>
@@ -494,9 +567,7 @@ function DonationsPage() {
                     <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                       {previewDonation.category}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      #{previewDonation.code}
-                    </span>
+                    <span className="text-xs text-muted-foreground">#{previewDonation.code}</span>
                   </div>
                   <StatusBadge value={previewDonation.status} />
                 </div>
@@ -505,7 +576,10 @@ function DonationsPage() {
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Offered on {new Date(previewDonation.createdAt).toLocaleDateString()} at{" "}
-                  {new Date(previewDonation.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(previewDonation.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </div>
 
@@ -523,7 +597,9 @@ function DonationsPage() {
                           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Volunteer Pickup Mission
                           </span>
-                          <h4 className="text-sm font-bold text-foreground">{detailedTask.title}</h4>
+                          <h4 className="text-sm font-bold text-foreground">
+                            {detailedTask.title}
+                          </h4>
                         </div>
                       </div>
                       <Link
@@ -544,7 +620,8 @@ function DonationsPage() {
                           </span>
                         ) : detailedTask.status === "IN_PROGRESS" ? (
                           <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                            <Activity className="h-3.5 w-3.5 animate-pulse" /> In Transit to Warehouse (50%)
+                            <Activity className="h-3.5 w-3.5 animate-pulse" /> In Transit to
+                            Warehouse (50%)
                           </span>
                         ) : detailedTask.status === "ASSIGNED" ? (
                           <span className="font-bold text-purple-600 dark:text-purple-400">
@@ -562,10 +639,10 @@ function DonationsPage() {
                           detailedTask.status === "COMPLETED"
                             ? 100
                             : detailedTask.status === "IN_PROGRESS"
-                            ? 60
-                            : detailedTask.status === "ASSIGNED"
-                            ? 30
-                            : 10
+                              ? 60
+                              : detailedTask.status === "ASSIGNED"
+                                ? 30
+                                : 10
                         }
                         className="h-2"
                       />
@@ -577,7 +654,9 @@ function DonationsPage() {
                           <span>
                             Assigned Volunteer:{" "}
                             <strong className="text-foreground">
-                              {detailedTask.volunteers.map((v: any) => v.name || v.first_name || "Volunteer").join(", ")}
+                              {detailedTask.volunteers
+                                .map((v: any) => v.name || v.first_name || "Volunteer")
+                                .join(", ")}
                             </strong>
                           </span>
                         </div>
@@ -585,8 +664,17 @@ function DonationsPage() {
 
                       {/* Dual-Leg Security PINs Verification Box */}
                       {(() => {
-                        const taskSeed = (parseInt((detailedTask.task_id || detailedTask.id || '').replace(/[^0-9]/g, '').slice(-4) || '8421', 10) % 9000) + 1000;
-                        const warehousePin = detailedTask.warehouse_pickup_pin || taskSeed.toString();
+                        const taskSeed =
+                          (parseInt(
+                            (detailedTask.task_id || detailedTask.id || "")
+                              .replace(/[^0-9]/g, "")
+                              .slice(-4) || "8421",
+                            10,
+                          ) %
+                            9000) +
+                          1000;
+                        const warehousePin =
+                          detailedTask.warehouse_pickup_pin || taskSeed.toString();
                         const isDelivered = detailedTask.status === "COMPLETED";
                         const isPickedUp = isDelivered || detailedTask.status === "IN_PROGRESS";
 
@@ -594,24 +682,36 @@ function DonationsPage() {
                           <div className="mt-3 rounded-lg border border-primary/20 bg-background/80 p-3 text-xs space-y-2.5">
                             <div className="flex items-center justify-between font-semibold text-foreground">
                               <span className="flex items-center gap-1.5 text-primary font-bold">
-                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN Lifecycle
+                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN
+                                Lifecycle
                               </span>
-                              <span className="text-[10px] text-muted-foreground">Central Warehouse Verification</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                Central Warehouse Verification
+                              </span>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               {/* Stage 1: Donor Collection (Private to Donor - Hidden from Admin) */}
-                              <div className={`rounded-md p-2.5 border ${isPickedUp ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : 'bg-muted/40 border-border text-foreground'}`}>
+                              <div
+                                className={`rounded-md p-2.5 border ${isPickedUp ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200" : "bg-muted/40 border-border text-foreground"}`}
+                              >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-[11px]">Stage 1: Donor Collection</span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isPickedUp ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'}`}>
-                                    {isPickedUp ? 'COLLECTED' : 'AWAITING PICKUP'}
+                                  <span className="font-bold text-[11px]">
+                                    Stage 1: Donor Collection
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isPickedUp ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300" : "bg-slate-500/10 text-slate-600 dark:text-slate-300"}`}
+                                  >
+                                    {isPickedUp ? "COLLECTED" : "AWAITING PICKUP"}
                                   </span>
                                 </div>
                                 <div className="mt-1.5 flex flex-col gap-0.5">
                                   <span className="font-mono text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-1">
                                     {isPickedUp ? (
-                                      <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> •••• (Verified)</>
+                                      <>
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />{" "}
+                                        •••• (Verified)
+                                      </>
                                     ) : (
                                       <>🔒 •••• (Private to Donor)</>
                                     )}
@@ -625,25 +725,38 @@ function DonationsPage() {
                               </div>
 
                               {/* Stage 2: Warehouse Store Deposit (Active only during drop-off, Disappears when entered) */}
-                              <div className={`rounded-md p-2.5 border ${isDelivered ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : isPickedUp ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200' : 'bg-muted/30 border-dashed border-border text-muted-foreground'}`}>
+                              <div
+                                className={`rounded-md p-2.5 border ${isDelivered ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200" : isPickedUp ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200" : "bg-muted/30 border-dashed border-border text-muted-foreground"}`}
+                              >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-[11px]">Stage 2: Warehouse Deposit PIN</span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isDelivered ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : isPickedUp ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse' : 'bg-slate-500/10 text-slate-500'}`}>
-                                    {isDelivered ? 'IN STOCK & CLOSED' : isPickedUp ? 'ACTIVE FOR STORE STAFF' : 'PENDING STAGE 1'}
+                                  <span className="font-bold text-[11px]">
+                                    Stage 2: Warehouse Deposit PIN
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isDelivered ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300" : isPickedUp ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse" : "bg-slate-500/10 text-slate-500"}`}
+                                  >
+                                    {isDelivered
+                                      ? "IN STOCK & CLOSED"
+                                      : isPickedUp
+                                        ? "ACTIVE FOR STORE STAFF"
+                                        : "PENDING STAGE 1"}
                                   </span>
                                 </div>
                                 <div className="mt-1.5 flex flex-col gap-0.5">
                                   {isDelivered ? (
                                     <>
                                       <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified &
+                                        Expired (Closed)
                                       </span>
                                       <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
                                         Stock automatically credited to relief inventory
                                       </span>
                                     </>
                                   ) : isPickedUp ? (
-                                    revealedDepositPins[detailedTask.id || detailedTask.task_id || ''] ? (
+                                    revealedDepositPins[
+                                      detailedTask.id || detailedTask.task_id || ""
+                                    ] ? (
                                       <>
                                         <div className="flex items-center justify-between">
                                           <span className="font-mono text-base font-extrabold tracking-widest text-indigo-600 dark:text-indigo-400">
@@ -657,14 +770,15 @@ function DonationsPage() {
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               navigator.clipboard.writeText(warehousePin);
-                                              toast.success('Warehouse Deposit PIN copied!');
+                                              toast.success("Warehouse Deposit PIN copied!");
                                             }}
                                           >
                                             <Copy className="h-3 w-3 mr-1" /> Copy
                                           </Button>
                                         </div>
                                         <span className="text-[10px] text-indigo-700/80 dark:text-indigo-300 font-medium">
-                                          Active Code: Warehouse staff provide to volunteer to store goods
+                                          Active Code: Warehouse staff provide to volunteer to store
+                                          goods
                                         </span>
                                       </>
                                     ) : (
@@ -678,9 +792,11 @@ function DonationsPage() {
                                             e.stopPropagation();
                                             setRevealedDepositPins((prev) => ({
                                               ...prev,
-                                              [detailedTask.id || detailedTask.task_id || '']: true,
+                                              [detailedTask.id || detailedTask.task_id || ""]: true,
                                             }));
-                                            toast.info('Warehouse Deposit PIN revealed for store staff.');
+                                            toast.info(
+                                              "Warehouse Deposit PIN revealed for store staff.",
+                                            );
                                           }}
                                         >
                                           <KeyRound className="h-3 w-3" /> Reveal Deposit PIN
@@ -713,7 +829,8 @@ function DonationsPage() {
                           <div className="flex items-center gap-2">
                             <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             <span>
-                              <strong>Package Delivered:</strong> Volunteer has deposited items at the central relief store.
+                              <strong>Package Delivered:</strong> Volunteer has deposited items at
+                              the central relief store.
                             </span>
                           </div>
                           {previewDonation.status === "Pending" && (
@@ -763,7 +880,10 @@ function DonationsPage() {
                   <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
                     <span className="text-xs font-medium text-muted-foreground">Quantity</span>
                     <p className="mt-1 text-lg font-bold text-foreground">
-                      {previewDonation.quantity} <span className="text-sm font-normal text-muted-foreground">{previewDonation.unit}</span>
+                      {previewDonation.quantity}{" "}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {previewDonation.unit}
+                      </span>
                     </p>
                   </div>
                   <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -775,7 +895,9 @@ function DonationsPage() {
                   <div className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-card p-3 shadow-sm">
                     <span className="text-xs font-medium text-muted-foreground">Expiry Date</span>
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      {previewDonation.expiryDate ? new Date(previewDonation.expiryDate).toLocaleDateString() : "No expiry"}
+                      {previewDonation.expiryDate
+                        ? new Date(previewDonation.expiryDate).toLocaleDateString()
+                        : "No expiry"}
                     </p>
                   </div>
                 </div>
@@ -790,9 +912,13 @@ function DonationsPage() {
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                       <span className="text-xs text-muted-foreground">Donor Name</span>
-                      <p className="text-sm font-semibold text-foreground">{previewDonation.donorName}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {previewDonation.donorName}
+                      </p>
                       {previewDonation.donorEmail && (
-                        <p className="text-xs text-muted-foreground">{previewDonation.donorEmail}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {previewDonation.donorEmail}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -818,12 +944,17 @@ function DonationsPage() {
 
                   {/* Pickup Location & Maps Link */}
                   <div className="mt-3 border-t border-border/60 pt-3">
-                    <span className="text-xs text-muted-foreground">Pickup Location / Destination</span>
+                    <span className="text-xs text-muted-foreground">
+                      Pickup Location / Destination
+                    </span>
                     <div className="mt-1 flex items-start justify-between gap-2">
                       <p className="flex items-start gap-1.5 text-sm text-foreground">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                         <span className="font-medium">
-                          {previewDonation.pickupLocation || (previewDonation.deliveryMethod === "DONOR_DELIVERY" ? "Self drop-off at relief center" : "Contact donor for pickup address")}
+                          {previewDonation.pickupLocation ||
+                            (previewDonation.deliveryMethod === "DONOR_DELIVERY"
+                              ? "Self drop-off at relief center"
+                              : "Contact donor for pickup address")}
                         </span>
                       </p>
                       {previewDonation.pickupLocation && (
@@ -860,8 +991,12 @@ function DonationsPage() {
                 {/* Donor Remarks */}
                 {previewDonation.remarks && (
                   <div className="rounded-lg border border-border bg-card p-3.5">
-                    <span className="text-xs font-medium text-muted-foreground">Donor Remarks & Notes</span>
-                    <p className="mt-1 text-sm text-foreground/90 italic">"{previewDonation.remarks}"</p>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Donor Remarks & Notes
+                    </span>
+                    <p className="mt-1 text-sm text-foreground/90 italic">
+                      "{previewDonation.remarks}"
+                    </p>
                   </div>
                 )}
               </div>
@@ -928,7 +1063,10 @@ function DonationsPage() {
       </Dialog>
 
       {/* 🚚 CREATE VOLUNTEER PICKUP TASK DIALOG */}
-      <Dialog open={!!taskCreatingDonation} onOpenChange={(open) => !open && setTaskCreatingDonation(null)}>
+      <Dialog
+        open={!!taskCreatingDonation}
+        onOpenChange={(open) => !open && setTaskCreatingDonation(null)}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
@@ -936,7 +1074,8 @@ function DonationsPage() {
               Create Volunteer Pickup Task
             </DialogTitle>
             <DialogDescription>
-              Dispatch this donation pickup mission to volunteers. They can accept and complete it via their mobile app.
+              Dispatch this donation pickup mission to volunteers. They can accept and complete it
+              via their mobile app.
             </DialogDescription>
           </DialogHeader>
 
@@ -970,7 +1109,9 @@ function DonationsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {TASK_PRIORITIES.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1028,7 +1169,9 @@ function DonationsPage() {
                     min={2}
                     max={20}
                     value={volunteersRequired}
-                    onChange={(e) => setVolunteersRequired(Math.max(2, parseInt(e.target.value) || 2))}
+                    onChange={(e) =>
+                      setVolunteersRequired(Math.max(2, parseInt(e.target.value) || 2))
+                    }
                     className="mt-1"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -1057,7 +1200,9 @@ function DonationsPage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold"
               disabled={!taskTitle.trim() || createTaskMutation.isPending}
               onClick={() => {
-                const tag = taskCreatingDonation ? `[DONATION_ID:${taskCreatingDonation.id}] [DONATION_CODE:${taskCreatingDonation.code}] ` : '';
+                const tag = taskCreatingDonation
+                  ? `[DONATION_ID:${taskCreatingDonation.id}] [DONATION_CODE:${taskCreatingDonation.code}] `
+                  : "";
                 createTaskMutation.mutate({
                   title: taskTitle.trim(),
                   description: `${tag}${taskDescription.trim()}`,
@@ -1081,7 +1226,8 @@ function DonationsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Accept Donation into Inventory?</AlertDialogTitle>
             <AlertDialogDescription>
-              {accepting?.quantity} {accepting?.unit} of {accepting?.resource} offered by {accepting?.donorName} will be credited to your relief inventory.
+              {accepting?.quantity} {accepting?.unit} of {accepting?.resource} offered by{" "}
+              {accepting?.donorName} will be credited to your relief inventory.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1104,7 +1250,9 @@ function DonationsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Donation</DialogTitle>
-            <DialogDescription>A reason is mandatory and will be visible to the donor.</DialogDescription>
+            <DialogDescription>
+              A reason is mandatory and will be visible to the donor.
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             value={reason}
@@ -1120,7 +1268,8 @@ function DonationsPage() {
               variant="destructive"
               disabled={reason.trim().length < 5 || decide.isPending}
               onClick={() => {
-                if (rejecting) decide.mutate({ id: rejecting.id, decision: "Rejected", note: reason.trim() });
+                if (rejecting)
+                  decide.mutate({ id: rejecting.id, decision: "Rejected", note: reason.trim() });
                 setRejecting(null);
               }}
             >

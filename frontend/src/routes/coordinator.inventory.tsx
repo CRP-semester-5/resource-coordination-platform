@@ -2,31 +2,32 @@ import { useMemo, useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { 
-  ArrowDownLeft, 
-  ArrowUpRight, 
-  Boxes, 
-  History, 
-  Layers, 
-  Package, PackageCheck, 
-  PlusCircle, 
-  RefreshCw, 
-  Search, 
-  Sparkles, 
-  GripVertical, 
-  Plus, 
-  Clock, 
-  ShieldCheck, 
-  Tag, 
-  ArrowRight, 
-  ArrowLeft, 
-  ChevronDown, 
-  FolderOpen, 
-  CheckCheck, 
-  Flame, 
-  Database, 
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Boxes,
+  History,
+  Layers,
+  Package,
+  PackageCheck,
+  PlusCircle,
+  RefreshCw,
+  Search,
+  Sparkles,
+  GripVertical,
+  Plus,
+  Clock,
+  ShieldCheck,
+  Tag,
+  ArrowRight,
+  ArrowLeft,
+  ChevronDown,
+  FolderOpen,
+  CheckCheck,
+  Flame,
+  Database,
   Activity,
-  X
+  X,
 } from "lucide-react";
 import { inventoryAPI, donationsAPI, categoriesAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
@@ -34,14 +35,32 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/coordinator/inventory")({
   head: () => ({
     meta: [
       { title: "Relief Inventory Hub & Real Database Sorter — ResQ Hub" },
-      { name: "description", content: "9-Category humanitarian warehouse inventory connected to Supabase PostgreSQL real database." },
+      {
+        name: "description",
+        content:
+          "9-Category humanitarian warehouse inventory connected to Supabase PostgreSQL real database.",
+      },
     ],
   }),
   component: CoordinatorInventoryPage,
@@ -105,8 +124,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🥛",
         unit: "packets",
         variants: [
-          { id: "vanilla_milk", name: "Vanilla Milk Packets (180ml)", quantity: 0, unit: "packets" },
-          { id: "chocolate_milk", name: "Chocolate Milk Packets (180ml)", quantity: 0, unit: "packets" },
+          {
+            id: "vanilla_milk",
+            name: "Vanilla Milk Packets (180ml)",
+            quantity: 0,
+            unit: "packets",
+          },
+          {
+            id: "chocolate_milk",
+            name: "Chocolate Milk Packets (180ml)",
+            quantity: 0,
+            unit: "packets",
+          },
           { id: "fresh_milk", name: "Fresh Liquid Milk (1L)", quantity: 0, unit: "bottles" },
           { id: "milk_powder", name: "Full Cream Milk Powder (400g)", quantity: 0, unit: "packs" },
         ],
@@ -140,8 +169,20 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🍱",
         unit: "packs",
         variants: [
-          { id: "rice_parcels", name: "Rice & Curry Parcels (Cooked)", quantity: 0, unit: "packs", isPerishable: true },
-          { id: "buns_bakery", name: "Buns / Fresh Bread Loaves", quantity: 0, unit: "packs", isPerishable: true },
+          {
+            id: "rice_parcels",
+            name: "Rice & Curry Parcels (Cooked)",
+            quantity: 0,
+            unit: "packs",
+            isPerishable: true,
+          },
+          {
+            id: "buns_bakery",
+            name: "Buns / Fresh Bread Loaves",
+            quantity: 0,
+            unit: "packs",
+            isPerishable: true,
+          },
         ],
       },
     ],
@@ -173,8 +214,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🧪",
         unit: "packs",
         variants: [
-          { id: "chlorine_tabs", name: "Water Purification Tablets (100s)", quantity: 0, unit: "tubes" },
-          { id: "ors_sachets", name: "Oral Rehydration Salts (ORS / Jeewani)", quantity: 0, unit: "sachets" },
+          {
+            id: "chlorine_tabs",
+            name: "Water Purification Tablets (100s)",
+            quantity: 0,
+            unit: "tubes",
+          },
+          {
+            id: "ors_sachets",
+            name: "Oral Rehydration Salts (ORS / Jeewani)",
+            quantity: 0,
+            unit: "sachets",
+          },
         ],
       },
     ],
@@ -196,7 +247,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         unit: "strips",
         variants: [
           { id: "panadol", name: "Paracetamol 500mg Strips", quantity: 0, unit: "strips" },
-          { id: "amoxicillin", name: "Amoxicillin / Antibiotic Strips", quantity: 0, unit: "strips" },
+          {
+            id: "amoxicillin",
+            name: "Amoxicillin / Antibiotic Strips",
+            quantity: 0,
+            unit: "strips",
+          },
           { id: "antihistamine", name: "Cetirizine / Antihistamines", quantity: 0, unit: "strips" },
         ],
       },
@@ -206,8 +262,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🩺",
         unit: "packs",
         variants: [
-          { id: "sterile_bandages", name: "Sterile Bandage Rolls & Gauze", quantity: 0, unit: "packs" },
-          { id: "antiseptic_liquid", name: "Povidone Iodine / Dettol 100ml", quantity: 0, unit: "bottles" },
+          {
+            id: "sterile_bandages",
+            name: "Sterile Bandage Rolls & Gauze",
+            quantity: 0,
+            unit: "packs",
+          },
+          {
+            id: "antiseptic_liquid",
+            name: "Povidone Iodine / Dettol 100ml",
+            quantity: 0,
+            unit: "bottles",
+          },
           { id: "surgical_tape", name: "Micropore Surgical Tape", quantity: 0, unit: "rolls" },
         ],
       },
@@ -217,7 +283,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🧰",
         unit: "kits",
         variants: [
-          { id: "first_aid_pouches", name: "Compact Emergency First Aid Pouches", quantity: 0, unit: "kits" },
+          {
+            id: "first_aid_pouches",
+            name: "Compact Emergency First Aid Pouches",
+            quantity: 0,
+            unit: "kits",
+          },
           { id: "burn_dressings", name: "Hydrogel Burn Dressings", quantity: 0, unit: "packs" },
         ],
       },
@@ -239,9 +310,19 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🍼",
         unit: "packs",
         variants: [
-          { id: "baby_milk_formula", name: "Infant Formula Milk Powder (400g)", quantity: 0, unit: "tins" },
+          {
+            id: "baby_milk_formula",
+            name: "Infant Formula Milk Powder (400g)",
+            quantity: 0,
+            unit: "tins",
+          },
           { id: "baby_cereal", name: "Nestum / Rice Baby Cereal", quantity: 0, unit: "boxes" },
-          { id: "feeding_bottles", name: "BPA-Free Baby Feeding Bottles", quantity: 0, unit: "units" },
+          {
+            id: "feeding_bottles",
+            name: "BPA-Free Baby Feeding Bottles",
+            quantity: 0,
+            unit: "units",
+          },
         ],
       },
       {
@@ -250,8 +331,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🧸",
         unit: "packs",
         variants: [
-          { id: "diapers_medium", name: "Baby Diapers (Medium Size Packs)", quantity: 0, unit: "packs" },
-          { id: "diapers_large", name: "Baby Diapers (Large Size Packs)", quantity: 0, unit: "packs" },
+          {
+            id: "diapers_medium",
+            name: "Baby Diapers (Medium Size Packs)",
+            quantity: 0,
+            unit: "packs",
+          },
+          {
+            id: "diapers_large",
+            name: "Baby Diapers (Large Size Packs)",
+            quantity: 0,
+            unit: "packs",
+          },
           { id: "baby_wipes", name: "Gentle Baby Wet Wipes (80s)", quantity: 0, unit: "packs" },
           { id: "baby_soap", name: "Mild Baby Bath Soap & Rash Cream", quantity: 0, unit: "packs" },
         ],
@@ -276,7 +367,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         variants: [
           { id: "mens_shirts_sarongs", name: "Men Shirts & Sarongs", quantity: 0, unit: "pcs" },
           { id: "womens_dresses", name: "Women Casual Dresses & Sarees", quantity: 0, unit: "pcs" },
-          { id: "underwear_adults", name: "Brand New Undergarment Sets", quantity: 0, unit: "sets" },
+          {
+            id: "underwear_adults",
+            name: "Brand New Undergarment Sets",
+            quantity: 0,
+            unit: "sets",
+          },
         ],
       },
       {
@@ -285,8 +381,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🧒",
         unit: "pcs",
         variants: [
-          { id: "boys_clothes", name: "Boys T-Shirts & Shorts (Ages 4-12)", quantity: 0, unit: "sets" },
-          { id: "girls_clothes", name: "Girls Frocks & Sets (Ages 4-12)", quantity: 0, unit: "sets" },
+          {
+            id: "boys_clothes",
+            name: "Boys T-Shirts & Shorts (Ages 4-12)",
+            quantity: 0,
+            unit: "sets",
+          },
+          {
+            id: "girls_clothes",
+            name: "Girls Frocks & Sets (Ages 4-12)",
+            quantity: 0,
+            unit: "sets",
+          },
           { id: "infant_onesies", name: "Infant Onesies & Warmers", quantity: 0, unit: "pcs" },
         ],
       },
@@ -298,7 +404,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         variants: [
           { id: "warm_blankets", name: "Warm Wool / Fleece Blankets", quantity: 0, unit: "units" },
           { id: "bath_towels", name: "Cotton Bath Towels", quantity: 0, unit: "pcs" },
-          { id: "bedsheets", name: "Single/Double Bedsheets with Covers", quantity: 0, unit: "sets" },
+          {
+            id: "bedsheets",
+            name: "Single/Double Bedsheets with Covers",
+            quantity: 0,
+            unit: "sets",
+          },
         ],
       },
     ],
@@ -319,7 +430,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🏕️",
         unit: "units",
         variants: [
-          { id: "tarps_heavy", name: "Heavy Duty Tarpaulins (20x30ft)", quantity: 0, unit: "units" },
+          {
+            id: "tarps_heavy",
+            name: "Heavy Duty Tarpaulins (20x30ft)",
+            quantity: 0,
+            unit: "units",
+          },
           { id: "family_tents", name: "4-6 Person Dome Relief Tents", quantity: 0, unit: "units" },
           { id: "nylon_ropes", name: "Nylon Tie-down Ropes (50m)", quantity: 0, unit: "coils" },
         ],
@@ -338,7 +454,16 @@ const DEFAULT_BRANCHES: MainBranch[] = [
   },
   {
     id: "hygiene",
-    dbCategoryNameKeywords: ["hygiene", "soap", "paste", "brush", "sanit", "bleach", "detergent", "tooth"],
+    dbCategoryNameKeywords: [
+      "hygiene",
+      "soap",
+      "paste",
+      "brush",
+      "sanit",
+      "bleach",
+      "detergent",
+      "tooth",
+    ],
     name: "Hygiene & Sanitation",
     icon: "🧼",
     description: "Bath soaps, sanitary napkins, toothbrushes, detergents, and sanitizers.",
@@ -353,8 +478,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         unit: "packs",
         variants: [
           { id: "soap_bars", name: "Disinfectant Bath Soap Bars", quantity: 0, unit: "bars" },
-          { id: "toothpaste_brush", name: "Toothpaste (120g) & Brush Sets", quantity: 0, unit: "sets" },
-          { id: "hand_sanitizer", name: "Alcohol Hand Sanitizer (500ml)", quantity: 0, unit: "bottles" },
+          {
+            id: "toothpaste_brush",
+            name: "Toothpaste (120g) & Brush Sets",
+            quantity: 0,
+            unit: "sets",
+          },
+          {
+            id: "hand_sanitizer",
+            name: "Alcohol Hand Sanitizer (500ml)",
+            quantity: 0,
+            unit: "bottles",
+          },
         ],
       },
       {
@@ -363,7 +498,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🌸",
         unit: "packs",
         variants: [
-          { id: "sanitary_pads", name: "Sanitary Napkins (Packs of 10)", quantity: 0, unit: "packs" },
+          {
+            id: "sanitary_pads",
+            name: "Sanitary Napkins (Packs of 10)",
+            quantity: 0,
+            unit: "packs",
+          },
           { id: "intimate_wipes", name: "Antibacterial Hygiene Wipes", quantity: 0, unit: "packs" },
         ],
       },
@@ -374,14 +514,29 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         unit: "bottles",
         variants: [
           { id: "bleach_bottles", name: "Chlorine Bleach (1L)", quantity: 0, unit: "bottles" },
-          { id: "washing_powder", name: "Laundry Detergent Powder (1kg)", quantity: 0, unit: "packs" },
+          {
+            id: "washing_powder",
+            name: "Laundry Detergent Powder (1kg)",
+            quantity: 0,
+            unit: "packs",
+          },
         ],
       },
     ],
   },
   {
     id: "equipment",
-    dbCategoryNameKeywords: ["equipment", "tool", "torch", "battery", "generator", "gear", "boot", "shovel", "book"],
+    dbCategoryNameKeywords: [
+      "equipment",
+      "tool",
+      "torch",
+      "battery",
+      "generator",
+      "gear",
+      "boot",
+      "shovel",
+      "book",
+    ],
     name: "Equipment & Tools",
     icon: "🔦",
     description: "Emergency torches, batteries, power banks, shovels, and boots.",
@@ -396,9 +551,19 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         unit: "units",
         variants: [
           { id: "led_torches", name: "Rechargeable LED Torches", quantity: 0, unit: "units" },
-          { id: "batteries_aa", name: "AA / D-Cell Alkaline Batteries (Pack of 4)", quantity: 0, unit: "packs" },
+          {
+            id: "batteries_aa",
+            name: "AA / D-Cell Alkaline Batteries (Pack of 4)",
+            quantity: 0,
+            unit: "packs",
+          },
           { id: "power_banks", name: "10,000mAh Solar Power Banks", quantity: 0, unit: "units" },
-          { id: "candles_matches", name: "Wax Emergency Candles & Matchboxes", quantity: 0, unit: "sets" },
+          {
+            id: "candles_matches",
+            name: "Wax Emergency Candles & Matchboxes",
+            quantity: 0,
+            unit: "sets",
+          },
         ],
       },
       {
@@ -409,7 +574,12 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         variants: [
           { id: "shovels_spades", name: "Mud Shovels & Spades", quantity: 0, unit: "units" },
           { id: "gumboots", name: "Heavy Rubber Gumboots (Pairs)", quantity: 0, unit: "pairs" },
-          { id: "safety_raincoats", name: "Reflective Waterproof Raincoats", quantity: 0, unit: "units" },
+          {
+            id: "safety_raincoats",
+            name: "Reflective Waterproof Raincoats",
+            quantity: 0,
+            unit: "units",
+          },
         ],
       },
     ],
@@ -431,8 +601,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         unit: "sets",
         variants: [
           { id: "aluminum_pots", name: "Large Aluminum Cooking Pots", quantity: 0, unit: "pots" },
-          { id: "plastic_plates_cups", name: "Reusable Plastic Plates & Cups (Pack of 10)", quantity: 0, unit: "sets" },
-          { id: "stainless_spoons", name: "Stainless Steel Spoon Sets (12 pcs)", quantity: 0, unit: "sets" },
+          {
+            id: "plastic_plates_cups",
+            name: "Reusable Plastic Plates & Cups (Pack of 10)",
+            quantity: 0,
+            unit: "sets",
+          },
+          {
+            id: "stainless_spoons",
+            name: "Stainless Steel Spoon Sets (12 pcs)",
+            quantity: 0,
+            unit: "sets",
+          },
         ],
       },
       {
@@ -441,8 +621,18 @@ const DEFAULT_BRANCHES: MainBranch[] = [
         icon: "🪣",
         unit: "units",
         variants: [
-          { id: "plastic_buckets", name: "20L Plastic Water Buckets with Lids", quantity: 0, unit: "units" },
-          { id: "heavy_garbage_bags", name: "Heavy Duty Waste Disposal Bags (Roll of 20)", quantity: 0, unit: "rolls" },
+          {
+            id: "plastic_buckets",
+            name: "20L Plastic Water Buckets with Lids",
+            quantity: 0,
+            unit: "units",
+          },
+          {
+            id: "heavy_garbage_bags",
+            name: "Heavy Duty Waste Disposal Bags (Roll of 20)",
+            quantity: 0,
+            unit: "rolls",
+          },
         ],
       },
     ],
@@ -473,7 +663,8 @@ export function CoordinatorInventoryPage() {
               ...defB,
               ...userB,
               dbCategoryNameKeywords: defB.dbCategoryNameKeywords || [],
-              types: Array.isArray(userB.types) && userB.types.length > 0 ? userB.types : defB.types,
+              types:
+                Array.isArray(userB.types) && userB.types.length > 0 ? userB.types : defB.types,
             };
           });
         }
@@ -571,7 +762,7 @@ export function CoordinatorInventoryPage() {
     variantId: string,
     variantName: string,
     typeName: string,
-    requestedQty: number
+    requestedQty: number,
   ) => {
     if (!alloc) return;
 
@@ -616,7 +807,7 @@ export function CoordinatorInventoryPage() {
           item_name: variantName,
           requester_name: alloc.requester,
         },
-        orgId
+        orgId,
       );
       queryClient.invalidateQueries({ queryKey: ["inventory", orgId] });
       queryClient.invalidateQueries({ queryKey: ["inventory_transactions", orgId] });
@@ -650,28 +841,30 @@ export function CoordinatorInventoryPage() {
     localStorage.removeItem("resq_hub_active_allocation");
     setActiveAllocation(null);
 
-    toast.success(`🎉 Successfully Allocated ${allocQty} ${alloc.unit || 'units'} of ${variantName}!`, {
-      description: `Reserved from Shelf "${typeName}" for Request #${alloc.requestCode || alloc.requestId.slice(0, 8)}. Returning to Request Details...`,
-      duration: 3000,
-    });
+    toast.success(
+      `🎉 Successfully Allocated ${allocQty} ${alloc.unit || "units"} of ${variantName}!`,
+      {
+        description: `Reserved from Shelf "${typeName}" for Request #${alloc.requestCode || alloc.requestId.slice(0, 8)}. Returning to Request Details...`,
+        duration: 3000,
+      },
+    );
 
     setTimeout(() => {
       window.location.href = `/coordinator/requests?allocatedRequestId=${alloc.requestId}`;
     }, 700);
   };
 
-
   // --------------------------------------------------------------------------
   // 1. REAL DATABASE QUERIES (SUPABASE POSTGRESQL VIA KONG GATEWAY)
   // --------------------------------------------------------------------------
-  
+
   // Real DB Categories
   const { data: dbCategories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
       try {
         const res = await categoriesAPI.getAll();
-        return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        return Array.isArray(res.data) ? res.data : res.data?.data || [];
       } catch (_) {
         return [];
       }
@@ -696,7 +889,11 @@ export function CoordinatorInventoryPage() {
   });
 
   // Real DB Inward Donations
-  const { data: dbDonationsRaw = [], isLoading: isDonationsLoading, refetch: refetchDonations } = useQuery({
+  const {
+    data: dbDonationsRaw = [],
+    isLoading: isDonationsLoading,
+    refetch: refetchDonations,
+  } = useQuery({
     queryKey: ["donations", orgId],
     queryFn: async () => {
       if (!orgId) return [];
@@ -713,7 +910,11 @@ export function CoordinatorInventoryPage() {
   });
 
   // Real DB Inward Transaction Ledger Logs
-  const { data: dbTransactionsRaw = [], isLoading: isTxLoading, refetch: refetchTransactions } = useQuery({
+  const {
+    data: dbTransactionsRaw = [],
+    isLoading: isTxLoading,
+    refetch: refetchTransactions,
+  } = useQuery({
     queryKey: ["inventory_transactions", orgId],
     queryFn: async () => {
       if (!orgId) return [];
@@ -738,16 +939,14 @@ export function CoordinatorInventoryPage() {
 
     // 1. Exact match by name
     const exact = cats.find(
-      (c: any) => c.name?.toLowerCase().trim() === (branch?.name || "").toLowerCase().trim()
+      (c: any) => c.name?.toLowerCase().trim() === (branch?.name || "").toLowerCase().trim(),
     );
     if (exact) return exact.category_id;
 
     // 2. Match by keywords
     const keywords = branch?.dbCategoryNameKeywords || [];
     for (const kw of keywords) {
-      const match = cats.find((c: any) =>
-        (c.name || "").toLowerCase().includes(kw)
-      );
+      const match = cats.find((c: any) => (c.name || "").toLowerCase().includes(kw));
       if (match) return match.category_id;
     }
 
@@ -788,8 +987,12 @@ export function CoordinatorInventoryPage() {
       // If database has 0, sum variants
       if (totalStock === 0 && Array.isArray(b?.types)) {
         totalStock = b.types.reduce(
-          (tSum, t) => tSum + (Array.isArray(t?.variants) ? t.variants.reduce((vSum, v) => vSum + (Number(v?.quantity) || 0), 0) : 0),
-          0
+          (tSum, t) =>
+            tSum +
+            (Array.isArray(t?.variants)
+              ? t.variants.reduce((vSum, v) => vSum + (Number(v?.quantity) || 0), 0)
+              : 0),
+          0,
         );
       }
 
@@ -812,12 +1015,25 @@ export function CoordinatorInventoryPage() {
   const realUnsortedDonations = useMemo(() => {
     if (!Array.isArray(dbDonationsRaw)) return [];
     // Only include donations that are fully verified and received at warehouse (handover completed via PIN / accepted)
-    const VERIFIED_RECEIVED_STATUSES = ["COMPLETED", "VERIFIED", "ACCEPTED", "DELIVERED", "RECEIVED", "COLLECTED"];
+    const VERIFIED_RECEIVED_STATUSES = [
+      "COMPLETED",
+      "VERIFIED",
+      "ACCEPTED",
+      "DELIVERED",
+      "RECEIVED",
+      "COLLECTED",
+    ];
     return dbDonationsRaw.filter((d: any) => {
       const donId = String(d.donation_id || d.id || d._id);
       if (sortedDonationIds.includes(donId)) return false;
       const status = (d.status || "").toUpperCase();
-      if (status === "SORTED" || status === "SHELVED" || status === "STORED" || status === "CATEGORIZED") return false;
+      if (
+        status === "SORTED" ||
+        status === "SHELVED" ||
+        status === "STORED" ||
+        status === "CATEGORIZED"
+      )
+        return false;
       return VERIFIED_RECEIVED_STATUSES.includes(status);
     });
   }, [dbDonationsRaw, sortedDonationIds]);
@@ -834,7 +1050,7 @@ export function CoordinatorInventoryPage() {
       const resName = (d.resource_name || d.item_name || d.resource || "").toLowerCase();
       const notes = (d.donation_notes || d.remarks || "").toLowerCase();
       const combined = (cat + " " + resName + " " + notes).trim();
-      
+
       const matchesKw = kws.some((kw: string) => combined.includes(kw.toLowerCase()));
       if (matchesKw) return true;
       if (currentB.id === "other") return true;
@@ -855,8 +1071,12 @@ export function CoordinatorInventoryPage() {
     return list.filter((tx: any) => {
       const matchesSearch =
         !ledgerSearch ||
-        (tx.item_name || tx.resources?.resource_name || tx.remarks || "").toLowerCase().includes(ledgerSearch.toLowerCase()) ||
-        (tx.users?.first_name || tx.performed_by || "").toLowerCase().includes(ledgerSearch.toLowerCase()) ||
+        (tx.item_name || tx.resources?.resource_name || tx.remarks || "")
+          .toLowerCase()
+          .includes(ledgerSearch.toLowerCase()) ||
+        (tx.users?.first_name || tx.performed_by || "")
+          .toLowerCase()
+          .includes(ledgerSearch.toLowerCase()) ||
         (tx.transaction_type || "").toLowerCase().includes(ledgerSearch.toLowerCase());
 
       const matchesType =
@@ -917,13 +1137,14 @@ export function CoordinatorInventoryPage() {
     donation: any,
     targetCategoryView: string,
     targetTypeId: string,
-    targetVariantId: string
+    targetVariantId: string,
   ) => {
     if (!donation) return;
 
     const donationId = String(donation.donation_id || donation.id || donation._id);
     const donationQty = Math.max(1, Number(donation.quantity) || 1);
-    const donationName = donation.resource_name || donation.item_name || donation.category || "Relief Supply";
+    const donationName =
+      donation.resource_name || donation.item_name || donation.category || "Relief Supply";
 
     // 1. FIND MATCHING REAL DB CATEGORY ID
     const targetBranch = branches.find((b) => b.id === targetCategoryView);
@@ -1011,11 +1232,7 @@ export function CoordinatorInventoryPage() {
     setDragOverTargetId(null);
   };
 
-  const handleDropOnVariant = (
-    e: React.DragEvent,
-    typeId: string,
-    variantId: string
-  ) => {
+  const handleDropOnVariant = (e: React.DragEvent, typeId: string, variantId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverTargetId(null);
@@ -1039,7 +1256,7 @@ export function CoordinatorInventoryPage() {
   const handleDropOnSubTypeContainer = (
     e: React.DragEvent,
     typeId: string,
-    fallbackVariantId: string
+    fallbackVariantId: string,
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1110,7 +1327,8 @@ export function CoordinatorInventoryPage() {
       return;
     }
 
-    const subTypeId = newSubTypeName.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now().toString().slice(-4);
+    const subTypeId =
+      newSubTypeName.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now().toString().slice(-4);
     const newSub: SubType = {
       id: subTypeId,
       name: newSubTypeName.trim(),
@@ -1149,7 +1367,8 @@ export function CoordinatorInventoryPage() {
       return;
     }
 
-    const varId = newVariantName.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now().toString().slice(-4);
+    const varId =
+      newVariantName.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now().toString().slice(-4);
     const qty = parseInt(newVariantQty) || 0;
 
     setBranches((prev) => {
@@ -1190,7 +1409,13 @@ export function CoordinatorInventoryPage() {
   // RENDER: VIEW 2 -> DEDICATED CATEGORY SUB-TYPE & SORTER PAGE
   // --------------------------------------------------------------------------
   if (selectedCategoryView && currentCategory) {
-    const allVariantsInCurrentCategory: { typeId: string; typeName: string; variantId: string; variantName: string; unit: string }[] = [];
+    const allVariantsInCurrentCategory: {
+      typeId: string;
+      typeName: string;
+      variantId: string;
+      variantName: string;
+      unit: string;
+    }[] = [];
     (currentCategory.types || []).forEach((t) => {
       (t.variants || []).forEach((v) => {
         allVariantsInCurrentCategory.push({
@@ -1237,7 +1462,9 @@ export function CoordinatorInventoryPage() {
                     <Database className="h-3 w-3" /> Supabase DB Connected
                   </span>
                 </h1>
-                <p className="text-xs text-muted-foreground mt-0.5">{currentCategory.description}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {currentCategory.description}
+                </p>
               </div>
             </div>
           </div>
@@ -1249,7 +1476,8 @@ export function CoordinatorInventoryPage() {
                 Total Dept Stock (DB)
               </span>
               <strong className="text-base font-black text-foreground">
-                {categoryRealStock.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">units</span>
+                {categoryRealStock.toLocaleString()}{" "}
+                <span className="text-xs font-normal text-muted-foreground">units</span>
               </strong>
             </div>
             <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-right">
@@ -1257,7 +1485,8 @@ export function CoordinatorInventoryPage() {
                 Unsorted Inward (DB)
               </span>
               <strong className="text-base font-black text-amber-500">
-                {categoryUnsortedDonations.length} <span className="text-xs font-normal text-muted-foreground">items</span>
+                {categoryUnsortedDonations.length}{" "}
+                <span className="text-xs font-normal text-muted-foreground">items</span>
               </strong>
             </div>
             <Button
@@ -1273,7 +1502,6 @@ export function CoordinatorInventoryPage() {
 
         {/* WORKSPACE: TWO-COLUMN LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
           {/* LEFT 8-COLS: SUB-CATEGORIES & SHELF VARIANTS */}
           <div className="lg:col-span-8 space-y-6">
             <div className="flex items-center justify-between">
@@ -1282,7 +1510,8 @@ export function CoordinatorInventoryPage() {
                   <FolderOpen className="h-4 w-4 text-primary" /> Sub-Categories & Variant Shelves
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Drag items from the right inward tray and drop onto any shelf below to increment real database stock.
+                  Drag items from the right inward tray and drop onto any shelf below to increment
+                  real database stock.
                 </p>
               </div>
               <Button
@@ -1309,7 +1538,10 @@ export function CoordinatorInventoryPage() {
             ) : (
               <div className="space-y-6">
                 {(currentCategory.types || []).map((subType) => {
-                  const subTypeTotal = (subType.variants || []).reduce((acc, v) => acc + (Number(v.quantity) || 0), 0);
+                  const subTypeTotal = (subType.variants || []).reduce(
+                    (acc, v) => acc + (Number(v.quantity) || 0),
+                    0,
+                  );
 
                   return (
                     <div
@@ -1328,10 +1560,14 @@ export function CoordinatorInventoryPage() {
                       {/* SUB-TYPE HEADER */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-border/60">
                         <div className="flex items-center gap-2.5">
-                          <span className="text-2xl p-1.5 rounded-lg bg-muted/60 shadow-2xs">{subType.icon}</span>
+                          <span className="text-2xl p-1.5 rounded-lg bg-muted/60 shadow-2xs">
+                            {subType.icon}
+                          </span>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-base text-foreground">{subType.name}</h3>
+                              <h3 className="font-bold text-base text-foreground">
+                                {subType.name}
+                              </h3>
                               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
                                 Unit: {subType.unit}
                               </span>
@@ -1389,7 +1625,9 @@ export function CoordinatorInventoryPage() {
 
                               <div>
                                 <div className="flex items-start justify-between gap-1">
-                                  <span className="font-bold text-xs text-foreground line-clamp-2">{v.name}</span>
+                                  <span className="font-bold text-xs text-foreground line-clamp-2">
+                                    {v.name}
+                                  </span>
                                   {v.isPerishable && (
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-0.5 shrink-0">
                                       <Flame className="h-2.5 w-2.5" /> Perishable
@@ -1402,12 +1640,13 @@ export function CoordinatorInventoryPage() {
                                     <span className="text-2xl font-black tracking-tight text-foreground">
                                       {(Number(v.quantity) || 0).toLocaleString()}
                                     </span>
-                                    <span className="text-xs font-semibold text-muted-foreground ml-1">{v.unit}</span>
+                                    <span className="text-xs font-semibold text-muted-foreground ml-1">
+                                      {v.unit}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
 
-                              
                               {/* ALLOCATION MODE ACTION */}
                               {activeAllocation && (
                                 <div className="mt-2.5 pt-2 border-t border-emerald-500/30">
@@ -1421,17 +1660,19 @@ export function CoordinatorInventoryPage() {
                                         v.id,
                                         v.name,
                                         subType.name,
-                                        activeAllocation.quantity
+                                        activeAllocation.quantity,
                                       )
                                     }
                                     className={`w-full text-[11px] font-bold gap-1.5 h-7 shadow-xs ${
-                                      (Number(v.quantity) || 0) >= (Number(activeAllocation.quantity) || 1)
+                                      (Number(v.quantity) || 0) >=
+                                      (Number(activeAllocation.quantity) || 1)
                                         ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse"
                                         : "bg-amber-600 hover:bg-amber-700 text-white"
                                     }`}
                                   >
                                     <PackageCheck className="h-3.5 w-3.5" />
-                                    Allocate {activeAllocation.quantity} {activeAllocation.unit || v.unit || "units"}
+                                    Allocate {activeAllocation.quantity}{" "}
+                                    {activeAllocation.unit || v.unit || "units"}
                                   </Button>
                                 </div>
                               )}
@@ -1485,7 +1726,9 @@ export function CoordinatorInventoryPage() {
                     <Boxes className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-foreground leading-none">Verified Inward Donations Tray</h3>
+                    <h3 className="font-bold text-sm text-foreground leading-none">
+                      Verified Inward Donations Tray
+                    </h3>
                     <span className="text-[11px] text-muted-foreground mt-0.5 block">
                       Live Real Database (Supabase)
                     </span>
@@ -1496,7 +1739,11 @@ export function CoordinatorInventoryPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (window.confirm("Reset sorted donations cache to show all inward items in the tray again?")) {
+                        if (
+                          window.confirm(
+                            "Reset sorted donations cache to show all inward items in the tray again?",
+                          )
+                        ) {
                           setSortedDonationIds([]);
                           try {
                             localStorage.removeItem("resq_hub_sorted_donation_ids");
@@ -1537,9 +1784,12 @@ export function CoordinatorInventoryPage() {
                 ) : categoryUnsortedDonations.length === 0 ? (
                   <div className="p-6 text-center border border-dashed border-border rounded-xl bg-muted/20">
                     <CheckCheck className="h-8 w-8 text-emerald-500 mx-auto mb-1.5 opacity-80" />
-                    <p className="font-bold text-xs text-foreground">No Unsorted Verified Donations</p>
+                    <p className="font-bold text-xs text-foreground">
+                      No Unsorted Verified Donations
+                    </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Donations will appear here once verified and handed over to the warehouse via PIN.
+                      Donations will appear here once verified and handed over to the warehouse via
+                      PIN.
                     </p>
                   </div>
                 ) : (
@@ -1555,7 +1805,9 @@ export function CoordinatorInventoryPage() {
                     })
                     .map((donation: any) => {
                       const donId = String(donation.donation_id || donation.id || donation._id);
-                      const isBeingDragged = draggedDonation && String(draggedDonation.donation_id || draggedDonation.id) === donId;
+                      const isBeingDragged =
+                        draggedDonation &&
+                        String(draggedDonation.donation_id || draggedDonation.id) === donId;
                       const isQuickAssignOpen = quickAssignDonationId === donId;
 
                       return (
@@ -1578,7 +1830,10 @@ export function CoordinatorInventoryPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-1">
                                 <h4 className="font-bold text-xs text-foreground leading-tight truncate">
-                                  {donation.resource_name || donation.item_name || donation.category || "Relief Supply"}
+                                  {donation.resource_name ||
+                                    donation.item_name ||
+                                    donation.category ||
+                                    "Relief Supply"}
                                 </h4>
                                 <span className="font-black text-xs px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0">
                                   +{donation.quantity || 1} {donation.unit || "units"}
@@ -1615,7 +1870,9 @@ export function CoordinatorInventoryPage() {
                                     onClick={() => {
                                       setQuickAssignDonationId(donId);
                                       if (allVariantsInCurrentCategory.length > 0) {
-                                        setQuickAssignVariantId(allVariantsInCurrentCategory[0].variantId);
+                                        setQuickAssignVariantId(
+                                          allVariantsInCurrentCategory[0].variantId,
+                                        );
                                       }
                                     }}
                                     className="h-6 px-2 text-[10px] font-semibold gap-1 text-primary hover:bg-primary/10"
@@ -1639,9 +1896,17 @@ export function CoordinatorInventoryPage() {
                                       size="sm"
                                       disabled={syncToRealDbMutation.isPending}
                                       onClick={() => {
-                                        const selected = allVariantsInCurrentCategory.find((v) => v.variantId === quickAssignVariantId) || allVariantsInCurrentCategory[0];
+                                        const selected =
+                                          allVariantsInCurrentCategory.find(
+                                            (v) => v.variantId === quickAssignVariantId,
+                                          ) || allVariantsInCurrentCategory[0];
                                         if (selected) {
-                                          executeCategorization(donation, selectedCategoryView, selected.typeId, selected.variantId);
+                                          executeCategorization(
+                                            donation,
+                                            selectedCategoryView,
+                                            selected.typeId,
+                                            selected.variantId,
+                                          );
                                         }
                                       }}
                                       className="h-6 px-2 text-[10px] font-bold bg-primary text-primary-foreground"
@@ -1665,8 +1930,6 @@ export function CoordinatorInventoryPage() {
                 )}
               </div>
             </div>
-
-            
           </div>
         </div>
 
@@ -1675,10 +1938,12 @@ export function CoordinatorInventoryPage() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <PlusCircle className="h-5 w-5 text-primary" /> Add Sub-Category to {currentCategory.name}
+                <PlusCircle className="h-5 w-5 text-primary" /> Add Sub-Category to{" "}
+                {currentCategory.name}
               </DialogTitle>
               <DialogDescription>
-                Create a new sub-category (e.g. "Rice & Grains", "Canned Protein") under {currentCategory.name}.
+                Create a new sub-category (e.g. "Rice & Grains", "Canned Protein") under{" "}
+                {currentCategory.name}.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-2">
@@ -1810,7 +2075,9 @@ export function CoordinatorInventoryPage() {
             Total Warehouse Stock (DB)
           </span>
           <div className="mt-1 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-foreground">{grandTotalStockUnits.toLocaleString()}</span>
+            <span className="text-2xl font-black text-foreground">
+              {grandTotalStockUnits.toLocaleString()}
+            </span>
             <span className="text-xs font-semibold text-muted-foreground">units</span>
           </div>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
@@ -1836,7 +2103,9 @@ export function CoordinatorInventoryPage() {
             Verified Inward Stock
           </span>
           <div className="mt-1 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-amber-500">{realUnsortedDonations.length}</span>
+            <span className="text-2xl font-black text-amber-500">
+              {realUnsortedDonations.length}
+            </span>
             <span className="text-xs font-semibold text-muted-foreground">in database</span>
           </div>
           <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1 block">
@@ -1849,7 +2118,9 @@ export function CoordinatorInventoryPage() {
             Recorded Ledger Logs (DB)
           </span>
           <div className="mt-1 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-foreground">{filteredLedgerEntries.length}</span>
+            <span className="text-2xl font-black text-foreground">
+              {filteredLedgerEntries.length}
+            </span>
             <span className="text-xs font-semibold text-muted-foreground">transactions</span>
           </div>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
@@ -1866,7 +2137,8 @@ export function CoordinatorInventoryPage() {
               <Layers className="h-5 w-5 text-primary" /> 9 Humanitarian Relief Categories
             </h2>
             <p className="text-xs text-muted-foreground">
-              Click any category card to open its variant shelves and drag-and-drop inward donation sorter.
+              Click any category card to open its variant shelves and drag-and-drop inward donation
+              sorter.
             </p>
           </div>
           <span className="text-xs font-medium text-muted-foreground">
@@ -1877,7 +2149,10 @@ export function CoordinatorInventoryPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {branches.map((b) => {
             const branchTotalUnits = branchStockMap.get(b.id) || 0;
-            const totalVariantsCount = (b.types || []).reduce((acc, t) => acc + (t.variants || []).length, 0);
+            const totalVariantsCount = (b.types || []).reduce(
+              (acc, t) => acc + (t.variants || []).length,
+              0,
+            );
 
             // Count real inward donations in DB matching this branch
             const pendingForThisCategory = realUnsortedDonations.filter((d: any) => {
@@ -1893,7 +2168,9 @@ export function CoordinatorInventoryPage() {
                 className={`p-5 rounded-2xl border bg-card hover:bg-card/90 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] flex flex-col justify-between group relative overflow-hidden ${b.borderTheme || "border-border"}`}
               >
                 {/* BACKGROUND ACCENT GRADIENT */}
-                <div className={`absolute -right-10 -bottom-10 w-40 h-40 bg-gradient-to-br ${b.bgGradient || "from-primary/10 to-transparent"} rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
+                <div
+                  className={`absolute -right-10 -bottom-10 w-40 h-40 bg-gradient-to-br ${b.bgGradient || "from-primary/10 to-transparent"} rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`}
+                />
 
                 <div className="relative z-10 space-y-3">
                   <div className="flex items-start justify-between">
@@ -1953,10 +2230,12 @@ export function CoordinatorInventoryPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black text-foreground flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" /> Real Inward Transaction History & Stock Movement Ledger
+              <History className="h-5 w-5 text-primary" /> Real Inward Transaction History & Stock
+              Movement Ledger
             </h2>
             <p className="text-xs text-muted-foreground">
-              Live audit logs fetched directly from Supabase PostgreSQL <code>inventory_transactions</code> table.
+              Live audit logs fetched directly from Supabase PostgreSQL{" "}
+              <code>inventory_transactions</code> table.
             </p>
           </div>
 
@@ -2025,11 +2304,20 @@ export function CoordinatorInventoryPage() {
                       })
                     : "Recently";
 
-                  const itemName = tx.resources?.resource_name || tx.item_name || tx.category_name || "Relief Supplies";
-                  const handledBy = tx.users ? `${tx.users.first_name || ""} ${tx.users.last_name || ""}`.trim() : (tx.performed_by || "Coordinator / System");
+                  const itemName =
+                    tx.resources?.resource_name ||
+                    tx.item_name ||
+                    tx.category_name ||
+                    "Relief Supplies";
+                  const handledBy = tx.users
+                    ? `${tx.users.first_name || ""} ${tx.users.last_name || ""}`.trim()
+                    : tx.performed_by || "Coordinator / System";
 
                   return (
-                    <TableRow key={tx.transaction_id || tx.id || Math.random()} className="hover:bg-muted/30 text-xs">
+                    <TableRow
+                      key={tx.transaction_id || tx.id || Math.random()}
+                      className="hover:bg-muted/30 text-xs"
+                    >
                       <TableCell className="font-mono text-muted-foreground whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> {formattedDate}
@@ -2053,12 +2341,16 @@ export function CoordinatorInventoryPage() {
                         </span>
                       </TableCell>
 
-                      <TableCell className="font-semibold text-foreground">
-                        {itemName}
-                      </TableCell>
+                      <TableCell className="font-semibold text-foreground">{itemName}</TableCell>
 
                       <TableCell className="text-right font-black">
-                        <span className={isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}>
+                        <span
+                          className={
+                            isPositive
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-foreground"
+                          }
+                        >
                           {isPositive ? "+" : "-"}
                           {Math.abs(tx.quantity || 1).toLocaleString()}
                         </span>

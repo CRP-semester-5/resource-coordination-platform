@@ -5,9 +5,9 @@ import { AppShell, type NavItem } from "@/components/app-shell";
 import { useAuth } from "@/context/auth";
 
 const nav: NavItem[] = [
-  { label: "Overview",      to: "/admin",             icon: LayoutDashboard, exact: true },
+  { label: "Overview", to: "/admin", icon: LayoutDashboard, exact: true },
   { label: "Organizations", to: "/admin/organizations", icon: Building2 },
-  { label: "Categories",    to: "/admin/categories",   icon: Tag },
+  { label: "Categories", to: "/admin/categories", icon: Tag },
 ];
 
 export const Route = createFileRoute("/admin")({

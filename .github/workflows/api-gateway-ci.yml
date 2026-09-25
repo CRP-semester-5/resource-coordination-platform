@@ -35,7 +35,7 @@ jobs:
       - name: Build API Gateway Docker image
         uses: docker/build-push-action@v5
         with:
-          context: api-gateway
+          context: .
           file: api-gateway/Dockerfile
           push: false
           tags: crp/api-gateway:ci-${{ github.sha }}

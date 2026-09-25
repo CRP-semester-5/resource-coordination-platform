@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { authAPI } from "@/api/auth";
 import { setToken, clearToken, getToken, setStoredOrgId, getStoredOrgId } from "@/api/http";
 import { orgsAPI } from "@/api/real";
@@ -44,7 +37,10 @@ interface AuthContextValue {
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   isCoordinator: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; isSuperAdmin?: boolean; message?: string }>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; isSuperAdmin?: boolean; message?: string }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
 }
@@ -157,8 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const globalRoles = user?.globalRoles ?? [];
   const isSuperAdmin = globalRoles.includes("SUPER_ADMIN");
   const isOrgAdmin = selectedOrg?.my_role === "ORGANIZATION_ADMIN";
-  const isCoordinator =
-    selectedOrg?.my_role === "COORDINATOR" || isOrgAdmin;
+  const isCoordinator = selectedOrg?.my_role === "COORDINATOR" || isOrgAdmin;
 
   return (
     <AuthCtx.Provider

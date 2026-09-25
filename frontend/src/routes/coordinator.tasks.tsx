@@ -9,19 +9,50 @@ import { Toolbar, EmptyState } from "@/components/toolbar";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, User, Clock, CheckCircle2, MapPin, Wrench, Calendar, PlusCircle, Activity } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Users,
+  User,
+  Clock,
+  CheckCircle2,
+  MapPin,
+  Wrench,
+  Calendar,
+  PlusCircle,
+  Activity,
+  Copy,
+  KeyRound,
+  ShieldCheck,
+} from "lucide-react";
 
 export const Route = createFileRoute("/coordinator/tasks")({
   head: () => ({
-    meta: [
-      { title: "Tasks — ResQ Hub Coordinator" },
-    ],
+    meta: [{ title: "Tasks — ResQ Hub Coordinator" }],
   }),
   component: TasksPage,
 });
@@ -88,7 +119,7 @@ function TasksPage() {
       console.error("Create task error:", err);
       const msg = err?.response?.data?.message || err?.message || "Failed to create task";
       toast.error(msg);
-    }
+    },
   });
 
   const assignMutation = useMutation({
@@ -105,7 +136,7 @@ function TasksPage() {
     },
     onError: () => {
       toast.error("Failed to assign volunteer");
-    }
+    },
   });
 
   const resetCreateForm = () => {
@@ -141,9 +172,9 @@ function TasksPage() {
 
   return (
     <>
-      <PageHeader 
-        title="Tasks" 
-        description={`Manage ${tasks.length} task${tasks.length === 1 ? "" : "s"} for your organization.`} 
+      <PageHeader
+        title="Tasks"
+        description={`Manage ${tasks.length} task${tasks.length === 1 ? "" : "s"} for your organization.`}
         actions={
           <Button onClick={() => setCreating(true)} className="gap-2">
             <PlusCircle className="h-4 w-4" />
@@ -160,8 +191,24 @@ function TasksPage() {
         }}
         placeholder="Search tasks by title, description or skill..."
         filters={[
-          { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
-          { label: "Priority", value: priority, options: PRIORITIES, onChange: (v) => { setPriority(v); setPage(1); } },
+          {
+            label: "Status",
+            value: status,
+            options: STATUSES,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
+          },
+          {
+            label: "Priority",
+            value: priority,
+            options: PRIORITIES,
+            onChange: (v) => {
+              setPriority(v);
+              setPage(1);
+            },
+          },
         ]}
       />
 
@@ -192,10 +239,10 @@ function TasksPage() {
                 const required = t.volunteers_required || 1;
                 const assignedCount = t.task_assignments?.length || 0;
                 const isFull = assignedCount >= required;
-                const isTeam = t.task_type === 'TEAM' || required > 1;
+                const isTeam = t.task_type === "TEAM" || required > 1;
 
                 return (
-                  <TableRow 
+                  <TableRow
                     key={t.task_id}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => setSelectedTaskId(t.task_id)}
@@ -224,15 +271,17 @@ function TasksPage() {
                     </TableCell>
 
                     <TableCell>
-                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                        t.priority === 'CRITICAL' 
-                          ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400' 
-                          : t.priority === 'HIGH' 
-                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400' 
-                          : t.priority === 'LOW'
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
-                          : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
-                      }`}>
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                          t.priority === "CRITICAL"
+                            ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400"
+                            : t.priority === "HIGH"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
+                              : t.priority === "LOW"
+                                ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                                : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                        }`}
+                      >
                         {t.priority}
                       </span>
                     </TableCell>
@@ -249,18 +298,20 @@ function TasksPage() {
                     </TableCell>
 
                     <TableCell>
-                      <StatusBadge value={(t.status || 'UNASSIGNED').replace("_", " ")} />
+                      <StatusBadge value={(t.status || "UNASSIGNED").replace("_", " ")} />
                     </TableCell>
 
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full ${
-                          isFull 
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' 
-                            : assignedCount > 0 
-                            ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300' 
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full ${
+                            isFull
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                              : assignedCount > 0
+                                ? "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300"
+                                : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                          }`}
+                        >
                           {assignedCount} / {required}
                         </span>
                         <span className="text-xs text-muted-foreground">
@@ -270,8 +321,8 @@ function TasksPage() {
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -293,13 +344,24 @@ function TasksPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)}{" "}
+            of {filtered.length}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current === pageCount} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === pageCount}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>
@@ -309,33 +371,47 @@ function TasksPage() {
       {/* ========================================================================= */}
       {/* 1. CREATE TASK MODAL (With Individual vs Team Selection & Count) */}
       {/* ========================================================================= */}
-      <Dialog open={creating} onOpenChange={(o) => { if (!o) { setCreating(false); resetCreateForm(); } }}>
+      <Dialog
+        open={creating}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCreating(false);
+            resetCreateForm();
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Create Task</DialogTitle>
-            <DialogDescription>Add a new task for volunteers to pick up or be assigned.</DialogDescription>
+            <DialogDescription>
+              Add a new task for volunteers to pick up or be assigned.
+            </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-2">
             {/* Title */}
             <div className="space-y-1.5">
-              <Label htmlFor="task-title" className="font-semibold">Title</Label>
-              <Input 
-                id="task-title" 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)} 
-                placeholder="e.g. Distribute water rations" 
+              <Label htmlFor="task-title" className="font-semibold">
+                Title
+              </Label>
+              <Input
+                id="task-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Distribute water rations"
               />
             </div>
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label htmlFor="task-desc" className="font-semibold">Description</Label>
-              <Textarea 
-                id="task-desc" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                placeholder="Provide details and instructions about the task..." 
+              <Label htmlFor="task-desc" className="font-semibold">
+                Description
+              </Label>
+              <Textarea
+                id="task-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Provide details and instructions about the task..."
                 rows={3}
               />
             </div>
@@ -343,11 +419,14 @@ function TasksPage() {
             {/* Task Type & Volunteer Capacity Selector */}
             <div className="grid grid-cols-2 gap-3 p-3 bg-muted/40 rounded-lg border border-border">
               <div className="space-y-1.5">
-                <Label htmlFor="task-type" className="font-semibold text-xs text-foreground uppercase tracking-wider">
+                <Label
+                  htmlFor="task-type"
+                  className="font-semibold text-xs text-foreground uppercase tracking-wider"
+                >
                   Mission Type
                 </Label>
-                <Select 
-                  value={taskType} 
+                <Select
+                  value={taskType}
                   onValueChange={(val: "INDIVIDUAL" | "TEAM") => {
                     setTaskType(val);
                     if (val === "INDIVIDUAL") {
@@ -378,7 +457,10 @@ function TasksPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="volunteer-count" className="font-semibold text-xs text-foreground uppercase tracking-wider">
+                <Label
+                  htmlFor="volunteer-count"
+                  className="font-semibold text-xs text-foreground uppercase tracking-wider"
+                >
                   {taskType === "TEAM" ? "Volunteers Needed" : "Capacity"}
                 </Label>
                 <Input
@@ -388,7 +470,9 @@ function TasksPage() {
                   max={50}
                   disabled={taskType === "INDIVIDUAL"}
                   value={volunteersRequired}
-                  onChange={(e) => setVolunteersRequired(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  onChange={(e) =>
+                    setVolunteersRequired(Math.max(1, parseInt(e.target.value, 10) || 1))
+                  }
                   className="bg-background"
                   placeholder="e.g. 5"
                 />
@@ -398,9 +482,13 @@ function TasksPage() {
             {/* Priority & Required Skill */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="task-priority" className="font-semibold">Priority</Label>
+                <Label htmlFor="task-priority" className="font-semibold">
+                  Priority
+                </Label>
                 <Select value={taskPriority} onValueChange={setTaskPriority}>
-                  <SelectTrigger id="task-priority"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="task-priority">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LOW">Low</SelectItem>
                     <SelectItem value="MEDIUM">Medium</SelectItem>
@@ -411,30 +499,40 @@ function TasksPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="task-skill" className="font-semibold">Required Skill (Optional)</Label>
-                <Input 
-                  id="task-skill" 
-                  value={requiredSkill} 
-                  onChange={(e) => setRequiredSkill(e.target.value)} 
-                  placeholder="e.g. Driver, First Aid" 
+                <Label htmlFor="task-skill" className="font-semibold">
+                  Required Skill (Optional)
+                </Label>
+                <Input
+                  id="task-skill"
+                  value={requiredSkill}
+                  onChange={(e) => setRequiredSkill(e.target.value)}
+                  placeholder="e.g. Driver, First Aid"
                 />
               </div>
             </div>
 
             {/* Location */}
             <div className="space-y-1.5">
-              <Label htmlFor="task-location" className="font-semibold">Location (Optional)</Label>
-              <Input 
-                id="task-location" 
-                value={location} 
-                onChange={(e) => setLocation(e.target.value)} 
-                placeholder="e.g. Colombo Flood Relief Center #3" 
+              <Label htmlFor="task-location" className="font-semibold">
+                Location (Optional)
+              </Label>
+              <Input
+                id="task-location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Colombo Flood Relief Center #3"
               />
             </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => { setCreating(false); resetCreateForm(); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreating(false);
+                resetCreateForm();
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -462,23 +560,34 @@ function TasksPage() {
       {/* 2. TASK DETAILS & LIVE PROGRESS INSPECTOR MODAL */}
       {/* ========================================================================= */}
       {selectedTask && (
-        <Dialog open={!!selectedTaskId} onOpenChange={(o) => { if (!o) setSelectedTaskId(null); }}>
+        <Dialog
+          open={!!selectedTaskId}
+          onOpenChange={(o) => {
+            if (!o) setSelectedTaskId(null);
+          }}
+        >
           <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto">
             <DialogHeader className="border-b border-border pb-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      selectedTask.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                      selectedTask.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        selectedTask.priority === "CRITICAL"
+                          ? "bg-red-100 text-red-700"
+                          : selectedTask.priority === "HIGH"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
                       {selectedTask.priority} Priority
                     </span>
-                    <StatusBadge value={(selectedTask.status || 'UNASSIGNED').replace("_", " ")} />
+                    <StatusBadge value={(selectedTask.status || "UNASSIGNED").replace("_", " ")} />
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      {selectedTask.task_type === 'TEAM' || (selectedTask.volunteers_required || 1) > 1
+                      {selectedTask.task_type === "TEAM" ||
+                      (selectedTask.volunteers_required || 1) > 1
                         ? `Team Mission (${selectedTask.volunteers_required || 1} Volunteers)`
-                        : 'Individual Mission (1 Volunteer)'}
+                        : "Individual Mission (1 Volunteer)"}
                     </span>
                   </div>
                   <DialogTitle className="text-xl font-bold">{selectedTask.title}</DialogTitle>
@@ -494,7 +603,9 @@ function TasksPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-muted/30 rounded-xl border border-border text-xs">
                 <div>
                   <span className="text-muted-foreground block">Required Skill</span>
-                  <span className="font-semibold text-foreground">{selectedTask.required_skill || "None required"}</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedTask.required_skill || "None required"}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block">Location</span>
@@ -518,15 +629,17 @@ function TasksPage() {
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
                     <h3 className="font-bold text-sm text-foreground">
-                      Assigned Volunteers ({selectedTask.task_assignments?.length || 0} / {selectedTask.volunteers_required || 1})
+                      Assigned Volunteers ({selectedTask.task_assignments?.length || 0} /{" "}
+                      {selectedTask.volunteers_required || 1})
                     </h3>
                   </div>
 
                   {/* Quick Assign button if slots remaining */}
-                  {(selectedTask.task_assignments?.length || 0) < (selectedTask.volunteers_required || 1) && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                  {(selectedTask.task_assignments?.length || 0) <
+                    (selectedTask.volunteers_required || 1) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs h-7 gap-1"
                       onClick={() => setAssigningVolunteer(true)}
                     >
@@ -537,43 +650,77 @@ function TasksPage() {
                 </div>
 
                 {/* Assignment List */}
-                {(!selectedTask.task_assignments || selectedTask.task_assignments.length === 0) ? (
+                {!selectedTask.task_assignments || selectedTask.task_assignments.length === 0 ? (
                   <div className="p-4 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 rounded-xl text-center">
                     <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                      No volunteers assigned yet. Open for registered volunteers to pick up or assign manually above.
+                      No volunteers assigned yet. Open for registered volunteers to pick up or
+                      assign manually above.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {selectedTask.task_assignments.map((a: any, idx: number) => {
                       const user = a.volunteers?.users || {};
-                      const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || `Volunteer #${idx + 1}`;
+                      const name =
+                        `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                        `Volunteer #${idx + 1}`;
                       const phone = user.phone || a.volunteers?.phone_number || "No phone";
                       const email = user.email || "";
+                      const isTeam = selectedTask.task_type === 'TEAM' || (selectedTask.volunteers_required || 1) > 1;
+                      const isLeader = a.is_leader === true || idx === 0;
 
                       return (
-                        <div 
+                        <div
                           key={a.assignment_id || idx}
-                          className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
+                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                            isTeam && isLeader 
+                              ? 'border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10' 
+                              : 'border-border bg-card hover:bg-muted/30'
+                          }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                              {name.substring(0, 2).toUpperCase()}
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                              isTeam && isLeader 
+                                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/30' 
+                                : 'bg-primary/10 text-primary'
+                            }`}>
+                              {isTeam && isLeader ? '⭐' : name.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-semibold text-xs text-foreground">{name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-xs text-foreground">{name}</p>
+                                {isTeam && (
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    isLeader 
+                                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30' 
+                                      : 'bg-muted text-muted-foreground border-border'
+                                  }`}>
+                                    {isLeader ? '⭐ Team Leader' : '👥 Member'}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-[11px] text-muted-foreground">{email} • {phone}</p>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                              a.assignment_status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                              a.assignment_status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                              a.assignment_status === 'ACCEPTED' ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              {a.assignment_status || 'ASSIGNED'}
-                            </span>
+                            {a.assignment_status === 'VERIFIED_ON_SITE' ? (
+                              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                🟢 Verified on Site
+                              </span>
+                            ) : a.assignment_status === 'REPORTED_ON_SITE' ? (
+                              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                                🟡 Reported on Site
+                              </span>
+                            ) : a.assignment_status === 'COMPLETED' ? (
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                ✅ Completed
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                                Assigned
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
@@ -584,45 +731,65 @@ function TasksPage() {
 
               {/* SECTION: DUAL-LEG SECURITY VERIFICATION PINS */}
               {(() => {
-                const isWarehouseDone = (selectedTask.task_progress || []).some(
-                  (p: any) => (p.remarks || '').toLowerCase().includes('warehouse') || (p.progress_percent || 0) >= 50
-                ) || selectedTask.status === 'COMPLETED';
-                const isCompleted = selectedTask.status === 'COMPLETED';
-                const isAssigned = selectedTask.status === 'ASSIGNED' || selectedTask.status === 'IN_PROGRESS';
-                const warehousePin = selectedTask.warehouse_pickup_pin || '8421';
-                const isPinRevealed = revealedTaskPins[selectedTask.id || selectedTask.task_id || ''] || false;
-                const isDonation = (selectedTask.title || '').toLowerCase().includes('pickup') || (selectedTask.description || '').toLowerCase().includes('donation');
+                const isWarehouseDone =
+                  (selectedTask.task_progress || []).some(
+                    (p: any) =>
+                      (p.remarks || "").toLowerCase().includes("warehouse") ||
+                      (p.progress_percent || 0) >= 50,
+                  ) || selectedTask.status === "COMPLETED";
+                const isCompleted = selectedTask.status === "COMPLETED";
+                const isAssigned =
+                  selectedTask.status === "ASSIGNED" || selectedTask.status === "IN_PROGRESS";
+                const warehousePin = selectedTask.warehouse_pickup_pin || "8421";
+                const isPinRevealed =
+                  revealedTaskPins[selectedTask.id || selectedTask.task_id || ""] || false;
+                const isDonation =
+                  (selectedTask.title || "").toLowerCase().includes("pickup") ||
+                  (selectedTask.description || "").toLowerCase().includes("donation");
 
                 return (
                   <div className="p-3.5 bg-background rounded-xl border border-border shadow-xs space-y-3">
                     <div className="flex items-center justify-between border-b border-border/60 pb-2">
                       <span className="flex items-center gap-1.5 font-bold text-xs text-foreground">
-                        <ShieldCheck className="h-4 w-4 text-primary" /> Multi-Stage Security PIN Lifecycle
+                        <ShieldCheck className="h-4 w-4 text-primary" /> Multi-Stage Security PIN
+                        Lifecycle
                       </span>
-                      <span className="text-[10px] text-muted-foreground font-medium">Stage-by-Stage Verification</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        Stage-by-Stage Verification
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Stage 1 Box */}
-                      <div className={`p-3 rounded-lg border flex flex-col justify-between ${
-                        isWarehouseDone
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
-                          : isAssigned
-                          ? 'bg-primary/5 border-primary/30 text-foreground'
-                          : 'bg-muted/30 border-dashed border-border text-muted-foreground'
-                      }`}>
+                      <div
+                        className={`p-3 rounded-lg border flex flex-col justify-between ${
+                          isWarehouseDone
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                            : isAssigned
+                              ? "bg-primary/5 border-primary/30 text-foreground"
+                              : "bg-muted/30 border-dashed border-border text-muted-foreground"
+                        }`}
+                      >
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold">
-                            {isDonation ? '🎁 Stage 1: Donor Collection PIN' : '📦 Stage 1: Warehouse Dispatch PIN'}
+                            {isDonation
+                              ? "🎁 Stage 1: Donor Collection PIN"
+                              : "📦 Stage 1: Warehouse Dispatch PIN"}
                           </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            isWarehouseDone
-                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              isWarehouseDone
+                                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
+                                : isAssigned
+                                  ? "bg-primary/20 text-primary animate-pulse"
+                                  : "bg-slate-500/10 text-slate-500"
+                            }`}
+                          >
+                            {isWarehouseDone
+                              ? "VERIFIED & CLOSED"
                               : isAssigned
-                              ? 'bg-primary/20 text-primary animate-pulse'
-                              : 'bg-slate-500/10 text-slate-500'
-                          }`}>
-                            {isWarehouseDone ? 'VERIFIED & CLOSED' : isAssigned ? 'ACTIVE FOR STAFF' : 'PENDING ASSIGNMENT'}
+                                ? "ACTIVE FOR STAFF"
+                                : "PENDING ASSIGNMENT"}
                           </span>
                         </div>
 
@@ -630,7 +797,8 @@ function TasksPage() {
                           {isWarehouseDone ? (
                             <div>
                               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired
+                                (Closed)
                               </span>
                               <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300 mt-0.5">
                                 {isDonation
@@ -661,7 +829,7 @@ function TasksPage() {
                                     className="h-6 px-2 text-[10px] text-primary hover:bg-primary/10"
                                     onClick={() => {
                                       navigator.clipboard.writeText(warehousePin);
-                                      toast.success('Warehouse Dispatch PIN copied!');
+                                      toast.success("Warehouse Dispatch PIN copied!");
                                     }}
                                   >
                                     <Copy className="h-3 w-3 mr-1" /> Copy
@@ -681,9 +849,9 @@ function TasksPage() {
                                   onClick={() => {
                                     setRevealedTaskPins((prev) => ({
                                       ...prev,
-                                      [selectedTask.id || selectedTask.task_id || '']: true,
+                                      [selectedTask.id || selectedTask.task_id || ""]: true,
                                     }));
-                                    toast.info('Warehouse Dispatch PIN revealed for staff.');
+                                    toast.info("Warehouse Dispatch PIN revealed for staff.");
                                   }}
                                 >
                                   <KeyRound className="h-3.5 w-3.5" /> Reveal Warehouse PIN
@@ -707,29 +875,35 @@ function TasksPage() {
                       </div>
 
                       {/* Stage 2 Box */}
-                      <div className={`p-3 rounded-lg border flex flex-col justify-between ${
-                        isCompleted
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
-                          : isWarehouseDone && isDonation
-                          ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200'
-                          : 'bg-muted/40 border-border text-foreground'
-                      }`}>
+                      <div
+                        className={`p-3 rounded-lg border flex flex-col justify-between ${
+                          isCompleted
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                            : isWarehouseDone && isDonation
+                              ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200"
+                              : "bg-muted/40 border-border text-foreground"
+                        }`}
+                      >
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold">
-                            {isDonation ? '🏛️ Stage 2: Warehouse Deposit PIN' : '🤝 Stage 2: Recipient Doorstep PIN'}
+                            {isDonation
+                              ? "🏛️ Stage 2: Warehouse Deposit PIN"
+                              : "🤝 Stage 2: Recipient Doorstep PIN"}
                           </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            isCompleted
-                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
-                              : isWarehouseDone && isDonation
-                              ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse'
-                              : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'
-                          }`}>
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              isCompleted
+                                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
+                                : isWarehouseDone && isDonation
+                                  ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse"
+                                  : "bg-slate-500/10 text-slate-600 dark:text-slate-300"
+                            }`}
+                          >
                             {isCompleted
-                              ? 'COMPLETED & CLOSED'
+                              ? "COMPLETED & CLOSED"
                               : isWarehouseDone && isDonation
-                              ? 'ACTIVE FOR STORE'
-                              : 'AWAITING STAGE 1'}
+                                ? "ACTIVE FOR STORE"
+                                : "AWAITING STAGE 1"}
                           </span>
                         </div>
 
@@ -737,7 +911,8 @@ function TasksPage() {
                           {isCompleted ? (
                             <div>
                               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired
+                                (Closed)
                               </span>
                               <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300 mt-0.5">
                                 {isDonation
@@ -759,7 +934,7 @@ function TasksPage() {
                                     className="h-6 px-2 text-[10px] text-indigo-600 hover:bg-indigo-500/10"
                                     onClick={() => {
                                       navigator.clipboard.writeText(warehousePin);
-                                      toast.success('Warehouse Deposit PIN copied!');
+                                      toast.success("Warehouse Deposit PIN copied!");
                                     }}
                                   >
                                     <Copy className="h-3 w-3 mr-1" /> Copy
@@ -779,9 +954,9 @@ function TasksPage() {
                                   onClick={() => {
                                     setRevealedTaskPins((prev) => ({
                                       ...prev,
-                                      [selectedTask.id || selectedTask.task_id || '']: true,
+                                      [selectedTask.id || selectedTask.task_id || ""]: true,
                                     }));
-                                    toast.info('Warehouse Deposit PIN revealed for store staff.');
+                                    toast.info("Warehouse Deposit PIN revealed for store staff.");
                                   }}
                                 >
                                   <KeyRound className="h-3.5 w-3.5" /> Reveal Store Deposit PIN
@@ -794,7 +969,9 @@ function TasksPage() {
                           ) : (
                             <div>
                               <span className="text-sm font-bold tracking-widest text-muted-foreground font-mono block">
-                                🔒 •••• ({isDonation ? 'Pending Stage 1 Collection' : 'Private to Recipient'})
+                                🔒 •••• (
+                                {isDonation ? "Pending Stage 1 Collection" : "Private to Recipient"}
+                                )
                               </span>
                               <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {isDonation
@@ -814,103 +991,131 @@ function TasksPage() {
               <div className="space-y-3 border-t border-border pt-4">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-emerald-600" />
-                  <h3 className="font-bold text-sm text-foreground">Live Progress & Field SitReps</h3>
+                  <h3 className="font-bold text-sm text-foreground">
+                    Live Progress & Field SitReps
+                  </h3>
                 </div>
 
-                {(!selectedTask.task_progress || selectedTask.task_progress.length === 0) ? (
+                {!selectedTask.task_progress || selectedTask.task_progress.length === 0 ? (
                   <div className="p-4 bg-muted/30 border border-border rounded-xl text-center">
                     <Clock className="h-6 w-6 text-muted-foreground mx-auto mb-1 opacity-50" />
                     <p className="text-xs text-muted-foreground font-medium">
-                      No live progress recorded yet. When volunteers update status (En Route, On Scene, Done) or send SitRep reports from the mobile app, updates will stream here.
+                      No live progress recorded yet. When volunteers update status (En Route, On
+                      Scene, Done) or send SitRep reports from the mobile app, updates will stream
+                      here.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {/* Calculated Team / Overall Progress Bar */}
-                      {(() => {
-                        const isTeam = selectedTask.task_type === 'TEAM' || (selectedTask.volunteers_required || 1) > 1;
-                        const requiredCount = selectedTask.volunteers_required || 1;
-                        
-                        // Map latest / highest progress per assigned volunteer
-                        const volProgMap = new Map();
+                    {(() => {
+                      const isTeam =
+                        selectedTask.task_type === "TEAM" ||
+                        (selectedTask.volunteers_required || 1) > 1;
+                      const requiredCount = selectedTask.volunteers_required || 1;
 
-                        // 1. Check all assigned volunteers
-                        if (selectedTask.task_assignments) {
-                          for (const a of selectedTask.task_assignments) {
-                            const u = a.volunteers?.users;
-                            const uid = u?.email || a.volunteers?.volunteer_id || a.assignment_id;
-                            if (a.assignment_status === 'COMPLETED') {
-                              volProgMap.set(uid, 100);
-                            } else {
-                              volProgMap.set(uid, 25);
-                            }
+                      // Map latest / highest progress per assigned volunteer
+                      const volProgMap = new Map();
+
+                      // 1. Check all assigned volunteers
+                      if (selectedTask.task_assignments) {
+                        for (const a of selectedTask.task_assignments) {
+                          const u = a.volunteers?.users;
+                          const uid = u?.email || a.volunteers?.volunteer_id || a.assignment_id;
+                          if (a.assignment_status === "COMPLETED") {
+                            volProgMap.set(uid, 100);
+                          } else {
+                            volProgMap.set(uid, 25);
                           }
                         }
+                      }
 
-                        // 2. Check all SitRep / progress entries
-                        if (selectedTask.task_progress) {
-                          for (const p of selectedTask.task_progress) {
-                            const uid = p.users?.email || p.updated_by_user_id;
-                            if (uid) {
-                              const curr = volProgMap.get(uid) || 0;
-                              const pPercent = typeof p.progress_percent === 'number' ? p.progress_percent : 0;
-                              volProgMap.set(uid, Math.max(curr, pPercent));
-                            }
+                      // 2. Check all SitRep / progress entries
+                      if (selectedTask.task_progress) {
+                        for (const p of selectedTask.task_progress) {
+                          const uid = p.users?.email || p.updated_by_user_id;
+                          if (uid) {
+                            const curr = volProgMap.get(uid) || 0;
+                            const pPercent =
+                              typeof p.progress_percent === "number" ? p.progress_percent : 0;
+                            volProgMap.set(uid, Math.max(curr, pPercent));
                           }
                         }
+                      }
 
-                        let sumProg = 0;
-                        volProgMap.forEach((v) => { sumProg += v; });
-                        const teamPercent = isTeam 
-                          ? Math.min(100, Math.round(sumProg / requiredCount))
-                          : (selectedTask.status === 'COMPLETED' ? 100 : (selectedTask.task_progress?.[0]?.progress_percent || (selectedTask.task_assignments?.[0]?.assignment_status === 'COMPLETED' ? 100 : 25)));
+                      let sumProg = 0;
+                      volProgMap.forEach((v) => {
+                        sumProg += v;
+                      });
+                      const teamPercent = isTeam
+                        ? Math.min(100, Math.round(sumProg / requiredCount))
+                        : selectedTask.status === "COMPLETED"
+                          ? 100
+                          : selectedTask.task_progress?.[0]?.progress_percent ||
+                            (selectedTask.task_assignments?.[0]?.assignment_status === "COMPLETED"
+                              ? 100
+                              : 25);
 
-                        return (
-                          <div className="p-3 bg-card border border-border rounded-lg space-y-1.5">
-                            <div className="flex justify-between text-xs font-semibold">
-                              <span className="text-foreground flex items-center gap-1.5">
-                                {isTeam ? `Team Mission Progress (${volProgMap.size} of ${requiredCount} volunteers active)` : "Mission Progress"}
-                              </span>
-                              <span className="text-emerald-600 font-bold">
-                                {teamPercent}% {isTeam ? `(${sumProg} / ${requiredCount * 100} pts)` : ""}
-                              </span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                              <div 
-                                className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" 
-                                style={{ width: `${teamPercent}%` }}
-                              />
-                            </div>
+                      return (
+                        <div className="p-3 bg-card border border-border rounded-lg space-y-1.5">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-foreground flex items-center gap-1.5">
+                              {isTeam
+                                ? `Team Mission Progress (${volProgMap.size} of ${requiredCount} volunteers active)`
+                                : "Mission Progress"}
+                            </span>
+                            <span className="text-emerald-600 font-bold">
+                              {teamPercent}%{" "}
+                              {isTeam ? `(${sumProg} / ${requiredCount * 100} pts)` : ""}
+                            </span>
                           </div>
-                        );
-                      })()}
-  
-                      {/* Timeline */}
+                          <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                              style={{ width: `${teamPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Timeline */}
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                      {[...selectedTask.task_progress].sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).map((p: any, idx: number) => {
-                        const user = p.users || {};
-                        const author = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Volunteer';
-                        
-                        return (
-                          <div 
-                            key={p.progress_id || idx}
-                            className="p-2.5 rounded-lg border border-border/80 bg-muted/20 text-xs space-y-1"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-foreground flex items-center gap-1.5">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                {author} • {p.progress_percent}%
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(p.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(p.updated_at).toLocaleDateString()})
-                              </span>
+                      {[...selectedTask.task_progress]
+                        .sort(
+                          (a: any, b: any) =>
+                            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+                        )
+                        .map((p: any, idx: number) => {
+                          const user = p.users || {};
+                          const author =
+                            `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                            "Volunteer";
+
+                          return (
+                            <div
+                              key={p.progress_id || idx}
+                              className="p-2.5 rounded-lg border border-border/80 bg-muted/20 text-xs space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-foreground flex items-center gap-1.5">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                  {author} • {p.progress_percent}%
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {new Date(p.updated_at).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}{" "}
+                                  ({new Date(p.updated_at).toLocaleDateString()})
+                                </span>
+                              </div>
+                              <p className="text-muted-foreground pl-4">
+                                {p.remarks || "Status updated"}
+                              </p>
                             </div>
-                            <p className="text-muted-foreground pl-4">
-                              {p.remarks || "Status updated"}
-                            </p>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -935,7 +1140,8 @@ function TasksPage() {
             <DialogHeader>
               <DialogTitle className="text-lg font-bold">Assign Volunteer to Task</DialogTitle>
               <DialogDescription>
-                Select a registered volunteer to add to this {selectedTask?.task_type === 'TEAM' ? 'team mission' : 'task'}.
+                Select a registered volunteer to add to this{" "}
+                {selectedTask?.task_type === "TEAM" ? "team mission" : "task"}.
               </DialogDescription>
             </DialogHeader>
 
@@ -950,11 +1156,12 @@ function TasksPage() {
                 <SelectContent>
                   {availableVolunteers.map((vol: any) => {
                     const u = vol.users || {};
-                    const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || vol.volunteer_id;
-                    const phone = u.phone || vol.phone_number || '';
+                    const name =
+                      `${u.first_name || ""} ${u.last_name || ""}`.trim() || vol.volunteer_id;
+                    const phone = u.phone || vol.phone_number || "";
                     return (
                       <SelectItem key={vol.volunteer_id} value={vol.volunteer_id}>
-                        {name} {phone ? `(${phone})` : ''}
+                        {name} {phone ? `(${phone})` : ""}
                       </SelectItem>
                     );
                   })}
@@ -966,13 +1173,13 @@ function TasksPage() {
               <Button variant="outline" onClick={() => setAssigningVolunteer(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 disabled={!chosenVolunteerId || assignMutation.isPending}
                 onClick={() => {
                   if (selectedTask && chosenVolunteerId) {
                     assignMutation.mutate({
                       taskId: selectedTask.task_id,
-                      volunteerId: chosenVolunteerId
+                      volunteerId: chosenVolunteerId,
                     });
                   }
                 }}

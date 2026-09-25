@@ -8,13 +8,18 @@ import { Toolbar, EmptyState } from "@/components/toolbar";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/coordinator/volunteers")({
   head: () => ({
-    meta: [
-      { title: "Volunteers — ResQ Hub Coordinator" },
-    ],
+    meta: [{ title: "Volunteers — ResQ Hub Coordinator" }],
   }),
   component: VolunteersPage,
 });
@@ -52,7 +57,10 @@ function VolunteersPage() {
 
   return (
     <>
-      <PageHeader title="Volunteers" description={`${volunteers.length} volunteer${volunteers.length === 1 ? "" : "s"} registered.`} />
+      <PageHeader
+        title="Volunteers"
+        description={`${volunteers.length} volunteer${volunteers.length === 1 ? "" : "s"} registered.`}
+      />
 
       <Toolbar
         search={search}
@@ -86,21 +94,33 @@ function VolunteersPage() {
             <TableBody>
               {rows.map((v: any) => (
                 <TableRow key={v.volunteer_id}>
-                  <TableCell className="font-medium">{v.users?.name || "Unknown Volunteer"}</TableCell>
-                  <TableCell>
-                    <span className="block">{v.users?.email}</span>
-                    <span className="block text-xs text-muted-foreground">{v.users?.phone || "No phone"}</span>
+                  <TableCell className="font-medium">
+                    {v.users?.name || "Unknown Volunteer"}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge value={v.availability_status === 'AVAILABLE' ? "Available" : "Unavailable"} />
+                    <span className="block">{v.users?.email}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {v.users?.phone || "No phone"}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge
+                      value={v.availability_status === "AVAILABLE" ? "Available" : "Unavailable"}
+                    />
                   </TableCell>
                   <TableCell>
                     <span className="block">
-                    {v.volunteer_skills?.length > 0 
-                      ? v.volunteer_skills.map((s: any) => s.skill_name).join(", ")
-                      : <span className="text-muted-foreground italic text-xs">No skills listed</span>}
+                      {v.volunteer_skills?.length > 0 ? (
+                        v.volunteer_skills.map((s: any) => s.skill_name).join(", ")
+                      ) : (
+                        <span className="text-muted-foreground italic text-xs">
+                          No skills listed
+                        </span>
+                      )}
                     </span>
-                    <span className="block text-xs text-muted-foreground mt-1">Exp: {v.experience_years || 0} yrs</span>
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      Exp: {v.experience_years || 0} yrs
+                    </span>
                   </TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">
                     {new Date(v.created_at).toLocaleDateString()}
@@ -115,13 +135,24 @@ function VolunteersPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}—{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}—{Math.min(current * PAGE_SIZE, filtered.length)}{" "}
+            of {filtered.length}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current === pageCount} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === pageCount}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>
