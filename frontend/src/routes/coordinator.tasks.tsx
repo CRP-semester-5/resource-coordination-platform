@@ -83,6 +83,7 @@ function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [assigningVolunteer, setAssigningVolunteer] = useState(false);
   const [chosenVolunteerId, setChosenVolunteerId] = useState("");
+  const [revealedTaskPins, setRevealedTaskPins] = useState<Record<string, boolean>>({});
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["tasks", orgId],
