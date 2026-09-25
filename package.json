@@ -1,6 +1,7 @@
 {
   "name": "resource-coordination-platform",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "description": "to run each service;\r docker build user-service\r docker run user-service",
   "main": "index.js",
@@ -19,7 +20,10 @@
     "services/notification-service"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed:db-test": "node database/seeds/seed.js",
+    "test:db-integrity": "node database/tests/run_all_db_tests.js",
+    "test:functional": "node tests/functional/run_all_functional_tests.js"
   },
   "repository": {
     "type": "git",
