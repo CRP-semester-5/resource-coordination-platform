@@ -1,0 +1,77 @@
+services:
+
+  user-service:
+    image: pamothkumarasinghe/resqhub-user-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  organization-service:
+    image: pamothkumarasinghe/resqhub-organization-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  resource-service:
+    image: pamothkumarasinghe/resqhub-resource-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  request-service:
+    image: pamothkumarasinghe/resqhub-request-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  task-service:
+    image: pamothkumarasinghe/resqhub-task-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  volunteer-service:
+    image: pamothkumarasinghe/resqhub-volunteer-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  notification-service:
+    image: pamothkumarasinghe/resqhub-notification-service:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - resqhub-network
+
+  api-gateway:
+    image: pamothkumarasinghe/resqhub-api-gateway:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - organization-service
+      - resource-service
+      - request-service
+      - task-service
+      - volunteer-service
+      - notification-service
+    networks:
+      - resqhub-network
+
+networks:
+  resqhub-network:
+    driver: bridge
