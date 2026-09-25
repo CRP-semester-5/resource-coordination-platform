@@ -85,3 +85,17 @@ export const rejectDonation = async (donationId, verifiedBy, rejection_reason) =
         rejection_reason: rejection_reason,
     });
 };
+
+export const regeneratePin = async (donationId) => {
+    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    try {
+        await donationRepository.update(donationId, { handover_pin: newPin });
+    } catch (e) {
+        console.warn('Update donation handover_pin note:', e.message);
+    }
+    return {
+        donation_id: donationId,
+        handover_pin: newPin,
+        generated_at: new Date().toISOString()
+    };
+};

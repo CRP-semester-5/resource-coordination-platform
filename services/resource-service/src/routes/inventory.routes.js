@@ -11,6 +11,20 @@ router.get(
     inventoryController.getInventory
 );
 
+router.get(
+    "/transactions",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.getTransactions
+);
+
+router.post(
+    "/check-stock",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.checkStock
+);
+
 router.post(
     "/",
     authenticate,
@@ -23,6 +37,13 @@ router.post(
     authenticate,
     requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
     inventoryController.restock
+);
+
+router.post(
+    "/deduct",
+    authenticate,
+    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
+    inventoryController.deductInventory
 );
 
 router.post(

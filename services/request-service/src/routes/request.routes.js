@@ -52,6 +52,13 @@ router.patch(
 );
 
 router.patch(
+    "/:id/unapprove",
+    authenticate,
+    requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"),
+    requestController.unapproveRequest
+);
+
+router.patch(
     "/:id/reject",
     authenticate,
     requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"),
@@ -67,5 +74,7 @@ router.patch(
 router.patch("/:id/progress", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.markInProgress);
 
 router.patch("/:id/fulfill", requireOrgRole("COORDINATOR", "ORGANIZATION_ADMIN"), requestController.fulfillRequest);
+
+router.post("/:id/regenerate-pin", optionalAuth, requestController.regeneratePin);
 
 export default router;

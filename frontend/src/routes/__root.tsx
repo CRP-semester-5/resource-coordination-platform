@@ -75,9 +75,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "ResQ Hub — Resource Coordination Platform" },
-      { name: "description", content: "Community resilience resource coordination for organizations and coordinators." },
+      {
+        name: "description",
+        content: "Community resilience resource coordination for organizations and coordinators.",
+      },
       { property: "og:title", content: "ResQ Hub" },
-      { property: "og:description", content: "Coordinate disaster relief requests, donations, inventory and volunteers." },
+      {
+        property: "og:description",
+        content: "Coordinate disaster relief requests, donations, inventory and volunteers.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

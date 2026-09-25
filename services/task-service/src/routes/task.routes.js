@@ -12,6 +12,12 @@ router.post(
 );
 
 router.get(
+    "/me",
+    authenticate,
+    taskController.getMyTasks
+);
+
+router.get(
     "/",
     authenticate,
     taskController.getTasks
@@ -26,15 +32,63 @@ router.get(
 router.patch(
     "/:id",
     authenticate,
-    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN", "VOLUNTEER"]),
     taskController.updateTask
 );
 
+// Allow both coordinators assigning volunteers AND volunteers accepting tasks
 router.post(
     "/:id/assign",
     authenticate,
-    requireRole(["COORDINATOR", "ORGANIZATION_ADMIN"]),
     taskController.assignTask
+);
+
+router.post(
+    "/:id/progress",
+    authenticate,
+    taskController.addProgress
+);
+
+router.get(
+    "/:id/progress",
+    authenticate,
+    taskController.getTaskProgress
+);
+router.post(
+    "/:id/verify-donor-pickup",
+    authenticate,
+    taskController.verifyDonorPickup
+);
+
+router.post(
+    "/:id/verify-warehouse-pickup",
+    authenticate,
+    taskController.verifyWarehousePickup
+);
+
+router.post(
+    "/:id/verify-handover",
+    authenticate,
+    taskController.verifyHandover
+);
+
+router.post(
+    "/:id/regenerate-pin",
+    authenticate,
+    taskController.regeneratePin
+);
+
+
+
+router.post(
+    "/:id/member-checkin",
+    authenticate,
+    taskController.memberCheckIn
+);
+
+router.post(
+    "/:id/verify-member",
+    authenticate,
+    taskController.verifyMember
 );
 
 export default router;

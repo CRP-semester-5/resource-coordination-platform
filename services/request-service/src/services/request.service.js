@@ -120,8 +120,8 @@ export const createRequest = async (requestData, userId = null) => {
     return formatRequest(await getRequestById(data.request_id));
 };
 
-export const getRequests = async (orgId = null) => {
-    const { data, error } = await requestRepository.findAll(orgId);
+export const getRequests = async (orgId = null, userId = null, myRequestsOnly = false) => {
+    const { data, error } = await requestRepository.findAll(orgId, userId, myRequestsOnly);
     if (error) {
         throw new Error(error.message);
     }
@@ -189,14 +189,15 @@ export const approveRequest = async (requestId, verifiedBy, orgId) => {
     if (!existing.data) {
         throw new Error("Request not found.");
     }
-    if (orgId && existing.data.organization_id && existing.data.organization_id !== orgId) {
-        throw new Error("Unauthorized: Request is already assigned to another organization.");
-    }
-    if (existing.data.status !== "PENDING") {
+    if (existing.data.status !== "PENDING" && existing.data.status !== "UNDER_REVIEW") {
         throw new Error("Only pending requests can be approved.");
     }
 
-    const { data, error } = await requestRepository.verify(requestId, verifiedBy, orgId);
+    const { data, error } = await requestRepository.verify(
+        requestId,
+        verifiedBy,
+        orgId || existing.data.organization_id
+    );
     if (error) {
         throw new Error(error.message);
     }
@@ -208,14 +209,16 @@ export const rejectRequest = async (requestId, verifiedBy, reason, orgId) => {
     if (!existing.data) {
         throw new Error("Request not found.");
     }
-    if (orgId && existing.data.organization_id && existing.data.organization_id !== orgId) {
-        throw new Error("Unauthorized: Request is already assigned to another organization.");
-    }
-    if (existing.data.status !== "PENDING") {
+    if (existing.data.status !== "PENDING" && existing.data.status !== "UNDER_REVIEW") {
         throw new Error("Only pending requests can be rejected.");
     }
 
-    const { data, error } = await requestRepository.reject(requestId, verifiedBy, reason, orgId);
+    const { data, error } = await requestRepository.reject(
+        requestId,
+        verifiedBy,
+        reason,
+        orgId || existing.data.organization_id
+    );
     if (error) {
         throw new Error(error.message);
     }
@@ -273,3 +276,30 @@ export const markInProgress = async (requestId) => {
     return data;
 };
 
+
+
+export const unapproveRequest = async (requestId) => {
+    const existing = await requestRepository.findById(requestId);
+    if (!existing.data) {
+        throw new Error("Request not found.");
+    }
+    if (existing.data.status === "FULFILLED") {
+        throw new Error("Fulfilled requests cannot be reverted to pending.");
+    }
+
+    const { data, error } = await requestRepository.unverify(requestId);
+    if (error) {
+        throw new Error(error.message);
+    }
+    return formatRequest(data);
+};
+
+export const regeneratePin = async (requestId) => {
+    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    try {
+        await supabase.from("requests").update({ handover_pin: newPin }).eq("request_id", requestId);
+    } catch (e) {
+        console.warn("Update requests handover_pin note:", e.message);
+    }
+    return { request_id: requestId, handover_pin: newPin, generated_at: new Date().toISOString() };
+};

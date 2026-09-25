@@ -1,3 +1,4 @@
+import { supabase } from "../lib/supabase.js";
 import * as taskService from "../services/task.service.js";
 
 export const createTask = async (req, res, next) => {
@@ -12,6 +13,16 @@ export const createTask = async (req, res, next) => {
         };
         const task = await taskService.createTask(data);
         return res.status(201).json({ success: true, data: task });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getMyTasks = async (req, res, next) => {
+    try {
+        const userId = req.user.sub;
+        const tasks = await taskService.getMyTasks(userId);
+        return res.json({ success: true, data: tasks });
     } catch (error) {
         next(error);
     }
@@ -47,12 +58,118 @@ export const updateTask = async (req, res, next) => {
 
 export const assignTask = async (req, res, next) => {
     try {
-        const { volunteer_id } = req.body;
-        if (!volunteer_id) return res.status(400).json({ success: false, message: "volunteer_id is required" });
+        let { volunteer_id } = req.body || {};
+        const userId = req.user.sub;
 
-        const assignment = await taskService.assignTask(req.params.id, volunteer_id);
+        // If volunteer_id not provided, look up volunteer_id for the logged-in user (mobile self-assignment)
+        if (!volunteer_id) {
+            const volunteer = await taskService.getVolunteerByUserId(userId);
+            if (volunteer && volunteer.volunteer_id) {
+                volunteer_id = volunteer.volunteer_id;
+            }
+        }
+
+        if (!volunteer_id) {
+            return res.status(400).json({ success: false, message: "volunteer_id could not be determined. Make sure you are registered as a volunteer." });
+        }
+
+        const assignment = await taskService.assignTask(req.params.id, volunteer_id, userId);
         return res.status(201).json({ success: true, message: "Task assigned successfully", data: assignment });
     } catch (error) {
         next(error);
     }
 };
+
+export const addProgress = async (req, res, next) => {
+    try {
+        const { progress_percent, remarks, status } = req.body;
+        const progress = await taskService.addProgress(req.params.id, req.user.sub, {
+            progress_percent,
+            remarks,
+            status
+        });
+        return res.status(201).json({ success: true, message: "Progress recorded successfully", data: progress });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getTaskProgress = async (req, res, next) => {
+    try {
+        const progress = await taskService.getTaskProgress(req.params.id);
+        return res.json({ success: true, data: progress });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const verifyDonorPickup = async (req, res, next) => {
+    try {
+        const { pin } = req.body;
+        if (!pin) {
+            return res.status(400).json({ success: false, message: "Donor Handover PIN is required" });
+        }
+        const result = await taskService.verifyDonorPickup(req.params.id, req.user.sub, pin);
+        return res.status(200).json({ success: true, message: "Donation collection from donor verified!", data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
+export const verifyWarehousePickup = async (req, res, next) => {
+    try {
+        const { pin } = req.body;
+        if (!pin) {
+            return res.status(400).json({ success: false, message: "Warehouse Dispatch PIN is required" });
+        }
+        const result = await taskService.verifyWarehousePickup(req.params.id, req.user.sub, pin);
+        return res.status(200).json({ success: true, message: "Supplies collected from warehouse verified!", data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
+export const verifyHandover = async (req, res, next) => {
+    try {
+        const { pin } = req.body;
+        if (!pin) {
+            return res.status(400).json({ success: false, message: "Verification PIN is required" });
+        }
+        const result = await taskService.verifyHandover(req.params.id, req.user.sub, pin);
+        return res.status(200).json({ success: true, message: "Handover verified and mission completed successfully!", data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
+export const regeneratePin = async (req, res, next) => {
+    try {
+        const result = await taskService.regeneratePin(req.params.id, req.user.sub);
+        return res.status(200).json({ success: true, message: "New handover PIN generated successfully", data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
+export const memberCheckIn = async (req, res, next) => {
+    try {
+        const { volunteer_id } = req.body || {};
+        const result = await taskService.memberCheckIn(req.params.id, req.user.sub, volunteer_id);
+        return res.json({ success: true, message: "Arrival on site reported successfully", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const verifyMember = async (req, res, next) => {
+    try {
+        const { volunteer_id } = req.body || {};
+        const result = await taskService.verifyMember(req.params.id, req.user.sub, volunteer_id);
+        return res.json({ success: true, message: "Member verified on site by Team Leader", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+

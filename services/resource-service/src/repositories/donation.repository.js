@@ -1,4 +1,4 @@
-﻿import { supabase } from "../lib/supabase.js";
+import { supabase } from "../lib/supabase.js";
 
 export const createDonation = async (donationData) => {
     return await supabase
@@ -13,7 +13,7 @@ export const create = createDonation;
 export const findAll = async (organization_id, user_id) => {
     let query = supabase
         .from("donations")
-        .select("*, users!donor_id(first_name, last_name)");
+        .select("*, users!donor_id(first_name, last_name, email, phone)");
 
     if (organization_id) {
         query = query.eq("organization_id", organization_id);

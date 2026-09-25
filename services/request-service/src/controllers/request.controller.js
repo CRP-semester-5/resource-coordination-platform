@@ -20,9 +20,10 @@ export const createRequest = async (req, res) => {
 
 export const getRequests = async (req, res) => {
     try {
-        // Prefer header (sent by frontend), fall back to JWT membership
+        const userId = req.user?.sub || null;
+        const myRequestsOnly = req.query.my_requests === 'true' || req.query.my_requests === true;
         const orgId = req.headers['x-organization-id'] || req.orgMembership?.org_id || null;
-        const requests = await requestService.getRequests(orgId);
+        const requests = await requestService.getRequests(orgId, userId, myRequestsOnly);
         return res.status(200).json({
             success: true,
             data: requests
@@ -172,6 +173,39 @@ export const markInProgress = async (req, res) => {
 
     } catch (error) {
 
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+export const unapproveRequest = async (req, res) => {
+    try {
+        const request = await requestService.unapproveRequest(req.params.id);
+        return res.status(200).json({
+            success: true,
+            message: "Request approval undone. Status reset to pending.",
+            data: request
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const regeneratePin = async (req, res) => {
+    try {
+        const result = await requestService.regeneratePin(req.params.id);
+        return res.status(200).json({
+            success: true,
+            message: "New handover PIN generated successfully",
+            data: result
+        });
+    } catch (error) {
         return res.status(400).json({
             success: false,
             message: error.message
