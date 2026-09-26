@@ -1,8 +1,4 @@
-﻿-- Resource Coordination Platform for Community Resilience
--- PostgreSQL / Supabase schema
--- Full schema generated from the reviewed ER design.
-
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+﻿CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TYPE user_status AS ENUM ('ACTIVE','INACTIVE','SUSPENDED','PENDING');
 -- Global platform roles (no org context needed)

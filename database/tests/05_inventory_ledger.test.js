@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.5: Inventory Ledger Arithmetic & Atomicity Integrity
- * Target: Validate stock ledger formula (Opening + IN - OUT = Current) and negative stock prevention.
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient, TEST_IDS } from './setup.js';
 
-describe('3.1.1.5 Inventory Ledger Arithmetic & Balance Integrity', () => {
+describe('Inventory Ledger Arithmetic & Balance Integrity', () => {
 
   it('verifies that stock ledger transactions mathematically equate to current stock balance', async () => {
     // 1. Create a dedicated test resource with known initial balance

@@ -1,14 +1,3 @@
--- ─────────────────────────────────────────────────────────────────────────────
---  ResQ Hub — Organization Applications Migration
---  Run this in Supabase SQL Editor (Project → SQL Editor → New Query)
---
---  This updates the `organizations` table to support an application flow:
---    - Adds `applicant_id` to track who submitted the org application.
---    - Drops the old status constraint and creates a new one including
---      `PENDING` and `REJECTED`.
---    - Sets the default status to `PENDING`.
--- ─────────────────────────────────────────────────────────────────────────────
-
 -- STEP 1: Add applicant_id column
 ALTER TABLE organizations
 ADD COLUMN applicant_id UUID REFERENCES users(user_id) ON DELETE SET NULL;

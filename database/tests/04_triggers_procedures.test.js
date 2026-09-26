@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.4: PostgreSQL Triggers & Stored Functions
- * Target: Validate automatic triggers: set_updated_at() and assign_default_user_role().
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient } from './setup.js';
 
-describe('3.1.1.4 PostgreSQL Triggers & Automated Procedures', () => {
+describe('PostgreSQL Triggers & Automated Procedures', () => {
 
   it('executes assign_default_user_role() trigger upon new user creation', async () => {
     const uniqueEmail = `trigger.test.${Date.now()}@resqhub.test`;

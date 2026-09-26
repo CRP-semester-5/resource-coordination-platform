@@ -1,7 +1,3 @@
-/**
- * Database Test Suite Configuration & Client Initializer
- * Provides isolated client instances for Section 3.1.1 testing.
- */
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

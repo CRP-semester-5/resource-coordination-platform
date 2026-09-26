@@ -1,7 +1,3 @@
-/**
- * ResQ Hub — Automated Database Test Seeder
- * Purpose: Populates predictable, idempotent test datasets for Section 3.1.1 testing.
- */
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

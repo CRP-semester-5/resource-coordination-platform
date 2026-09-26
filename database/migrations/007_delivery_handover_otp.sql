@@ -1,9 +1,4 @@
-﻿-- ==============================================================================
--- ResQ Hub - Delivery & Pickup Handover Verification PIN Migration
--- Run in Supabase SQL Editor (Dashboard -> SQL Editor -> New Query)
--- ==============================================================================
-
--- 1. Add handover_pin to requests table
+﻿-- 1. Add handover_pin to requests table
 ALTER TABLE requests 
 ADD COLUMN IF NOT EXISTS handover_pin VARCHAR(6) DEFAULT LPAD(FLOOR(RANDOM() * 9000 + 1000)::TEXT, 4, '0');
 

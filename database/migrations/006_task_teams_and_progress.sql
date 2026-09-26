@@ -1,9 +1,4 @@
-﻿-- ==============================================================================
--- ResQ Hub - Multi-Volunteer Teams & Task Capacity Migration
--- Run in Supabase SQL Editor (Dashboard -> SQL Editor -> New Query)
--- ==============================================================================
-
--- 1. Add task_type and volunteers_required to tasks table
+﻿-- 1. Add task_type and volunteers_required to tasks table
 ALTER TABLE tasks 
 ADD COLUMN IF NOT EXISTS task_type VARCHAR(20) NOT NULL DEFAULT 'INDIVIDUAL';
 

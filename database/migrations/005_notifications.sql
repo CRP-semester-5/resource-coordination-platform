@@ -1,8 +1,3 @@
--- ─────────────────────────────────────────────────────────────────────────────
---  ResQ Hub — Real-Time Notifications Migration
---  Run this in Supabase SQL Editor
--- ─────────────────────────────────────────────────────────────────────────────
-
 CREATE TYPE notification_type AS ENUM ('TASK_ASSIGNED', 'TASK_STATUS_CHANGED', 'NEW_DONATION', 'DONATION_STATUS_CHANGED', 'INVENTORY_ALERT');
 
 CREATE TABLE notifications (

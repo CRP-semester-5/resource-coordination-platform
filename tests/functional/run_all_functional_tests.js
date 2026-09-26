@@ -1,7 +1,3 @@
-/**
- * ResQ Hub — Master Functional Test Runner (Section 3.1.2)
- * Purpose: Executes all functional end-to-end test suites (Flow A, Flow B, Flow C, RBAC, State Machines).
- */
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';

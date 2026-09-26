@@ -1,8 +1,3 @@
--- ==============================================================================
--- ResQ Hub - Task Status Notification Trigger Fix Migration
--- Run in Supabase SQL Editor (Dashboard -> SQL Editor -> New Query)
--- ==============================================================================
-
 CREATE OR REPLACE FUNCTION notify_task_status()
 RETURNS TRIGGER AS $$
 BEGIN

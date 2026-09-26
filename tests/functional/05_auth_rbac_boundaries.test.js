@@ -1,17 +1,10 @@
-/**
- * Functional Test 3.1.2.5: Role-Based Access Control (RBAC) & Endpoint Authorization
- * Specification:
- *   - Verifies JWT claim generation & signature verification
- *   - Validates role boundaries (COORDINATOR vs VOLUNTEER vs CITIZEN vs SUPER_ADMIN)
- *   - Verifies organization membership authorization
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import jwt from 'jsonwebtoken';
 import { generateTestToken, TEST_USERS } from './helpers/auth.helper.js';
 import { supabase, TEST_ORGS } from './helpers/fixtures.helper.js';
 
-describe('3.1.2.5 RBAC Boundaries & Role Authorization Validation', () => {
+describe('RBAC Boundaries & Role Authorization Validation', () => {
   const jwtSecret = process.env.JWT_SECRET || 'Callofduty4&';
 
   it('generates cryptographically valid JWT tokens with verified claims', () => {

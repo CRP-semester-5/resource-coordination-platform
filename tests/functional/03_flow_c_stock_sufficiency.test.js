@@ -1,14 +1,8 @@
-/**
- * Functional Test 3.1.2.3: Flow C (Stock Sufficiency Rules & Deficit Prevention)
- * Specification:
- *   Validate that inventory sufficiency checks prevent task dispatch when requested quantity
- *   exceeds available warehouse stock, and accurately calculate surplus / deficit margins.
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { supabase, TEST_ORGS } from './helpers/fixtures.helper.js';
 
-describe('3.1.2.3 Flow C: Stock Sufficiency Rules & Inventory Boundary Validation', () => {
+describe('Flow C: Stock Sufficiency Rules & Inventory Boundary Validation', () => {
   const targetOrgId = TEST_ORGS.COLOMBO_HUB;
   let testResourceId = null;
   const availableStock = 40;

@@ -1,7 +1,3 @@
-/**
- * ResQ Hub — Master Database Integrity Test Runner (Section 3.1.1)
- * Purpose: Executes all database integrity test suites and generates executive summary metrics.
- */
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,7 +16,7 @@ const testFiles = [
 ];
 
 console.log('================================================================================');
-console.log(' ResQ Hub — Section 3.1.1 Data & Database Integrity Test Suite Runner');
+console.log(' ResQ Hub —Data & Database Integrity Test Suite Runner');
 console.log(' Testing against Supabase PostgreSQL Persistence Tier');
 console.log('================================================================================\n');
 
@@ -39,7 +35,7 @@ child.on('exit', (code) => {
   console.log('\n================================================================================');
   if (code === 0) {
     console.log(' ✅ ALL DATABASE INTEGRITY TESTS PASSED (100% SUCCESS)');
-    console.log(' Status: Approved for Iteration Release / RUP Section 3.1.1 Verified');
+    console.log(' Status: Approved for Iteration Release Verified');
   } else {
     console.log(` ❌ DATABASE INTEGRITY TESTS FAILED WITH EXIT CODE ${code}`);
   }

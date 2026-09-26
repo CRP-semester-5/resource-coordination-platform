@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.3: Foreign Key Integrity, Cascades, and Restrict Rules
- * Target: Verify referential integrity, reject invalid parent FKs (23503), enforce ON DELETE RESTRICT and ON DELETE CASCADE.
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient, TEST_IDS } from './setup.js';
 
-describe('3.1.1.3 Foreign Key Integrity, Restricts & Cascades', () => {
+describe('Foreign Key Integrity, Restricts & Cascades', () => {
 
   it('rejects insertion with non-existent foreign key UUID (foreign_key_violation: 23503)', async () => {
     const invalidFkReq = {
