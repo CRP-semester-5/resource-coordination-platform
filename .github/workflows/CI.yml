@@ -1,4 +1,4 @@
-name: Build and Push Microservices
+name: Build, Push and Deploy Microservices
 
 on:
   push:
@@ -9,7 +9,6 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     strategy:
-      # If one build fails, don't cancel the others
       fail-fast: false
       matrix:
         include:
@@ -46,7 +45,7 @@ jobs:
             image: resqhub-api-gateway
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
@@ -61,13 +60,36 @@ jobs:
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v6
         with:
-          # CRITICAL: The context MUST be the root ('.') because of your npm workspaces
           context: .
           file: ${{ matrix.file }}
           push: true
-          # Note: arm64 takes significantly longer on GitHub's free runners. 
-          # Remove it if you only deploy to standard x86/amd64 AWS EC2 instances.
           platforms: linux/amd64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
+
+  deploy:
+    name: Deploy to AWS EC2
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - name: Deploy latest images to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/resqhub
+
+            echo "Pulling latest images..."
+            docker compose -f docker-compose.prod.yml pull
+
+            echo "Restarting containers..."
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            echo "Removing unused images..."
+            docker image prune -f
+
+            echo "Deployment status:"
+            docker compose -f docker-compose.prod.yml ps

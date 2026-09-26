@@ -186,7 +186,7 @@ plugins:
   # Conservative default: 300 requests per minute per IP
   - name: rate-limiting
     config:
-      minute: 300
+      minute: 1000
       policy: local
       error_message: "Rate limit exceeded. Please slow down."
 
