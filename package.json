@@ -23,7 +23,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed:db-test": "node database/seeds/seed.js",
     "test:db-integrity": "node database/tests/run_all_db_tests.js",
-    "test:functional": "node tests/functional/run_all_functional_tests.js"
+    "test:functional": "node tests/functional/run_all_functional_tests.js",
+    "test:ui": "node tests/ui/run_all_ui_tests.js"
   },
   "repository": {
     "type": "git",
