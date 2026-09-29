@@ -4,6 +4,9 @@ import { authenticate } from "@crp/shared-middleware";
 
 const router = express.Router();
 
+// Internal route without auth for other microservices
+router.post("/internal/send", notificationController.sendNotification);
+
 router.use(authenticate); // All routes require authentication
 
 router.get("/", notificationController.getNotifications);

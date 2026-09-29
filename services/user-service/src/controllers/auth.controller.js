@@ -1,4 +1,5 @@
 import * as authService from '../services/auth.service.js'
+import { updateUser } from '../repositaries/user.repository.js'
 
 /**
  * POST /api/v1/auth/register
@@ -166,4 +167,22 @@ export async function resetPassword(req, res, next) {
  */
 export async function logout(req, res) {
     return res.status(200).json({ message: 'Logged out successfully.' })
+}
+
+
+/**
+ * POST /api/v1/auth/fcm-token
+ * Body: { fcm_token }
+ */
+export async function updateFCMToken(req, res, next) {
+    try {
+        const { fcm_token } = req.body
+        const userId = req.user.sub || req.user.user_id
+
+        await updateUser(userId, { fcm_token })
+        
+        return res.status(200).json({ message: 'FCM Token updated successfully' })
+    } catch (err) {
+        next(err)
+    }
 }
