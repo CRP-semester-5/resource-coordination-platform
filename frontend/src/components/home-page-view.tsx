@@ -19,7 +19,6 @@ import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
 import { BackgroundShader } from "./background-shader";
 
-
 export const MOBILE_APP_DOWNLOAD_URL = "https://drive.google.com/YOUR_GOOGLE_DRIVE_LINK_HERE";
 
 export function HomePageView() {
@@ -60,13 +59,19 @@ export function HomePageView() {
             <a href="#roles" className="hover:text-foreground transition-colors whitespace-nowrap">
               Access Portals
             </a>
-            <a href="#features" className="hover:text-foreground transition-colors whitespace-nowrap">
+            <a
+              href="#features"
+              className="hover:text-foreground transition-colors whitespace-nowrap"
+            >
               Platform Features
             </a>
             <a href="#mobile" className="hover:text-foreground transition-colors whitespace-nowrap">
               Mobile App
             </a>
-            <a href="#workflow" className="hover:text-foreground transition-colors whitespace-nowrap">
+            <a
+              href="#workflow"
+              className="hover:text-foreground transition-colors whitespace-nowrap"
+            >
               How It Works
             </a>
           </nav>
@@ -98,8 +103,12 @@ export function HomePageView() {
                   Signed in as <strong className="text-foreground">{user?.email || "User"}</strong>
                 </span>
                 <Link to={isSuperAdmin ? "/admin" : "/coordinator"}>
-                  <Button size="sm" className="h-9 font-bold text-xs gap-1.5 shadow-sm whitespace-nowrap shrink-0">
-                    Open {isSuperAdmin ? "Admin Console" : "Workspace"} <ArrowRight className="size-3.5" />
+                  <Button
+                    size="sm"
+                    className="h-9 font-bold text-xs gap-1.5 shadow-sm whitespace-nowrap shrink-0"
+                  >
+                    Open {isSuperAdmin ? "Admin Console" : "Workspace"}{" "}
+                    <ArrowRight className="size-3.5" />
                   </Button>
                 </Link>
                 <Button
@@ -123,7 +132,10 @@ export function HomePageView() {
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="sm" className="h-9 text-xs font-bold gap-1.5 shadow-sm whitespace-nowrap shrink-0">
+                  <Button
+                    size="sm"
+                    className="h-9 text-xs font-bold gap-1.5 shadow-sm whitespace-nowrap shrink-0"
+                  >
                     <Building2 className="size-3.5" /> Create Organization
                   </Button>
                 </Link>
@@ -152,7 +164,9 @@ export function HomePageView() {
 
           {/* Subtitle */}
           <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
-            ResQ Hub empowers humanitarian relief organizations, field coordinators, volunteer brigades, and emergency admins to collaborate in real-time without bottlenecks or relief duplication.
+            ResQ Hub empowers humanitarian relief organizations, field coordinators, volunteer
+            brigades, and emergency admins to collaborate in real-time without bottlenecks or relief
+            duplication.
           </p>
 
           {/* Top Quick Actions Bar */}
@@ -168,7 +182,8 @@ export function HomePageView() {
                 size="lg"
                 className="font-bold text-sm h-12 px-6 gap-2 border-border hover:bg-muted/50"
               >
-                <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" /> Admin Console
+                <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" /> Admin
+                Console
               </Button>
             </Link>
             <Link to="/register">
@@ -193,7 +208,9 @@ export function HomePageView() {
               <span className="text-xs text-muted-foreground font-medium">PostgreSQL Stock</span>
             </div>
             <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 backdrop-blur-xs text-center shadow-xs">
-              <span className="block text-2xl font-black text-emerald-600 dark:text-emerald-400">Multi-Org</span>
+              <span className="block text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                Multi-Org
+              </span>
               <span className="text-xs text-muted-foreground font-medium">Inter-agency Feed</span>
             </div>
             <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 backdrop-blur-xs text-center shadow-xs">
@@ -205,7 +222,10 @@ export function HomePageView() {
       </section>
 
       {/* 3. PRIMARY ACCESS ROLES SECTION (Choose Admin, Coordinator or Create Organization) */}
-      <section id="roles" className="relative z-10 py-16 sm:py-20 bg-transparent border-b border-border/40 scroll-mt-20">
+      <section
+        id="roles"
+        className="relative z-10 py-16 sm:py-20 bg-transparent border-b border-border/40 scroll-mt-20"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -365,7 +385,10 @@ export function HomePageView() {
       </section>
 
       {/* 4. PLATFORM PILLARS & FEATURES */}
-      <section id="features" className="relative z-10 py-16 sm:py-20 border-b border-border/40 scroll-mt-20 bg-transparent">
+      <section
+        id="features"
+        className="relative z-10 py-16 sm:py-20 border-b border-border/40 scroll-mt-20 bg-transparent"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -375,7 +398,8 @@ export function HomePageView() {
               Engineered for Real Disaster Relief Conditions
             </h2>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              Built to withstand emergency scenarios with live PostgreSQL synchronization, smart variant shelves, and audit trails.
+              Built to withstand emergency scenarios with live PostgreSQL synchronization, smart
+              variant shelves, and audit trails.
             </p>
           </div>
 
@@ -386,7 +410,8 @@ export function HomePageView() {
               </div>
               <h3 className="font-bold text-base text-foreground">Warehouse Inventory</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Categorized across 9 humanitarian relief branches with sub-types, variant shelves, and live audit transaction ledgers.
+                Categorized across 9 humanitarian relief branches with sub-types, variant shelves,
+                and live audit transaction ledgers.
               </p>
             </div>
 
@@ -396,7 +421,8 @@ export function HomePageView() {
               </div>
               <h3 className="font-bold text-base text-foreground">Community Requests</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Triage incoming community requests with urgency indicators, direct stock reserving, and fulfillment handoff PINs.
+                Triage incoming community requests with urgency indicators, direct stock reserving,
+                and fulfillment handoff PINs.
               </p>
             </div>
 
@@ -406,7 +432,8 @@ export function HomePageView() {
               </div>
               <h3 className="font-bold text-base text-foreground">Donation Pipeline</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Track donor pledges, coordinate organization pickups, verify physical condition, and shelve directly into warehouse inventory.
+                Track donor pledges, coordinate organization pickups, verify physical condition, and
+                shelve directly into warehouse inventory.
               </p>
             </div>
 
@@ -416,7 +443,8 @@ export function HomePageView() {
               </div>
               <h3 className="font-bold text-base text-foreground">Coordination Feed</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Inter-organization communication channel for requesting new main categories, broadcast announcements, and real-time coordinator chat.
+                Inter-organization communication channel for requesting new main categories,
+                broadcast announcements, and real-time coordinator chat.
               </p>
             </div>
           </div>
@@ -424,7 +452,10 @@ export function HomePageView() {
       </section>
 
       {/* 5. MOBILE APP COMPANION SPOTLIGHT */}
-      <section id="mobile" className="relative z-10 py-16 sm:py-20 bg-transparent border-b border-border/40 scroll-mt-20">
+      <section
+        id="mobile"
+        className="relative z-10 py-16 sm:py-20 bg-transparent border-b border-border/40 scroll-mt-20"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-border/80 bg-card/85 backdrop-blur-md p-8 sm:p-12 lg:p-16 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="max-w-xl space-y-4">
@@ -435,17 +466,22 @@ export function HomePageView() {
                 Connecting Citizens and Donors Directly to Relief Teams
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Our Flutter mobile app lets affected families submit urgent requests even with unstable connectivity. Donors can pledge supplies, and field volunteers can check in at distribution points.
+                Our Flutter mobile app lets affected families submit urgent requests even with
+                unstable connectivity. Donors can pledge supplies, and field volunteers can check in
+                at distribution points.
               </p>
               <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-foreground/80">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> Offline Request Queuing
+                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> Offline
+                  Request Queuing
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> Dynamic Category Sync
+                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> Dynamic
+                  Category Sync
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> Multilingual Support
+                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />{" "}
+                  Multilingual Support
                 </div>
               </div>
 
@@ -472,21 +508,27 @@ export function HomePageView() {
                 <Layers className="size-5 text-primary shrink-0" />
                 <div className="text-xs">
                   <strong className="block text-foreground">Synchronized Categories</strong>
-                  <span className="text-muted-foreground">Every category in DB updates live on mobile.</span>
+                  <span className="text-muted-foreground">
+                    Every category in DB updates live on mobile.
+                  </span>
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-card/90 border border-border flex items-center gap-3">
                 <Users className="size-5 text-primary shrink-0" />
                 <div className="text-xs">
                   <strong className="block text-foreground">Volunteer Field Tasks</strong>
-                  <span className="text-muted-foreground">GPS check-ins, pin validation and tasks.</span>
+                  <span className="text-muted-foreground">
+                    GPS check-ins, pin validation and tasks.
+                  </span>
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-card/90 border border-border flex items-center gap-3">
                 <Sparkles className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <div className="text-xs">
                   <strong className="block text-foreground">Zero Hoarding Verification</strong>
-                  <span className="text-muted-foreground">Secure tracking from donor to recipient.</span>
+                  <span className="text-muted-foreground">
+                    Secure tracking from donor to recipient.
+                  </span>
                 </div>
               </div>
             </div>
@@ -495,7 +537,10 @@ export function HomePageView() {
       </section>
 
       {/* 6. HOW IT WORKS WORKFLOW */}
-      <section id="workflow" className="relative z-10 py-16 sm:py-20 border-b border-border/40 scroll-mt-20 bg-transparent">
+      <section
+        id="workflow"
+        className="relative z-10 py-16 sm:py-20 border-b border-border/40 scroll-mt-20 bg-transparent"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -514,23 +559,32 @@ export function HomePageView() {
               <span className="text-4xl font-black text-primary/20">01</span>
               <h3 className="text-base font-bold text-foreground mt-2">Intake & Verification</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Community members and relief camps log emergency needs via mobile or portal. Coordinators triage urgency and prevent duplicates.
+                Community members and relief camps log emergency needs via mobile or portal.
+                Coordinators triage urgency and prevent duplicates.
               </p>
             </div>
 
             <div className="rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-6 relative">
-              <span className="text-4xl font-black text-emerald-600/20 dark:text-emerald-400/20">02</span>
-              <h3 className="text-base font-bold text-foreground mt-2">Warehouse Shelving & Stock</h3>
+              <span className="text-4xl font-black text-emerald-600/20 dark:text-emerald-400/20">
+                02
+              </span>
+              <h3 className="text-base font-bold text-foreground mt-2">
+                Warehouse Shelving & Stock
+              </h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Donations are checked in, sorted into specific variant shelves, and tracked in a transparent audit ledger connected to Supabase PostgreSQL.
+                Donations are checked in, sorted into specific variant shelves, and tracked in a
+                transparent audit ledger connected to Supabase PostgreSQL.
               </p>
             </div>
 
             <div className="rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-6 relative">
-              <span className="text-4xl font-black text-indigo-600/20 dark:text-indigo-400/20">03</span>
+              <span className="text-4xl font-black text-indigo-600/20 dark:text-indigo-400/20">
+                03
+              </span>
               <h3 className="text-base font-bold text-foreground mt-2">Dispatch & Delivery</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Stock is reserved for approved requests, volunteer drivers receive mission waypoints, and handoff PINs confirm safe receipt.
+                Stock is reserved for approved requests, volunteer drivers receive mission
+                waypoints, and handoff PINs confirm safe receipt.
               </p>
             </div>
           </div>
@@ -555,10 +609,18 @@ export function HomePageView() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-xs font-semibold text-muted-foreground">
-            <Link to="/login" search={{ role: "coordinator" }} className="hover:text-foreground transition-colors">
+            <Link
+              to="/login"
+              search={{ role: "coordinator" }}
+              className="hover:text-foreground transition-colors"
+            >
               Coordinator Login
             </Link>
-            <Link to="/login" search={{ role: "admin" }} className="hover:text-foreground transition-colors">
+            <Link
+              to="/login"
+              search={{ role: "admin" }}
+              className="hover:text-foreground transition-colors"
+            >
               Admin Login
             </Link>
             <Link to="/register" className="hover:text-foreground transition-colors">

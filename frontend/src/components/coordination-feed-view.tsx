@@ -60,16 +60,7 @@ const COMMON_EMOJIS = [
   { emoji: "❤️", label: "Support" },
 ];
 
-const SUGGESTED_UNITS = [
-  "units",
-  "boxes",
-  "kits",
-  "kg",
-  "liters",
-  "packs",
-  "pairs",
-  "bottles",
-];
+const SUGGESTED_UNITS = ["units", "boxes", "kits", "kg", "liters", "packs", "pairs", "bottles"];
 
 export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
   const { user, selectedOrg, isSuperAdmin, isOrgAdmin } = useAuth();
@@ -94,9 +85,9 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
 
   // Post Composer State
   const [showComposer, setShowComposer] = useState(false);
-  const [messageType, setMessageType] = useState<"GENERAL" | "CATEGORY_REQUEST" | "RESOURCE_ALERT" | "ANNOUNCEMENT">(
-    "CATEGORY_REQUEST"
-  );
+  const [messageType, setMessageType] = useState<
+    "GENERAL" | "CATEGORY_REQUEST" | "RESOURCE_ALERT" | "ANNOUNCEMENT"
+  >("CATEGORY_REQUEST");
   const [content, setContent] = useState("");
   const [proposedCategory, setProposedCategory] = useState("");
   const [proposedUnit, setProposedUnit] = useState("units");
@@ -112,14 +103,19 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
   const [catDesc, setCatDesc] = useState("");
 
   // Auto-refresh interval (every 8 seconds for responsive chat feel)
-  const { data: messages = [], isLoading, isFetching, refetch } = useQuery<FeedMessage[]>({
+  const {
+    data: messages = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery<FeedMessage[]>({
     queryKey: ["coordination-feed", activeTab, statusFilter],
     queryFn: async () => {
       const res = await feedAPI.getAll({
         type: activeTab === "ALL" ? undefined : activeTab,
         status: statusFilter === "ALL" ? undefined : statusFilter,
       });
-      return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      return Array.isArray(res.data) ? res.data : res.data?.data || [];
     },
     refetchInterval: 8000,
   });
@@ -149,7 +145,7 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
         toast.success(
           variables.message_type === "CATEGORY_REQUEST"
             ? "Category request posted to Admin & Coordinators!"
-            : "Message posted to Coordination Feed!"
+            : "Message posted to Coordination Feed!",
         );
       } else {
         // Clear reply box
@@ -251,7 +247,7 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
       await feedAPI.create({
         parent_id: post.message_id,
         message_type: "GENERAL",
-        content: `Acknowledged! I'll review and add the "${post.proposed_category || 'requested'}" category shortly.`,
+        content: `Acknowledged! I'll review and add the "${post.proposed_category || "requested"}" category shortly.`,
         organization_name: "Super Admin",
       });
       qc.invalidateQueries({ queryKey: ["coordination-feed"] });
@@ -265,11 +261,15 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
     setCategoryModalPost(post);
     setCatName(post.proposed_category || "");
     setCatUnit(post.proposed_unit || "units");
-    setCatDesc(`Requested by ${post.user_name} (${post.organization_name || 'Coordinator'}) via Coordination Feed.`);
+    setCatDesc(
+      `Requested by ${post.user_name} (${post.organization_name || "Coordinator"}) via Coordination Feed.`,
+    );
   };
 
   // Counts for tabs
-  const categoryRequestsCount = messages.filter((m) => m.message_type === "CATEGORY_REQUEST" && m.status === "OPEN").length;
+  const categoryRequestsCount = messages.filter(
+    (m) => m.message_type === "CATEGORY_REQUEST" && m.status === "OPEN",
+  ).length;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -286,7 +286,8 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
               </h1>
             </div>
             <p className="text-sm text-muted-foreground">
-              Real-time collaboration between Organization Coordinators and System Administrators. Request new categories, alert on supplies, and coordinate disaster response.
+              Real-time collaboration between Organization Coordinators and System Administrators.
+              Request new categories, alert on supplies, and coordinate disaster response.
             </p>
           </div>
 
@@ -384,7 +385,9 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                   <span>Propose New Resource Category for Platform</span>
                 </div>
                 <p className="text-xs text-blue-700/80 dark:text-blue-300/80">
-                  Admins and other coordinators will see this request immediately. Once approved, the new category will be selectable in inventories, donations, and citizen requests.
+                  Admins and other coordinators will see this request immediately. Once approved,
+                  the new category will be selectable in inventories, donations, and citizen
+                  requests.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
@@ -472,13 +475,9 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                       content: content.trim(),
                       message_type: messageType,
                       proposed_category:
-                        messageType === "CATEGORY_REQUEST"
-                          ? proposedCategory.trim()
-                          : undefined,
+                        messageType === "CATEGORY_REQUEST" ? proposedCategory.trim() : undefined,
                       proposed_unit:
-                        messageType === "CATEGORY_REQUEST"
-                          ? proposedUnit.trim()
-                          : undefined,
+                        messageType === "CATEGORY_REQUEST" ? proposedUnit.trim() : undefined,
                     })
                   }
                   className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 min-w-[120px]"
@@ -634,8 +633,8 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                   isCategoryReq && post.status === "OPEN"
                     ? "border-blue-300 dark:border-blue-800 bg-blue-50/10"
                     : isCategoryReq && post.status === "RESOLVED"
-                    ? "border-emerald-300 dark:border-emerald-900 bg-emerald-50/10"
-                    : "border-border"
+                      ? "border-emerald-300 dark:border-emerald-900 bg-emerald-50/10"
+                      : "border-border"
                 }`}
               >
                 <CardContent className="p-5 space-y-4">
@@ -704,19 +703,28 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                       {isCategoryReq && (
                         <>
                           {post.status === "OPEN" && (
-                            <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 text-[11px] gap-1">
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 text-[11px] gap-1"
+                            >
                               <Clock className="h-3 w-3" />
                               Pending Admin
                             </Badge>
                           )}
                           {post.status === "ACKNOWLEDGED" && (
-                            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800 text-[11px] gap-1">
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800 text-[11px] gap-1"
+                            >
                               <Check className="h-3 w-3" />
                               Admin In Progress
                             </Badge>
                           )}
                           {post.status === "RESOLVED" && (
-                            <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 text-[11px] gap-1">
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 text-[11px] gap-1"
+                            >
                               <CheckCheck className="h-3 w-3" />
                               Created & Active
                             </Badge>
@@ -802,8 +810,8 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                               hasReacted
                                 ? "bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-bold scale-105"
                                 : count > 0
-                                ? "bg-muted/70 border-border text-foreground hover:bg-muted"
-                                : "bg-transparent border-transparent text-muted-foreground hover:bg-muted/50 hover:border-border"
+                                  ? "bg-muted/70 border-border text-foreground hover:bg-muted"
+                                  : "bg-transparent border-transparent text-muted-foreground hover:bg-muted/50 hover:border-border"
                             }`}
                           >
                             <span>{emoji}</span>
@@ -856,7 +864,9 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                               rTime = "recently";
                             }
 
-                            const isFromAdmin = reply.user_role === "SUPER_ADMIN" || reply.organization_name === "Super Admin";
+                            const isFromAdmin =
+                              reply.user_role === "SUPER_ADMIN" ||
+                              reply.organization_name === "Super Admin";
 
                             return (
                               <div
@@ -886,9 +896,7 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                                       </Badge>
                                     )}
                                   </div>
-                                  <span className="text-muted-foreground text-[10px]">
-                                    {rTime}
-                                  </span>
+                                  <span className="text-muted-foreground text-[10px]">{rTime}</span>
                                 </div>
                                 <p className="text-foreground/90 whitespace-pre-wrap pl-8">
                                   {reply.content}
@@ -925,8 +933,7 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
                         <Button
                           size="sm"
                           disabled={
-                            createPostMutation.isPending ||
-                            !replyContents[post.message_id]?.trim()
+                            createPostMutation.isPending || !replyContents[post.message_id]?.trim()
                           }
                           onClick={() => handleSendReply(post.message_id)}
                           className="bg-blue-600 hover:bg-blue-700 text-white shrink-0 h-9"
@@ -955,7 +962,8 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
               <span>Create Category from Coordinator Request</span>
             </DialogTitle>
             <DialogDescription>
-              This will officially create the resource category and notify coordinators in the thread that it is active.
+              This will officially create the resource category and notify coordinators in the
+              thread that it is active.
             </DialogDescription>
           </DialogHeader>
 
@@ -983,9 +991,7 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-foreground block mb-1">
-                Description
-              </label>
+              <label className="text-xs font-medium text-foreground block mb-1">Description</label>
               <Textarea
                 rows={3}
                 value={catDesc}
@@ -996,10 +1002,7 @@ export function CoordinationFeedView({ variant }: CoordinationFeedViewProps) {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCategoryModalPost(null)}
-            >
+            <Button variant="outline" onClick={() => setCategoryModalPost(null)}>
               Cancel
             </Button>
             <Button

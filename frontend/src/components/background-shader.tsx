@@ -98,8 +98,7 @@ export function BackgroundShader() {
           width * blob.baseX + Math.sin(t * blob.speedX + blob.phase) * (width * 0.14);
         const currentY =
           height * blob.baseY + Math.cos(t * blob.speedY + blob.phase) * (height * 0.14);
-        const currentRadius =
-          blob.radius + Math.sin(t * 0.0025 + blob.phase) * 60;
+        const currentRadius = blob.radius + Math.sin(t * 0.0025 + blob.phase) * 60;
 
         const gradient = ctx.createRadialGradient(
           currentX,
@@ -107,7 +106,7 @@ export function BackgroundShader() {
           0,
           currentX,
           currentY,
-          Math.max(10, currentRadius)
+          Math.max(10, currentRadius),
         );
 
         gradient.addColorStop(0, blob.innerColor);
@@ -147,8 +146,7 @@ export function BackgroundShader() {
       <div
         className="absolute inset-0 opacity-20 mix-blend-multiply dark:mix-blend-screen"
         style={{
-          backgroundImage:
-            "radial-gradient(rgba(13, 148, 136, 0.3) 1.2px, transparent 1.2px)",
+          backgroundImage: "radial-gradient(rgba(13, 148, 136, 0.3) 1.2px, transparent 1.2px)",
           backgroundSize: "24px 24px",
         }}
       />

@@ -5,7 +5,11 @@ export const Route = createFileRoute("/admin/feed")({
   head: () => ({
     meta: [
       { title: "Coordination Feed & Requests — Super Admin" },
-      { name: "description", content: "Review and respond to coordinator category requests and inter-org communications." },
+      {
+        name: "description",
+        content:
+          "Review and respond to coordinator category requests and inter-org communications.",
+      },
     ],
   }),
   component: AdminFeedPage,
