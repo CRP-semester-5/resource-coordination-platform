@@ -1,16 +1,9 @@
-/**
- * Functional Test 3.1.2.4: State Machine Invariants & Business Rule Boundaries
- * Specification:
- *   - Duplicate request detection logic
- *   - Exact tag binding parser [REQUEST_ID:uuid] and [DONATION_ID:uuid]
- *   - Illegal state machine transition prevention (e.g., re-claiming a COMPLETED task)
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { supabase, TEST_ORGS } from './helpers/fixtures.helper.js';
 import { TEST_USERS } from './helpers/auth.helper.js';
 
-describe('3.1.2.4 State Machine Transitions & Domain Business Rule Boundaries', () => {
+describe('State Machine Transitions & Domain Business Rule Boundaries', () => {
 
   it('detects and flags potential duplicate requests from the same user for identical category', async () => {
     const user = TEST_USERS.CITIZEN.userId;

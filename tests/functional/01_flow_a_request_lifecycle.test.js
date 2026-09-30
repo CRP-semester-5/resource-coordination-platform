@@ -1,17 +1,9 @@
-/**
- * Functional Test 3.1.2.1: Flow A (Citizen Help Request Lifecycle)
- * Specification:
- *   Citizen submits request -> Status PENDING -> Coordinator reviews & verifies -> Status VERIFIED
- *   -> Task dispatched with [REQUEST_ID:uuid] -> Volunteer claims mission -> Status ASSIGNED
- *   -> Milestones updated (50% En Route, 75% On Scene) -> Handover 4-digit PIN verified
- *   -> Task marked COMPLETED (100%), Request marked FULFILLED, Inventory deducted (STOCK_OUT).
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { supabase, TEST_ORGS } from './helpers/fixtures.helper.js';
 import { TEST_USERS } from './helpers/auth.helper.js';
 
-describe('3.1.2.1 Flow A: Citizen Help Request Lifecycle to Handover PIN Completion', () => {
+describe('Flow A: Citizen Help Request Lifecycle to Handover PIN Completion', () => {
   let createdRequestId = null;
   const expectedHandoverPin = (Math.floor(1000 + Math.random() * 9000)).toString();
   let createdTaskId = null;

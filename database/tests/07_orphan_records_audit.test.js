@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.7: Orphan Records Audit & Referential Snapshot
- * Target: Verify zero unlinked rows (orphaned foreign references) across dependent tables.
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient } from './setup.js';
 
-describe('3.1.1.7 Orphan Records Audit & Relational Integrity', () => {
+describe('Orphan Records Audit & Relational Integrity', () => {
 
   it('audits task_assignments for orphaned task references', async () => {
     // Check that every task_assignment has a valid task in tasks table

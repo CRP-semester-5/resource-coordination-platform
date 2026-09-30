@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.6: Row-Level Security (RLS) & Key Boundary Validation
- * Target: Verify isolation and architectural boundary between anonymous/publishable key and privileged service_role key.
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient, anonClient, TEST_IDS } from './setup.js';
 
-describe('3.1.1.6 Row-Level Security & Key Boundary Validation', () => {
+describe('Row-Level Security & Key Boundary Validation', () => {
 
   it('allows full database inspection using privileged service_role client', async () => {
     const { data: orgs, error } = await serviceClient

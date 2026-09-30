@@ -1,16 +1,9 @@
-/**
- * Functional Test 3.1.2.2: Flow B (Donation Lifecycle to Stock-In Auto-Credit)
- * Specification:
- *   Donor submits offer -> Coordinator accepts -> Volunteer pickup task dispatched
- *   -> Milestones reached -> Handover PIN verified -> Donation marked COMPLETED
- *   -> Warehouse inventory auto-incremented (STOCK_IN).
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { supabase, TEST_ORGS } from './helpers/fixtures.helper.js';
 import { TEST_USERS } from './helpers/auth.helper.js';
 
-describe('3.1.2.2 Flow B: Donation Lifecycle & Automated Stock-In Crediting', () => {
+describe('Flow B: Donation Lifecycle & Automated Stock-In Crediting', () => {
   let createdDonationId = null;
   const donationHandoverPin = (Math.floor(1000 + Math.random() * 9000)).toString();
   let pickupTaskId = null;

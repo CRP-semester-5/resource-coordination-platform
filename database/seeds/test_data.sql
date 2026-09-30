@@ -1,8 +1,3 @@
--- ==============================================================================
--- ResQ Hub - Database Integrity Test Seed Data Fixture
--- Purpose: Standardized relational seed records for Section 3.1.1 test execution
--- ==============================================================================
-
 -- 1. Organizations
 INSERT INTO organizations (organization_id, tenant_id, organization_name, description, email, phone, status)
 VALUES 

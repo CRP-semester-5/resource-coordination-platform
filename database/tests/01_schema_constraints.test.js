@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.1: Schema Check Constraints & Domain Integrity
- * Target: Verify that invalid numeric, range, and ENUM values are strictly rejected (SQL error 23514 / 22P02).
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient, TEST_IDS } from './setup.js';
 
-describe('3.1.1.1 Schema Constraints & Domain Boundary Validation', () => {
+describe('Schema Constraints & Domain Boundary Validation', () => {
 
   it('rejects requests with quantity_required <= 0 (check_violation: 23514)', async () => {
     const invalidReq = {

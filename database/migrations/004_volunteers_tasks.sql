@@ -1,8 +1,3 @@
--- ─────────────────────────────────────────────────────────────────────────────
---  ResQ Hub — Volunteer & Task Management Migration
---  Run this in Supabase SQL Editor (Project → SQL Editor → New Query)
--- ─────────────────────────────────────────────────────────────────────────────
-
 -- 1. Volunteers Profile (Extends the User profile)
 CREATE TABLE volunteers (
     volunteer_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),

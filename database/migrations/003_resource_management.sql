@@ -1,8 +1,3 @@
--- ─────────────────────────────────────────────────────────────────────────────
---  ResQ Hub — Logistics & Resource Management Migration
---  Run this in Supabase SQL Editor (Project → SQL Editor → New Query)
--- ─────────────────────────────────────────────────────────────────────────────
-
 -- 1. Resource Categories (Global, managed by Super Admins)
 CREATE TABLE resource_categories (
     category_id     UUID PRIMARY KEY DEFAULT gen_random_uuid(),

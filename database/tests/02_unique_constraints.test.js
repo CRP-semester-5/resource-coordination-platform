@@ -1,12 +1,8 @@
-/**
- * Test Suite 3.1.1.2: Unique Constraint & Candidate Key Validation
- * Target: Verify that duplicate unique values/keys are rejected with SQL error 23505 (unique_violation).
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { serviceClient, TEST_IDS } from './setup.js';
 
-describe('3.1.1.2 Unique Constraint Validation', () => {
+describe('Unique Constraint Validation', () => {
 
   it('rejects duplicate user email addresses (unique_violation: 23505)', async () => {
     const duplicateUser = {
