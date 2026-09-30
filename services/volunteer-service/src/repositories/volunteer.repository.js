@@ -1,4 +1,4 @@
-﻿import { supabase } from "../lib/supabase.js";
+import { supabase } from "../lib/supabase.js";
 
 export const createVolunteer = async (volunteerData) => {
     return await supabase
@@ -8,8 +8,8 @@ export const createVolunteer = async (volunteerData) => {
         .single();
 };
 
-export const getVolunteers = async () => {
-    return await supabase
+export const getVolunteers = async (organizationId = null) => {
+    let query = supabase
         .from("volunteers")
         .select(`
             *,
@@ -17,6 +17,12 @@ export const getVolunteers = async () => {
             organizations ( organization_id, organization_name, address, email, phone ),
             volunteer_skills ( skills ( skill_name ) )
         `);
+
+    if (organizationId) {
+        query = query.eq("organization_id", organizationId);
+    }
+
+    return await query;
 };
 
 export const getVolunteerById = async (id) => {

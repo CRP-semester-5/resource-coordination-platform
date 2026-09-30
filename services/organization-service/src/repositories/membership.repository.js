@@ -27,9 +27,12 @@ export const getMembers = async (organizationId) => {
             organization_member_id,
             role,
             status,
-            users ( user_id, first_name, last_name, email, profile_image )
+            created_at,
+            users!organization_members_user_id_fkey ( user_id, first_name, last_name, email, profile_image )
         `)
-        .eq("organization_id", organizationId);
+        .eq("organization_id", organizationId)
+        .neq("status", "INACTIVE")
+        .order("created_at", { ascending: true });
 };
 
 // Get membership by ID
@@ -55,8 +58,6 @@ export const updateMembership = async (membershipId, updateData) => {
 export const deleteMembership = async (membershipId) => {
     return await supabase
         .from("organization_members")
-        .update({
-            status: "INACTIVE"
-        })
+        .delete()
         .eq("organization_member_id", membershipId);
 };

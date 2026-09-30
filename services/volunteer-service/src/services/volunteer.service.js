@@ -1,4 +1,4 @@
-﻿import * as volunteerRepo from "../repositories/volunteer.repository.js";
+import * as volunteerRepo from "../repositories/volunteer.repository.js";
 import { AppError } from "@crp/shared-middleware";
 import { supabase } from "../lib/supabase.js";
 
@@ -61,27 +61,23 @@ export const registerVolunteer = async (userId, data) => {
         volunteerRecord = created;
     }
 
-    // Automatically link volunteer into organization_members table
-    if (orgId) {
-        try {
-            const { data: existingMember } = await supabase
-                .from("organization_members")
-                .select("organization_member_id")
-                .eq("organization_id", orgId)
-                .eq("user_id", userId)
-                .maybeSingle();
+    // Ensure volunteer has VOLUNTEER global role (in user_roles table)
+    try {
+        const { data: existingRole } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId)
+            .eq("role", "VOLUNTEER")
+            .maybeSingle();
 
-            if (!existingMember) {
-                await supabase.from("organization_members").insert([{
-                    organization_id: orgId,
-                    user_id: userId,
-                    role: 'COORDINATOR',
-                    status: 'ACTIVE'
-                }]);
-            }
-        } catch (orgMemberErr) {
-            console.error("Warning: Failed to create organization_members entry:", orgMemberErr);
+        if (!existingRole) {
+            await supabase.from("user_roles").insert([{
+                user_id: userId,
+                role: "VOLUNTEER"
+            }]);
         }
+    } catch (roleErr) {
+        console.warn("Notice: user_roles check:", roleErr?.message);
     }
 
     // Save skills
@@ -114,8 +110,8 @@ const formatVolunteer = (v) => {
     return formatted;
 };
 
-export const getVolunteers = async () => {
-    const { data, error } = await volunteerRepo.getVolunteers();
+export const getVolunteers = async (organizationId = null) => {
+    const { data, error } = await volunteerRepo.getVolunteers(organizationId);
     if (error) throw new AppError(500, error.message);
     return data.map(formatVolunteer);
 };
