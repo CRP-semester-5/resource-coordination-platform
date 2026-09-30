@@ -49,6 +49,8 @@ export const findAll = async (orgId = null, userId = null, myRequestsOnly = fals
 
     if (myRequestsOnly && userId) {
         query = query.eq("requester_id", userId);
+    } else if (orgId) {
+        query = query.or(`status.eq.PENDING,organization_id.eq.${orgId}`);
     }
 
     return await query;
@@ -176,7 +178,8 @@ export const unverify = async (requestId) => {
             status: "PENDING",
             verified_by: null,
             verified_at: null,
-            rejection_reason: null
+            rejection_reason: null,
+            organization_id: null
         })
         .eq("request_id", requestId)
         .select()

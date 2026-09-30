@@ -58,7 +58,7 @@ export const getRequests = async (req, res) => {
     try {
         const userId = req.user?.sub || null;
         const myRequestsOnly = req.query.my_requests === 'true' || req.query.my_requests === true;
-        const orgId = req.headers['x-organization-id'] || req.orgMembership?.org_id || null;
+        const orgId = req.headers['x-organization-id'] || req.query.organization_id || req.orgMembership?.org_id || null;
         const requests = await requestService.getRequests(orgId, userId, myRequestsOnly);
         return res.status(200).json({
             success: true,
@@ -121,10 +121,11 @@ export const deleteRequest = async (req, res) => {
 
 export const approveRequest = async (req, res) => {
     try {
+        const orgId = req.headers['x-organization-id'] || req.query.organization_id || req.body?.organization_id || req.orgMembership?.org_id || null;
         const request = await requestService.approveRequest(
             req.params.id,
             req.user.sub,
-            req.orgMembership?.org_id
+            orgId
         );
 
         // Send notification to citizen / requester
@@ -163,11 +164,12 @@ export const approveRequest = async (req, res) => {
 
 export const rejectRequest = async (req, res) => {
     try {
+        const orgId = req.headers['x-organization-id'] || req.query.organization_id || req.body?.organization_id || req.orgMembership?.org_id || null;
         const request = await requestService.rejectRequest(
             req.params.id,
             req.user.sub,
             req.body.rejection_reason,
-            req.orgMembership?.org_id
+            orgId
         );
 
         // Send notification to citizen / requester

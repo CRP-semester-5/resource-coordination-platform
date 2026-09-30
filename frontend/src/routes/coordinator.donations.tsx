@@ -31,6 +31,8 @@ import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
 import { Toolbar, EmptyState } from "@/components/toolbar";
 import { StatusBadge } from "@/components/status-badge";
+import { StatCard } from "@/components/stat-card";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -116,6 +118,7 @@ function DonationsPage() {
   const { orgId } = useOrganization();
   const qc = useQueryClient();
 
+  const [activeTab, setActiveTab] = useState<"all" | "pending" | "accepted" | "active_missions">("all");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
@@ -340,30 +343,150 @@ function DonationsPage() {
   const categories = useMemo(() => [...new Set(donations.map((d) => d.category).filter(Boolean))], [donations]);
   const donors = useMemo(() => [...new Set(donations.map((d) => d.donorName).filter(Boolean))], [donations]);
 
+  const totalCount = donations.length;
+  const pendingCount = donations.filter((d) => d.status === "Pending").length;
+  const acceptedCount = donations.filter((d) => d.status === "Accepted").length;
+  const activeMissionsCount = donations.filter((d) => {
+    const task = getLinkedTask(d);
+    return task && (task.status === "IN_PROGRESS" || task.status === "ASSIGNED" || task.status === "OPEN" || task.status === "TODO");
+  }).length;
+
   const filtered = useMemo(
     () =>
-      donations.filter(
-        (d) =>
-          (status === "all" || d.status === status) &&
-          (category === "all" || d.category === category) &&
-          (donor === "all" || d.donorName === donor) &&
-          (search === "" ||
-            [d.donorName, d.resource, d.pickupLocation, d.donorPhone, d.category].join(" ").toLowerCase().includes(search.toLowerCase())),
-      ),
-    [donations, status, category, donor, search],
+      donations.filter((d) => {
+        if (activeTab === "pending" && d.status !== "Pending") return false;
+        if (activeTab === "accepted" && d.status !== "Accepted") return false;
+        if (activeTab === "active_missions") {
+          const task = getLinkedTask(d);
+          if (!task || task.status === "COMPLETED" || task.status === "CANCELLED") return false;
+        }
+
+        if (status !== "all" && d.status !== status) return false;
+        if (category !== "all" && d.category !== category) return false;
+        if (donor !== "all" && d.donorName !== donor) return false;
+        if (search.trim() !== "") {
+          const target = [d.donorName, d.resource, d.pickupLocation, d.donorPhone, d.category, d.code].join(" ").toLowerCase();
+          if (!target.includes(search.toLowerCase())) return false;
+        }
+        return true;
+      }),
+    [donations, activeTab, status, category, donor, search, allTasks],
   );
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
   const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const pending = donations.filter((d) => d.status === "Pending").length;
+
+  const quickTabs = [
+    { id: "all" as const, label: "All Donations", count: totalCount },
+    { id: "pending" as const, label: "Awaiting Review", count: pendingCount },
+    { id: "active_missions" as const, label: "Active Missions", count: activeMissionsCount },
+    { id: "accepted" as const, label: "In Relief Stock", count: acceptedCount },
+  ];
 
   return (
     <>
       <PageHeader
         title="Donations"
-        description={`${pending} donation${pending === 1 ? "" : "s"} awaiting verification.`}
+        description={`${pendingCount} community donation${pendingCount === 1 ? "" : "s"} awaiting verification and warehouse intake.`}
       />
+
+      {/* 📊 Key Operational Metrics Bar */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-5">
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "pending" ? "all" : "pending");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "pending" && "ring-2 ring-amber-500/50 rounded-xl")}
+        >
+          <StatCard
+            label="Awaiting Review"
+            value={pendingCount}
+            hint="Offers needing verification"
+            icon={Clock}
+            tone="warning"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "active_missions" ? "all" : "active_missions");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "active_missions" && "ring-2 ring-primary/50 rounded-xl")}
+        >
+          <StatCard
+            label="Active Missions"
+            value={activeMissionsCount}
+            hint="Pickup tasks in progress"
+            icon={Truck}
+            tone="default"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "accepted" ? "all" : "accepted");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "accepted" && "ring-2 ring-emerald-500/50 rounded-xl")}
+        >
+          <StatCard
+            label="In Relief Stock"
+            value={acceptedCount}
+            hint="Verified & added to inventory"
+            icon={CheckCircle2}
+            tone="success"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab("all");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "all" && "ring-2 ring-muted-foreground/30 rounded-xl")}
+        >
+          <StatCard
+            label="Total Donations"
+            value={totalCount}
+            hint="All registered donations"
+            icon={Package}
+            tone="default"
+          />
+        </div>
+      </div>
+
+      {/* Quick Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {quickTabs.map((tab) => (
+          <Button
+            key={tab.id}
+            variant={activeTab === tab.id ? "default" : "outline"}
+            size="sm"
+            className={cn(
+              "h-8 text-xs font-semibold transition-all",
+              activeTab === tab.id
+                ? "shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+            onClick={() => {
+              setActiveTab(tab.id);
+              setPage(1);
+            }}
+          >
+            {tab.label}
+            <span
+              className={cn(
+                "ml-1.5 rounded-full px-1.5 py-0.2 text-[10px] font-bold tabular-nums",
+                activeTab === tab.id
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {tab.count}
+            </span>
+          </Button>
+        ))}
+      </div>
 
       <Toolbar
         search={search}
@@ -412,46 +535,91 @@ function DonationsPage() {
                   >
                     <TableCell>
                       <span className="block font-semibold text-foreground">{d.resource}</span>
-                      <span className="block text-xs text-muted-foreground">{d.category}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="block font-medium">{d.donorName}</span>
-                      <span className="block text-xs text-muted-foreground font-mono">
-                        {d.donorPhone || "Contact in App"}
+                      <span className="inline-block mt-0.5 rounded bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        {d.category}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums font-semibold">
-                      {d.quantity} {d.unit}
+                    <TableCell>
+                      <span className="block font-medium text-foreground">{d.donorName}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {d.donorPhone || "Contact in App"}
+                        </span>
+                        {d.donorPhone && (
+                          <button
+                            type="button"
+                            className="inline-flex h-4 w-4 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copy Phone"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyPhone(d.donorPhone);
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
+                    <TableCell className="text-right tabular-nums">
+                      <span className="font-bold text-foreground text-sm">{d.quantity}</span>{" "}
+                      <span className="text-xs text-muted-foreground">{d.unit}</span>
+                    </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      <div className="flex items-center gap-1.5 text-xs">
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                        <span className="truncate">{d.pickupLocation || "Drop-off at relief center"}</span>
-                      </span>
+                        <span className="truncate text-foreground/90 font-medium" title={d.pickupLocation || "Drop-off at relief center"}>
+                          {d.pickupLocation || "Drop-off at relief center"}
+                        </span>
+                        {d.pickupLocation && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.pickupLocation)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="shrink-0 text-muted-foreground hover:text-primary p-0.5 rounded transition-colors"
+                            title="Open in Google Maps"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       {linkedTask ? (
                         <div className="flex items-center gap-1.5">
                           {linkedTask.status === "COMPLETED" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                               <CheckCircle2 className="h-3 w-3" /> Delivered
                             </span>
                           ) : linkedTask.status === "IN_PROGRESS" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400 border border-blue-500/20">
                               <Activity className="h-3 w-3 animate-pulse" /> In Transit
                             </span>
                           ) : linkedTask.status === "ASSIGNED" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-400 border border-purple-500/20">
                               <User className="h-3 w-3" /> Assigned
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400 border border-amber-500/20">
                               <Clock className="h-3 w-3" /> Dispatched
                             </span>
                           )}
                         </div>
+                      ) : d.status === "Pending" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[11px] font-semibold border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 gap-1 px-2"
+                          onClick={() => openTaskCreateForDonation(d)}
+                        >
+                          <PlusCircle className="h-3 w-3" /> Dispatch Pickup
+                        </Button>
+                      ) : d.status === "Accepted" ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted/60 px-2.5 py-0.5 rounded-full border border-border/60">
+                          <Package className="h-3 w-3 text-muted-foreground/70" /> Direct / Received
+                        </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground italic">None (Closed)</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -461,7 +629,7 @@ function DonationsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                        className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary font-semibold h-8 text-xs"
                         onClick={() => setPreviewDonationId(d.id)}
                       >
                         <Eye className="size-3.5" />
@@ -494,443 +662,478 @@ function DonationsPage() {
 
       {/* 👁️ PREVIEW & VERIFICATION MODAL */}
       <Dialog open={!!previewDonation} onOpenChange={(open) => !open && setPreviewDonationId(null)}>
-        <DialogContent className="max-w-2xl overflow-hidden p-0">
+        <DialogContent className="max-w-4xl lg:max-w-5xl overflow-hidden p-0 max-h-[90vh] flex flex-col">
           {previewDonation && (
-            <div>
+            <div className="flex flex-col h-full overflow-hidden">
               {/* Header */}
-              <div className="border-b border-border bg-muted/30 p-6">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              <div className="border-b border-border bg-muted/30 px-6 py-5 shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary tracking-wide uppercase">
                       {previewDonation.category}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                       #{previewDonation.code}
                     </span>
                   </div>
                   <StatusBadge value={previewDonation.status} />
                 </div>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-                  {previewDonation.resource}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Offered on {new Date(previewDonation.createdAt).toLocaleDateString()} at{" "}
-                  {new Date(previewDonation.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </p>
-              </div>
+                <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                    {previewDonation.resource}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Offered on {new Date(previewDonation.createdAt).toLocaleDateString()} at{" "}
+                    {new Date(previewDonation.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
 
-              {/* Body Content */}
-              <div className="space-y-5 p-6 max-h-[70vh] overflow-y-auto">
-                {/* 🚚 LIVE VOLUNTEER TASK PROGRESS BANNER */}
-                {detailedTask ? (
-                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                          <Truck className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Volunteer Pickup Mission
-                          </span>
-                          <h4 className="text-sm font-bold text-foreground">{detailedTask.title}</h4>
-                        </div>
-                      </div>
-                      <Link
-                        to="/coordinator/tasks"
-                        className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-background px-2.5 py-1 text-xs font-semibold text-primary shadow-xs hover:bg-primary/10 transition-colors"
-                      >
-                        View in Tasks <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </div>
-
-                    {/* Progress Bar & Status details */}
-                    <div className="mt-3 space-y-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-foreground">Mission Status:</span>
-                        {detailedTask.status === "COMPLETED" ? (
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> 100% Deposited in Warehouse
-                          </span>
-                        ) : detailedTask.status === "IN_PROGRESS" ? (
-                          <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                            <Activity className="h-3.5 w-3.5 animate-pulse" /> In Transit to Warehouse (50%)
-                          </span>
-                        ) : detailedTask.status === "ASSIGNED" ? (
-                          <span className="font-bold text-purple-600 dark:text-purple-400">
-                            Volunteer Assigned (En Route to Donor)
-                          </span>
-                        ) : (
-                          <span className="font-bold text-amber-600 dark:text-amber-400">
-                            Dispatched (Awaiting Volunteer)
-                          </span>
-                        )}
-                      </div>
-
-                      <Progress
-                        value={
-                          detailedTask.status === "COMPLETED"
-                            ? 100
-                            : detailedTask.status === "IN_PROGRESS"
-                            ? 60
-                            : detailedTask.status === "ASSIGNED"
-                            ? 30
-                            : 10
-                        }
-                        className="h-2"
-                      />
-
-                      {/* Assigned Volunteer list if available */}
-                      {detailedTask.volunteers && detailedTask.volunteers.length > 0 && (
-                        <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                          <Users className="h-3.5 w-3.5 text-primary" />
-                          <span>
-                            Assigned Volunteer:{" "}
-                            <strong className="text-foreground">
-                              {detailedTask.volunteers.map((v: any) => v.name || v.first_name || "Volunteer").join(", ")}
-                            </strong>
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Dual-Leg Security PINs Verification Box */}
-                      {(() => {
-                        const taskSeed = (parseInt((detailedTask.task_id || detailedTask.id || '').replace(/[^0-9]/g, '').slice(-4) || '8421', 10) % 9000) + 1000;
-                        const warehousePin = detailedTask.warehouse_pickup_pin || taskSeed.toString();
-                        const isDelivered = detailedTask.status === "COMPLETED";
-                        const isPickedUp = isDelivered || detailedTask.status === "IN_PROGRESS";
-
-                        return (
-                          <div className="mt-3 rounded-lg border border-primary/20 bg-background/80 p-3 text-xs space-y-2.5">
-                            <div className="flex items-center justify-between font-semibold text-foreground">
-                              <span className="flex items-center gap-1.5 text-primary font-bold">
-                                <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN Lifecycle
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">Central Warehouse Verification</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                              {/* Stage 1: Donor Collection (Private to Donor - Hidden from Admin) */}
-                              <div className={`rounded-md p-2.5 border ${isPickedUp ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : 'bg-muted/40 border-border text-foreground'}`}>
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-[11px]">Stage 1: Donor Collection</span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isPickedUp ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'}`}>
-                                    {isPickedUp ? 'COLLECTED' : 'AWAITING PICKUP'}
-                                  </span>
-                                </div>
-                                <div className="mt-1.5 flex flex-col gap-0.5">
-                                  <span className="font-mono text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-1">
-                                    {isPickedUp ? (
-                                      <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> •••• (Verified)</>
-                                    ) : (
-                                      <>🔒 •••• (Private to Donor)</>
-                                    )}
-                                  </span>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {isPickedUp
-                                      ? "Volunteer verified donor's app PIN at collection"
-                                      : "Donor displays 4-digit PIN on mobile app to volunteer"}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Stage 2: Warehouse Store Deposit (Active only during drop-off, Disappears when entered) */}
-                              <div className={`rounded-md p-2.5 border ${isDelivered ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : isPickedUp ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200' : 'bg-muted/30 border-dashed border-border text-muted-foreground'}`}>
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-[11px]">Stage 2: Warehouse Deposit PIN</span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isDelivered ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : isPickedUp ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse' : 'bg-slate-500/10 text-slate-500'}`}>
-                                    {isDelivered ? 'IN STOCK & CLOSED' : isPickedUp ? 'ACTIVE FOR STORE STAFF' : 'PENDING STAGE 1'}
-                                  </span>
-                                </div>
-                                <div className="mt-1.5 flex flex-col gap-0.5">
-                                  {isDelivered ? (
-                                    <>
-                                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                        <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
-                                      </span>
-                                      <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
-                                        Stock automatically credited to relief inventory
-                                      </span>
-                                    </>
-                                  ) : isPickedUp ? (
-                                    revealedDepositPins[detailedTask.id || detailedTask.task_id || ''] ? (
-                                      <>
-                                        <div className="flex items-center justify-between">
-                                          <span className="font-mono text-base font-extrabold tracking-widest text-indigo-600 dark:text-indigo-400">
-                                            {warehousePin}
-                                          </span>
-                                          <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-6 px-2 text-[10px] text-indigo-600 hover:bg-indigo-500/10"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              navigator.clipboard.writeText(warehousePin);
-                                              toast.success('Warehouse Deposit PIN copied!');
-                                            }}
-                                          >
-                                            <Copy className="h-3 w-3 mr-1" /> Copy
-                                          </Button>
-                                        </div>
-                                        <span className="text-[10px] text-indigo-700/80 dark:text-indigo-300 font-medium">
-                                          Active Code: Warehouse staff provide to volunteer to store goods
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <div>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="outline"
-                                          className="h-6 text-[10px] font-semibold border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 w-full justify-center gap-1"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRevealedDepositPins((prev) => ({
-                                              ...prev,
-                                              [detailedTask.id || detailedTask.task_id || '']: true,
-                                            }));
-                                            toast.info('Warehouse Deposit PIN revealed for store staff.');
-                                          }}
-                                        >
-                                          <KeyRound className="h-3 w-3" /> Reveal Deposit PIN
-                                        </Button>
-                                        <span className="text-[10px] text-muted-foreground block mt-0.5">
-                                          Click to view code for volunteer drop-off receipt.
-                                        </span>
-                                      </div>
-                                    )
-                                  ) : (
-                                    <>
-                                      <span className="font-mono text-xs italic text-muted-foreground">
-                                        ⏳ PIN Inactive (Activates when volunteer collects items)
-                                      </span>
-                                      <span className="text-[10px] text-muted-foreground">
-                                        Generated once volunteer completes Stage 1
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Delivered Banner */}
-                      {detailedTask.status === "COMPLETED" && (
-                        <div className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs text-emerald-950 dark:text-emerald-100 flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            <span>
-                              <strong>Package Delivered:</strong> Volunteer has deposited items at the central relief store.
-                            </span>
-                          </div>
-                          {previewDonation.status === "Pending" && (
-                            <Button
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-7 text-xs px-3 shadow-xs"
-                              onClick={() => setAccepting(previewDonation)}
-                            >
-                              Accept to Inventory Now
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-border bg-muted/10 p-3.5 text-xs text-muted-foreground flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-muted-foreground" />
-                      No volunteer pickup mission created yet.
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-primary/40 text-primary hover:bg-primary/10 h-7 text-xs font-semibold"
-                      onClick={() => openTaskCreateForDonation(previewDonation)}
-                    >
-                      <PlusCircle className="mr-1 h-3.5 w-3.5" />
-                      Dispatch Pickup Task
-                    </Button>
-                  </div>
-                )}
-
-                {/* Rejection notice if rejected */}
-                {previewDonation.status === "Rejected" && previewDonation.rejectionReason && (
-                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-sm text-destructive">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <AlertCircle className="h-4 w-4" />
-                      Rejection Reason
-                    </div>
-                    <p className="mt-1 text-xs">{previewDonation.rejectionReason}</p>
-                  </div>
-                )}
-
-                {/* Donation Spec Cards */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Quantity</span>
-                    <p className="mt-1 text-lg font-bold text-foreground">
-                      {previewDonation.quantity} <span className="text-sm font-normal text-muted-foreground">{previewDonation.unit}</span>
+                {/* 4 Quick Stat Metric Badges Bar */}
+                <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Quantity</span>
+                    <p className="text-base font-extrabold text-foreground mt-0.5">
+                      {previewDonation.quantity} <span className="text-xs font-normal text-muted-foreground">{previewDonation.unit}</span>
                     </p>
                   </div>
-                  <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Category</span>
-                    <p className="mt-1 text-sm font-semibold text-foreground truncate">
+                  <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Category</span>
+                    <p className="text-sm font-bold text-foreground mt-0.5 truncate">
                       {previewDonation.category}
                     </p>
                   </div>
-                  <div className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Expiry Date</span>
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      {previewDonation.expiryDate ? new Date(previewDonation.expiryDate).toLocaleDateString() : "No expiry"}
+                  <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Delivery Mode</span>
+                    <p className="text-xs font-bold text-foreground mt-0.5 truncate">
+                      {previewDonation.deliveryMethod === "ORGANIZATION_PICKUP" ? "Volunteer Pickup" : "Direct Drop-off"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Expiry / Shelf Life</span>
+                    <p className="text-xs font-bold text-foreground mt-0.5 truncate">
+                      {previewDonation.expiryDate ? new Date(previewDonation.expiryDate).toLocaleDateString() : "Non-perishable"}
                     </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Donor Information & Verification Card */}
-                <div className="rounded-xl border border-border bg-muted/10 p-4">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <User className="h-4 w-4 text-primary" />
-                    Donor Contact & Verification
-                  </h3>
-
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <span className="text-xs text-muted-foreground">Donor Name</span>
-                      <p className="text-sm font-semibold text-foreground">{previewDonation.donorName}</p>
-                      {previewDonation.donorEmail && (
-                        <p className="text-xs text-muted-foreground">{previewDonation.donorEmail}</p>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-xs text-muted-foreground">Contact Phone</span>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <span className="font-mono text-sm font-semibold text-foreground">
-                          {previewDonation.donorPhone || "Contact in Mobile App"}
-                        </span>
-                        {previewDonation.donorPhone && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title="Copy phone number"
-                            onClick={() => handleCopyPhone(previewDonation.donorPhone)}
+              {/* Scrollable Body: 2 Columns */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column: Mission & Inspection (7 cols on lg) */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {/* Live Volunteer Task / Mission Banner */}
+                    {detailedTask ? (
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                              <Truck className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                                Volunteer Pickup Mission
+                              </span>
+                              <h4 className="text-sm font-bold text-foreground">{detailedTask.title}</h4>
+                            </div>
+                          </div>
+                          <Link
+                            to="/coordinator/tasks"
+                            className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-background px-2.5 py-1 text-xs font-semibold text-primary shadow-xs hover:bg-primary/10 transition-colors shrink-0"
                           >
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
+                            View in Tasks <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+
+                        {/* Progress Bar & Status details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-semibold text-foreground">Mission Status:</span>
+                            {detailedTask.status === "COMPLETED" ? (
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> 100% Deposited in Warehouse
+                              </span>
+                            ) : detailedTask.status === "IN_PROGRESS" ? (
+                              <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                <Activity className="h-3.5 w-3.5 animate-pulse" /> In Transit to Warehouse (50%)
+                              </span>
+                            ) : detailedTask.status === "ASSIGNED" ? (
+                              <span className="font-bold text-purple-600 dark:text-purple-400">
+                                Volunteer Assigned (En Route to Donor)
+                              </span>
+                            ) : (
+                              <span className="font-bold text-amber-600 dark:text-amber-400">
+                                Dispatched (Awaiting Volunteer)
+                              </span>
+                            )}
+                          </div>
+
+                          <Progress
+                            value={
+                              detailedTask.status === "COMPLETED"
+                                ? 100
+                                : detailedTask.status === "IN_PROGRESS"
+                                ? 60
+                                : detailedTask.status === "ASSIGNED"
+                                ? 30
+                                : 10
+                            }
+                            className="h-2"
+                          />
+
+                          {/* Assigned Volunteer list */}
+                          {detailedTask.volunteers && detailedTask.volunteers.length > 0 && (
+                            <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+                              <Users className="h-3.5 w-3.5 text-primary" />
+                              <span>
+                                Assigned Volunteer:{" "}
+                                <strong className="text-foreground">
+                                  {detailedTask.volunteers.map((v: any) => v.name || v.first_name || "Volunteer").join(", ")}
+                                </strong>
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Multi-Stage Security PIN Lifecycle */}
+                        {(() => {
+                          const taskSeed = (parseInt((detailedTask.task_id || detailedTask.id || '').replace(/[^0-9]/g, '').slice(-4) || '8421', 10) % 9000) + 1000;
+                          const warehousePin = detailedTask.warehouse_pickup_pin || taskSeed.toString();
+                          const isDelivered = detailedTask.status === "COMPLETED";
+                          const isPickedUp = isDelivered || detailedTask.status === "IN_PROGRESS";
+
+                          return (
+                            <div className="rounded-lg border border-primary/20 bg-background/90 p-3.5 text-xs space-y-2.5">
+                              <div className="flex items-center justify-between font-semibold text-foreground">
+                                <span className="flex items-center gap-1.5 text-primary font-bold">
+                                  <ShieldCheck className="h-4 w-4" /> Multi-Stage Security PIN Lifecycle
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">Central Warehouse Verification</span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {/* Stage 1: Donor Collection */}
+                                <div className={`rounded-md p-2.5 border ${isPickedUp ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : 'bg-muted/40 border-border text-foreground'}`}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-[11px]">Stage 1: Donor Collection</span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isPickedUp ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'}`}>
+                                      {isPickedUp ? 'COLLECTED' : 'AWAITING PICKUP'}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1.5 flex flex-col gap-0.5">
+                                    <span className="font-mono text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-1">
+                                      {isPickedUp ? (
+                                        <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> •••• (Verified)</>
+                                      ) : (
+                                        <>🔒 •••• (Private to Donor)</>
+                                      )}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {isPickedUp
+                                        ? "Volunteer verified donor's app PIN at collection"
+                                        : "Donor displays 4-digit PIN on mobile app to volunteer"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Stage 2: Warehouse Store Deposit PIN */}
+                                <div className={`rounded-md p-2.5 border ${isDelivered ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' : isPickedUp ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200' : 'bg-muted/30 border-dashed border-border text-muted-foreground'}`}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-[11px]">Stage 2: Warehouse Deposit PIN</span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isDelivered ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : isPickedUp ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse' : 'bg-slate-500/10 text-slate-500'}`}>
+                                      {isDelivered ? 'IN STOCK & CLOSED' : isPickedUp ? 'ACTIVE FOR STORE STAFF' : 'PENDING STAGE 1'}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1.5 flex flex-col gap-0.5">
+                                    {isDelivered ? (
+                                      <>
+                                        <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                          <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                        </span>
+                                        <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300">
+                                          Stock automatically credited to relief inventory
+                                        </span>
+                                      </>
+                                    ) : isPickedUp ? (
+                                      revealedDepositPins[detailedTask.id || detailedTask.task_id || ''] ? (
+                                        <>
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-mono text-base font-extrabold tracking-widest text-indigo-600 dark:text-indigo-400">
+                                              {warehousePin}
+                                            </span>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-6 px-2 text-[10px] text-indigo-600 hover:bg-indigo-500/10"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(warehousePin);
+                                                toast.success('Warehouse Deposit PIN copied!');
+                                              }}
+                                            >
+                                              <Copy className="h-3 w-3 mr-1" /> Copy
+                                            </Button>
+                                          </div>
+                                          <span className="text-[10px] text-indigo-700/80 dark:text-indigo-300 font-medium">
+                                            Active Code: Warehouse staff provide to volunteer to store goods
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <div>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-6 text-[10px] font-semibold border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 w-full justify-center gap-1"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setRevealedDepositPins((prev) => ({
+                                                ...prev,
+                                                [detailedTask.id || detailedTask.task_id || '']: true,
+                                              }));
+                                              toast.info('Warehouse Deposit PIN revealed for store staff.');
+                                            }}
+                                          >
+                                            <KeyRound className="h-3 w-3" /> Reveal Deposit PIN
+                                          </Button>
+                                          <span className="text-[10px] text-muted-foreground block mt-0.5">
+                                            Click to view code for volunteer drop-off receipt.
+                                          </span>
+                                        </div>
+                                      )
+                                    ) : (
+                                      <>
+                                        <span className="font-mono text-xs italic text-muted-foreground">
+                                          ⏳ PIN Inactive (Activates when volunteer collects items)
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground">
+                                          Generated once volunteer completes Stage 1
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Delivered Banner */}
+                        {detailedTask.status === "COMPLETED" && (
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/15 p-3 text-xs text-emerald-950 dark:text-emerald-100 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <span>
+                                <strong>Package Delivered:</strong> Volunteer has deposited items at the central relief store.
+                              </span>
+                            </div>
+                            {previewDonation.status === "Pending" && (
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-7 text-xs px-3 shadow-xs"
+                                onClick={() => setAccepting(previewDonation)}
+                              >
+                                Accept to Inventory Now
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2 font-semibold text-foreground">
+                            <Truck className="h-4 w-4 text-muted-foreground" />
+                            No Volunteer Pickup Mission Dispatched
+                          </span>
+                          {previewDonation.status === "Pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-primary/40 text-primary hover:bg-primary/10 h-7 text-xs font-semibold"
+                              onClick={() => openTaskCreateForDonation(previewDonation)}
+                            >
+                              <PlusCircle className="mr-1 h-3.5 w-3.5" />
+                              Dispatch Pickup Task
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {previewDonation.pickupLocation
+                            ? `Donor provided pickup address at "${previewDonation.pickupLocation}". You can dispatch a volunteer mission to collect and transport these supplies to your relief warehouse.`
+                            : "Donor did not specify a separate pickup address. This item can be brought directly to the relief warehouse."}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Rejection notice if rejected */}
+                    {previewDonation.status === "Rejected" && previewDonation.rejectionReason && (
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-sm text-destructive">
+                        <div className="flex items-center gap-2 font-semibold">
+                          <AlertCircle className="h-4 w-4" />
+                          Rejection Reason
+                        </div>
+                        <p className="mt-1 text-xs">{previewDonation.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    {/* Donor Remarks */}
+                    {previewDonation.remarks && (
+                      <div className="rounded-lg border border-border bg-card p-3.5">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                          Donor Remarks & Notes
+                        </span>
+                        <p className="mt-1 text-sm text-foreground/90 italic">"{previewDonation.remarks}"</p>
+                      </div>
+                    )}
+
+                    {/* Inventory Impact Note */}
+                    <div className="rounded-lg border border-primary/15 bg-primary/5 p-3 text-xs text-muted-foreground flex items-center gap-2.5">
+                      <Package className="h-4 w-4 text-primary shrink-0" />
+                      <span>
+                        When accepted, <strong>{previewDonation.quantity} {previewDonation.unit}</strong> will be immediately credited to your organization's <strong>{previewDonation.category}</strong> relief stock in the database.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Donor Profile & Actions (5 cols on lg) */}
+                  <div className="lg:col-span-5 space-y-4">
+                    {/* Donor Contact Card */}
+                    <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3.5">
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                        <User className="h-4 w-4 text-primary" />
+                        Donor Information
+                      </h3>
+
+                      <div>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Full Name</span>
+                        <p className="text-base font-bold text-foreground">{previewDonation.donorName}</p>
+                        {previewDonation.donorEmail && (
+                          <p className="text-xs text-muted-foreground">{previewDonation.donorEmail}</p>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-border/60">
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Phone Contact</span>
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <span className="font-mono text-sm font-bold text-foreground">
+                            {previewDonation.donorPhone || "Contact in Mobile App"}
+                          </span>
+                          {previewDonation.donorPhone && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                              title="Copy phone number"
+                              onClick={() => handleCopyPhone(previewDonation.donorPhone)}
+                            >
+                              <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+                            </Button>
+                          )}
+                        </div>
+
+                        {previewDonation.donorPhone && (
+                          <a
+                            href={`tel:${previewDonation.donorPhone}`}
+                            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                          >
+                            <PhoneCall className="h-3.5 w-3.5" />
+                            Call Donor Now ({previewDonation.donorPhone})
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Pickup Address & Maps Link */}
+                      <div className="pt-2 border-t border-border/60">
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Pickup / Drop-off Location</span>
+                        <p className="mt-1 flex items-start gap-1.5 text-xs text-foreground font-medium">
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" />
+                          <span>
+                            {previewDonation.pickupLocation || (previewDonation.deliveryMethod === "DONOR_DELIVERY" ? "Self drop-off at relief center" : "Contact donor for pickup address")}
+                          </span>
+                        </p>
+                        {previewDonation.pickupLocation && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(previewDonation.pickupLocation)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary hover:bg-muted transition-colors shadow-2xs"
+                          >
+                            <MapPin className="h-3.5 w-3.5 text-red-500" />
+                            Open Location in Google Maps <ExternalLink className="h-3 w-3 ml-0.5" />
+                          </a>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Pickup Location & Maps Link */}
-                  <div className="mt-3 border-t border-border/60 pt-3">
-                    <span className="text-xs text-muted-foreground">Pickup Location / Destination</span>
-                    <div className="mt-1 flex items-start justify-between gap-2">
-                      <p className="flex items-start gap-1.5 text-sm text-foreground">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                        <span className="font-medium">
-                          {previewDonation.pickupLocation || (previewDonation.deliveryMethod === "DONOR_DELIVERY" ? "Self drop-off at relief center" : "Contact donor for pickup address")}
-                        </span>
-                      </p>
-                      {previewDonation.pickupLocation && (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(previewDonation.pickupLocation)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-2.5 py-1 text-xs font-medium text-primary hover:underline shadow-xs"
-                        >
-                          Maps <ExternalLink className="h-3 w-3" />
-                        </a>
+                    {/* Workflow Actions Card */}
+                    <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Coordinator Decision & Actions
+                      </h4>
+
+                      {previewDonation.status === "Pending" ? (
+                        <div className="space-y-2">
+                          <Button
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-bold shadow-xs"
+                            onClick={() => setAccepting(previewDonation)}
+                          >
+                            <Check className="h-4 w-4" /> Accept into Relief Inventory
+                          </Button>
+
+                          {!detailedTask && (
+                            <Button
+                              variant="outline"
+                              className="w-full border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 font-semibold gap-1.5"
+                              onClick={() => openTaskCreateForDonation(previewDonation)}
+                            >
+                              <Truck className="h-4 w-4" /> Dispatch Volunteer Pickup Task
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold gap-1.5"
+                            onClick={() => {
+                              setReason("");
+                              setRejecting(previewDonation);
+                            }}
+                          >
+                            <X className="h-4 w-4" /> Reject Donation Offer
+                          </Button>
+                        </div>
+                      ) : previewDonation.status === "Accepted" ? (
+                        <div className="space-y-2">
+                          <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <span>Donation verified & recorded in relief inventory.</span>
+                          </div>
+                          <Link to="/coordinator/inventory" className="block">
+                            <Button variant="outline" className="w-full text-xs font-semibold gap-1.5">
+                              <Package className="h-3.5 w-3.5" /> View in Inventory Dashboard
+                            </Button>
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          <span>This donation offer was closed or rejected.</span>
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {/* Coordinator Phone Call Verification Aid */}
-                  {previewDonation.donorPhone && (
-                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-950 dark:text-emerald-200">
-                      <div className="flex items-center gap-2">
-                        <PhoneCall className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Verify donor by calling before dispatching pickup:</span>
-                      </div>
-                      <a
-                        href={`tel:${previewDonation.donorPhone}`}
-                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
-                      >
-                        <Phone className="h-3 w-3" />
-                        Call {previewDonation.donorPhone}
-                      </a>
-                    </div>
-                  )}
                 </div>
-
-                {/* Donor Remarks */}
-                {previewDonation.remarks && (
-                  <div className="rounded-lg border border-border bg-card p-3.5">
-                    <span className="text-xs font-medium text-muted-foreground">Donor Remarks & Notes</span>
-                    <p className="mt-1 text-sm text-foreground/90 italic">"{previewDonation.remarks}"</p>
-                  </div>
-                )}
               </div>
 
-              {/* Modal Action Footer */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/20 p-4">
+              {/* Modal Bottom Footer */}
+              <div className="border-t border-border bg-muted/20 px-6 py-3 flex items-center justify-between shrink-0">
                 <Button variant="ghost" size="sm" onClick={() => setPreviewDonationId(null)}>
                   Close
                 </Button>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {previewDonation.status === "Pending" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => {
-                        setReason("");
-                        setRejecting(previewDonation);
-                      }}
-                    >
-                      <X className="mr-1 h-4 w-4" /> Reject
-                    </Button>
-                  )}
-
-                  {/* Create or View Volunteer Pickup Task button */}
-                  {detailedTask ? (
-                    <Link to="/coordinator/tasks">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-primary/40 bg-primary/5 text-primary hover:bg-primary/15 font-semibold gap-1.5"
-                      >
-                        <Truck className="h-4 w-4 text-primary" />
-                        View Task ({detailedTask.status})
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-primary/40 bg-primary/5 text-primary hover:bg-primary/15 font-semibold gap-1.5"
-                      onClick={() => openTaskCreateForDonation(previewDonation)}
-                    >
-                      <Truck className="h-4 w-4 text-primary" />
-                      Create Volunteer Pickup Task
-                    </Button>
-                  )}
-
-                  {previewDonation.status === "Pending" && (
-                    <Button
-                      size="sm"
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold"
-                      onClick={() => setAccepting(previewDonation)}
-                    >
-                      <Check className="h-4 w-4" /> Accept to Inventory
-                    </Button>
-                  )}
-                </div>
+                <span className="text-xs text-muted-foreground">
+                  Donation ID: <code className="font-mono">{previewDonation.id}</code>
+                </span>
               </div>
             </div>
           )}
