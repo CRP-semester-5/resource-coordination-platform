@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import dns from 'node:dns/promises'
 import { env } from '../config/env.js'
 
 /**
@@ -33,11 +34,29 @@ async function getTransporter() {
             auth: { user: testAccount.user, pass: testAccount.pass },
         })
     } else {
+        // Resolve IPv4 to avoid Windows Node.js IPv6 ENETUNREACH socket drops
+        let hostIp = env.smtpHost
+        const servername = env.smtpHost
+        try {
+            const ips = await dns.resolve4(env.smtpHost)
+            if (ips && ips.length > 0) {
+                hostIp = ips[0]
+            }
+        } catch {
+            // fallback to original hostname if lookup fails
+        }
+
         _transporter = nodemailer.createTransport({
-            host: env.smtpHost,
+            host: hostIp,
             port: env.smtpPort,
             secure: env.smtpPort === 465,
-            auth: { user: env.smtpUser, pass: env.smtpPass },
+            auth: {
+                user: env.smtpUser,
+                pass: (env.smtpPass || '').replace(/\s+/g, ''),
+            },
+            tls: {
+                servername: servername,
+            },
         })
     }
 
@@ -45,21 +64,28 @@ async function getTransporter() {
 }
 
 async function send({ to, subject, html }) {
-    const transporter = await getTransporter()
-    const info = await transporter.sendMail({
-        from: env.emailFrom,
-        to,
-        subject,
-        html,
-    })
+    try {
+        const transporter = await getTransporter()
+        const info = await transporter.sendMail({
+            from: env.emailFrom,
+            to,
+            subject,
+            html,
+        })
 
-    // In dev, print a preview URL for Ethereal
-    const previewUrl = nodemailer.getTestMessageUrl(info)
-    if (previewUrl) {
-        console.log(`📧  Email preview: ${previewUrl}`)
+        // In dev, print a preview URL for Ethereal
+        const previewUrl = nodemailer.getTestMessageUrl(info)
+        if (previewUrl) {
+            console.log(`📧  Email preview: ${previewUrl}`)
+        } else {
+            console.log(`📧  Email sent successfully to ${to} (Message ID: ${info.messageId})`)
+        }
+
+        return info
+    } catch (err) {
+        console.error(`❌  Failed to send email to ${to}:`, err.message)
+        throw err
     }
-
-    return info
 }
 
 /**

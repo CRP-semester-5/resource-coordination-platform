@@ -1,10 +1,11 @@
-/**
- * env.js — Centralised, fail-fast environment variable access.
- *
- * Import from here instead of reading process.env directly in service files.
- * The module validates required vars at startup so misconfiguration is caught
- * immediately, not at the first request that touches a missing value.
- */
+import { fileURLToPath } from 'url'
+import path from 'path'
+import dotenv from 'dotenv'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+// Walk up: src/config/ -> src/ -> user-service/ -> services/ -> repo root
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') })
 
 const required = (name) => {
     const value = process.env[name]
