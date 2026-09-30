@@ -1,24 +1,21 @@
-# Build context is the repo ROOT (set in docker-compose.yml)
-# so all paths below are relative to the monorepo root.
+FROM kong:3.7-ubuntu
 
-# Stage 1: Install dependencies
-FROM node:20-alpine AS deps
-WORKDIR /app
+# Set Kong to DB-less mode
+ENV KONG_DATABASE="off"
+ENV KONG_DECLARATIVE_CONFIG="/kong/kong.yml"
+ENV KONG_PROXY_LISTEN="0.0.0.0:3000"
+ENV KONG_ADMIN_LISTEN="0.0.0.0:8001"
+ENV KONG_LOG_LEVEL="notice"
+ENV KONG_PLUGINS="bundled"
 
-# Copy root lockfile + this service's package.json
-COPY package-lock.json ./
-COPY api-gateway/package.json ./package.json
+# Copy the declarative config into the container
+USER root
+RUN mkdir -p /kong && chown kong:kong /kong
+USER kong
 
-RUN npm ci --only=production
-
-# Stage 2: Runtime
-FROM node:20-alpine
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy only this service's source files
-COPY api-gateway/ .
+COPY --chown=kong:kong api-gateway/kong/kong.yml /kong/kong.yml
 
 EXPOSE 3000
-CMD ["node", "src/index.js"]
+EXPOSE 8001
+
+# The default entrypoint for the Kong image will handle starting it

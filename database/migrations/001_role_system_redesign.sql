@@ -1,12 +1,4 @@
--- ─────────────────────────────────────────────────────────────────────────────
---  ResQ Hub — Role System Migration
---  Run this in Supabase SQL Editor (Project → SQL Editor → New Query)
---
---  This replaces the single `memberships` table with:
---    - user_roles          (global platform roles: USER, VOLUNTEER, SUPER_ADMIN)
---    - organization_members (org-specific staff: COORDINATOR, ORGANIZATION_ADMIN)
--- ─────────────────────────────────────────────────────────────────────────────
-
+─────────────────────────────────────────────────────────────────────────
 -- STEP 1: Drop the old memberships system
 -- (CASCADE removes any dependent objects like indexes/triggers automatically)
 DROP TABLE  IF EXISTS memberships CASCADE;

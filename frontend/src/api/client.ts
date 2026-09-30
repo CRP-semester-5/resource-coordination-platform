@@ -88,7 +88,12 @@ export async function verifyOrganization(id: UUID, decision: "Approved" | "Rejec
   const org = db.organizations.find((o) => o.id === id);
   if (org) {
     org.verification = decision;
-    pushAudit("Kavindu Rathnasiri", `${decision} organization ${org.name}`, "Organization", "Organization Service");
+    pushAudit(
+      "Kavindu Rathnasiri",
+      `${decision} organization ${org.name}`,
+      "Organization",
+      "Organization Service",
+    );
     pushNotification({
       title: `Organization ${decision.toLowerCase()}`,
       description: `${org.name} was ${decision.toLowerCase()} by an administrator.`,
@@ -129,8 +134,17 @@ export async function verifyRequest(id: UUID, decision: "Approved" | "Rejected",
   if (req) {
     req.status = decision;
     if (decision === "Rejected") req.rejectionReason = reason;
-    req.timeline.push({ status: decision, at: nowIso(), note: reason ?? "Reviewed by coordinator" });
-    pushAudit("Dilhara Weerasinghe", `${decision} request ${req.code}`, "Request", "Request Service");
+    req.timeline.push({
+      status: decision,
+      at: nowIso(),
+      note: reason ?? "Reviewed by coordinator",
+    });
+    pushAudit(
+      "Dilhara Weerasinghe",
+      `${decision} request ${req.code}`,
+      "Request",
+      "Request Service",
+    );
     pushNotification({
       title: `Request ${decision.toLowerCase()}`,
       description: `${req.code} from ${req.requester} was ${decision.toLowerCase()}.`,
@@ -149,8 +163,10 @@ export async function setRequestStatus(id: UUID, status: RequestStatus, note?: s
   return ok(req as HelpRequest);
 }
 
-export const fulfillRequest = (id: UUID) => setRequestStatus(id, "Fulfilled", "All resources delivered");
-export const cancelRequest = (id: UUID) => setRequestStatus(id, "Cancelled", "Cancelled by coordinator");
+export const fulfillRequest = (id: UUID) =>
+  setRequestStatus(id, "Fulfilled", "All resources delivered");
+export const cancelRequest = (id: UUID) =>
+  setRequestStatus(id, "Cancelled", "Cancelled by coordinator");
 
 /* ----------------------------------------------------------------- Donations */
 
@@ -179,7 +195,12 @@ export async function verifyDonation(id: UUID, decision: "Accepted" | "Rejected"
           expiryDate: don.expiryDate,
         });
     }
-    pushAudit("Dilhara Weerasinghe", `${decision} donation ${don.code}`, "Resource", "Resource Service");
+    pushAudit(
+      "Dilhara Weerasinghe",
+      `${decision} donation ${don.code}`,
+      "Resource",
+      "Resource Service",
+    );
     pushNotification({
       title: `Donation ${decision.toLowerCase()}`,
       description: `${don.code} from ${don.donorName} was ${decision.toLowerCase()}.`,
@@ -203,7 +224,12 @@ export async function restockInventory(id: UUID, quantity: number) {
   const item = db.inventory.find((i) => i.id === id);
   if (item) {
     item.available += quantity;
-    pushAudit("Dilhara Weerasinghe", `Restocked ${item.resource} by ${quantity}`, "Resource", "Resource Service");
+    pushAudit(
+      "Dilhara Weerasinghe",
+      `Restocked ${item.resource} by ${quantity}`,
+      "Resource",
+      "Resource Service",
+    );
   }
   return ok(item as InventoryItem);
 }
@@ -237,7 +263,12 @@ export async function approveVolunteer(id: UUID, decision: "Approved" | "Rejecte
   const vol = db.volunteers.find((v) => v.id === id);
   if (vol) {
     vol.verification = decision;
-    pushAudit("Dilhara Weerasinghe", `${decision} volunteer ${vol.name}`, "Volunteer", "Volunteer Service");
+    pushAudit(
+      "Dilhara Weerasinghe",
+      `${decision} volunteer ${vol.name}`,
+      "Volunteer",
+      "Volunteer Service",
+    );
     pushNotification({
       title: `Volunteer ${decision.toLowerCase()}`,
       description: `${vol.name}'s registration was ${decision.toLowerCase()}.`,
@@ -257,7 +288,9 @@ export async function setVolunteerAvailability(id: UUID, availability: Volunteer
 
 export const getTasks = (orgId: UUID) => ok(db.tasks.filter((t) => t.orgId === orgId));
 
-export async function createTask(input: Omit<Task, "id" | "createdAt" | "status" | "progress" | "assignees">) {
+export async function createTask(
+  input: Omit<Task, "id" | "createdAt" | "status" | "progress" | "assignees">,
+) {
   const task: Task = {
     ...input,
     id: `task-${Date.now()}`,
@@ -289,7 +322,12 @@ export async function updateTaskStatus(id: UUID, status: TaskStatus) {
   const task = db.tasks.find((t) => t.id === id);
   if (task) {
     task.status = status;
-    task.progress = status === "Completed" ? 100 : status === "In Progress" ? Math.max(task.progress, 25) : task.progress;
+    task.progress =
+      status === "Completed"
+        ? 100
+        : status === "In Progress"
+          ? Math.max(task.progress, 25)
+          : task.progress;
     pushAudit("Dilhara Weerasinghe", `Task ${task.title} set to ${status}`, "Task", "Task Service");
   }
   return ok(task as Task);
@@ -303,7 +341,12 @@ export async function updateUserRole(id: UUID, role: Role) {
   const user = db.users.find((u) => u.id === id);
   if (user) {
     user.role = role;
-    pushAudit("Kavindu Rathnasiri", `Changed role of ${user.name} to ${role}`, "User", "User Service");
+    pushAudit(
+      "Kavindu Rathnasiri",
+      `Changed role of ${user.name} to ${role}`,
+      "User",
+      "User Service",
+    );
   }
   return ok(user as PlatformUser);
 }
@@ -312,7 +355,12 @@ export async function updateUserStatus(id: UUID, status: AccountStatus) {
   const user = db.users.find((u) => u.id === id);
   if (user) {
     user.status = status;
-    pushAudit("Kavindu Rathnasiri", `Set ${user.name} account to ${status}`, "User", "User Service");
+    pushAudit(
+      "Kavindu Rathnasiri",
+      `Set ${user.name} account to ${status}`,
+      "User",
+      "User Service",
+    );
   }
   return ok(user as PlatformUser);
 }
@@ -352,14 +400,25 @@ export async function getDashboard(orgId: UUID): Promise<DashboardSummary> {
   ];
 
   return ok<DashboardSummary>({
-    openRequests: reqs.filter((r) => !["Fulfilled", "Rejected", "Cancelled"].includes(r.status)).length,
-    criticalRequests: reqs.filter((r) => r.priority === "Critical" && r.status !== "Fulfilled").length,
+    openRequests: reqs.filter((r) => !["Fulfilled", "Rejected", "Cancelled"].includes(r.status))
+      .length,
+    criticalRequests: reqs.filter((r) => r.priority === "Critical" && r.status !== "Fulfilled")
+      .length,
     pendingDonations: dons.filter((d) => d.status === "Pending").length,
     lowStock: inv.filter((i) => i.available < i.minThreshold).length,
-    activeVolunteers: vols.filter((v) => v.verification === "Approved" && v.availability !== "Unavailable").length,
-    overdueTasks: tsk.filter((t) => t.status !== "Completed" && new Date(t.deadline).getTime() < Date.now()).length,
-    requestsByStatus: statuses.map((status) => ({ status, count: reqs.filter((r) => r.status === status).length })),
-    activity: db.audit.slice(0, 6).map((a) => ({ id: a.id, text: `${a.actor} — ${a.action}`, at: a.at })),
+    activeVolunteers: vols.filter(
+      (v) => v.verification === "Approved" && v.availability !== "Unavailable",
+    ).length,
+    overdueTasks: tsk.filter(
+      (t) => t.status !== "Completed" && new Date(t.deadline).getTime() < Date.now(),
+    ).length,
+    requestsByStatus: statuses.map((status) => ({
+      status,
+      count: reqs.filter((r) => r.status === status).length,
+    })),
+    activity: db.audit
+      .slice(0, 6)
+      .map((a) => ({ id: a.id, text: `${a.actor} — ${a.action}`, at: a.at })),
   });
 }
 

@@ -22,11 +22,7 @@ export type TaskStatus = "Assigned" | "Accepted" | "In Progress" | "Completed" |
 export type AccountStatus = "Active" | "Pending Verification" | "Suspended" | "Disabled";
 
 export type Role =
-  | "Community Member"
-  | "Volunteer"
-  | "Donor"
-  | "Organization Coordinator"
-  | "System Administrator";
+  "Community Member" | "Volunteer" | "Donor" | "Organization Coordinator" | "System Administrator";
 
 export interface Organization {
   id: UUID;

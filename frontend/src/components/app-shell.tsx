@@ -27,24 +27,25 @@ export interface NavItem {
 
 function NotificationsBell() {
   const qc = useQueryClient();
-  const { data: itemsRaw = [] } = useQuery({ 
-    queryKey: ["notifications"], 
+  const { data: itemsRaw = [] } = useQuery({
+    queryKey: ["notifications"],
     queryFn: async () => {
       const res = await notificationsAPI.getAll();
       return res.data?.data ?? res.data ?? [];
     },
     refetchInterval: 5000, // Poll every 5s for pseudo-realtime
   });
-  
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items: { id: string; title: string; description: string; read: boolean; at: string }[] = itemsRaw.map((n: any) => ({
-    id: String(n.notification_id),
-    title: String(n.type || "Notification").replace(/_/g, ' '),
-    description: String(n.message),
-    read: Boolean(n.is_read),
-    at: String(n.created_at),
-  }));
-  
+  const items: { id: string; title: string; description: string; read: boolean; at: string }[] =
+    itemsRaw.map((n: any) => ({
+      id: String(n.notification_id),
+      title: String(n.type || "Notification").replace(/_/g, " "),
+      description: String(n.message),
+      read: Boolean(n.is_read),
+      at: String(n.created_at),
+    }));
+
   const unread = items.filter((n) => !n.read).length;
 
   const readOne = useMutation({
@@ -92,7 +93,10 @@ function NotificationsBell() {
                   )}
                 >
                   <span
-                    className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-primary")}
+                    className={cn(
+                      "mt-1.5 size-2 shrink-0 rounded-full",
+                      n.read ? "bg-transparent" : "bg-primary",
+                    )}
                   />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium">{n.title}</span>
@@ -125,7 +129,9 @@ function OrgSwitcher() {
             {organization?.name.slice(0, 2).toUpperCase() ?? "RQ"}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold">{organization?.name ?? "Select organization"}</span>
+            <span className="block truncate text-sm font-semibold">
+              {organization?.name ?? "Select organization"}
+            </span>
             <span className="block truncate text-xs text-muted-foreground">
               {organization ? `${organization.district} district` : "No organization"}
             </span>
@@ -134,7 +140,9 @@ function OrgSwitcher() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">Your organizations</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          Your organizations
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {organizations.map((org) => (
           <DropdownMenuItem key={org.id} onSelect={() => setOrgId(org.id)} className="gap-2">
@@ -162,8 +170,8 @@ function UserAvatarBadge({ variant }: { variant: "coordinator" | "admin" }) {
   const roleLabel = isSuperAdmin
     ? "System Administrator"
     : variant === "coordinator"
-    ? "Coordinator"
-    : "Org Admin";
+      ? "Coordinator"
+      : "Org Admin";
 
   return (
     <>
@@ -236,7 +244,11 @@ export function AppShell({
     <div className="flex h-full flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-5">
       <div className="flex items-center gap-2 px-1">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          {variant === "admin" ? <ShieldCheck className="size-4" /> : <LifeBuoy className="size-4" />}
+          {variant === "admin" ? (
+            <ShieldCheck className="size-4" />
+          ) : (
+            <LifeBuoy className="size-4" />
+          )}
         </span>
         <div>
           <p className="text-sm font-bold tracking-tight">ResQ Hub</p>
@@ -297,7 +309,13 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur md:px-6">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+          >
             <Menu className="size-5" />
           </Button>
           <div className="min-w-0 flex-1">
