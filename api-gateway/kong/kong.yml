@@ -1,4 +1,4 @@
-﻿_format_version: "3.0"
+_format_version: "3.0"
 _transform: true
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -136,6 +136,7 @@ services:
       - name: notification-service-notifications
         paths:
           - /api/v1/notifications
+          - /api/v1/feed
         strip_path: false
         preserve_host: false
 

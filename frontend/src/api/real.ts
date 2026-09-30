@@ -17,6 +17,10 @@ export const orgsAPI = {
     http.post(`/api/v1/organizations/${orgId}/members`, { email, role }),
   getMembers: (orgId: string) =>
     http.get(`/api/v1/organizations/${orgId}/members`),
+  removeMember: (orgId: string, memberId: string) =>
+    http.delete(`/api/v1/organizations/${orgId}/members/${memberId}`),
+  resendInvite: (orgId: string, memberId: string) =>
+    http.post(`/api/v1/organizations/${orgId}/members/${memberId}/resend`),
   delete: (id: string) => http.delete(`/api/v1/organizations/${id}`), 
 };
 
@@ -24,7 +28,7 @@ export const orgsAPI = {
 
 export const requestsAPI = {
   getAll: (orgId?: string) =>
-    http.get("/api/v1/requests", orgId ? { headers: { "x-organization-id": orgId } } : {}),
+    http.get("/api/v1/requests", orgId ? { headers: { "x-organization-id": orgId }, params: { organization_id: orgId } } : {}),
   getById: (id: string) => http.get(`/api/v1/requests/${id}`),
   approve: (id: string, orgId?: string) => http.patch(`/api/v1/requests/${id}/approve`, {}, orgId ? { headers: { "x-organization-id": orgId } } : {}),
   unapprove: (id: string, orgId?: string) => http.patch(`/api/v1/requests/${id}/unapprove`, {}, orgId ? { headers: { "x-organization-id": orgId } } : {}),
@@ -45,26 +49,35 @@ export const donationsAPI = {
 export const categoriesAPI = {
   getAll: () => http.get("/api/v1/categories"),
   create: (data: any) => http.post("/api/v1/categories", data),
+  update: (id: string, data: any) => http.patch(`/api/v1/categories/${id}`, data),
+  delete: (id: string) => http.delete(`/api/v1/categories/${id}`),
 };
 
 export const inventoryAPI = {
   getAll: (orgId?: string) => http.get("/api/v1/inventory", orgId ? { headers: { "x-organization-id": orgId } } : {}),
   getTransactions: (orgId?: string) => http.get("/api/v1/inventory/transactions", orgId ? { headers: { "x-organization-id": orgId } } : {}),
   checkStock: (category: string, quantity: number, orgId?: string) => http.post("/api/v1/inventory/check-stock", { category, quantity }, orgId ? { headers: { "x-organization-id": orgId } } : {}),
-  add: (category_id: string, quantity: number, orgId?: string) => http.post("/api/v1/inventory", { category_id, quantity }, orgId ? { headers: { "x-organization-id": orgId } } : {}),
+  add: (category_id: string, quantity: number, orgId?: string, donation_id?: string, item_name?: string) =>
+    http.post(
+      "/api/v1/inventory",
+      { category_id, quantity, donation_id, item_name },
+      orgId ? { headers: { "x-organization-id": orgId } } : {}
+    ),
   restock: (id: string, quantity: number) => http.post(`/api/v1/inventory/${id}/restock`, { quantity }),
   allocate: (id: string, quantity: number, code: string) => http.post(`/api/v1/inventory/${id}/allocate`, { quantity, request_code: code }),
-  deduct: (data: { category_id?: string; category_name?: string; quantity: number; request_id?: string; request_code?: string; item_name?: string; requester_name?: string }, orgId?: string) =>
+  deduct: (data: { category_id?: string | undefined; category_name?: string | undefined; quantity: number; request_id?: string | undefined; request_code?: string | undefined; item_name?: string | undefined; requester_name?: string | undefined }, orgId?: string) =>
     http.post("/api/v1/inventory/deduct", data, orgId ? { headers: { "x-organization-id": orgId } } : {}),
 };
 
 export const volunteersAPI = {
-  getAll: () => http.get("/api/v1/volunteers"),
+  getAll: (orgId?: string) =>
+    http.get("/api/v1/volunteers", orgId ? { headers: { "x-organization-id": orgId }, params: { organization_id: orgId } } : {}),
   getById: (id: string) => http.get(`/api/v1/volunteers/${id}`),
 };
 
 export const tasksAPI = {
-  getAll: () => http.get("/api/v1/tasks"),
+  getAll: (orgId?: string) =>
+    http.get("/api/v1/tasks", orgId ? { headers: { "x-organization-id": orgId }, params: { organization_id: orgId } } : {}),
   getById: (id: string) => http.get(`/api/v1/tasks/${id}`),
   create: (data: any) => http.post("/api/v1/tasks", data),
   update: (id: string, data: any) => http.patch(`/api/v1/tasks/${id}`, data),
@@ -79,3 +92,45 @@ export const notificationsAPI = {
   markRead: (id: string) => http.patch(`/api/v1/notifications/${id}/read`),
   markAllRead: () => http.post("/api/v1/notifications/mark-all-read"),
 };
+
+/* --------------------------------------------------------------- Coordination Feed */
+
+export interface FeedMessage {
+  message_id: string;
+  parent_id?: string | null;
+  user_id: string;
+  user_name: string;
+  user_role: "COORDINATOR" | "SUPER_ADMIN" | string;
+  organization_id?: string | null;
+  organization_name?: string | null;
+  message_type: "GENERAL" | "CATEGORY_REQUEST" | "RESOURCE_ALERT" | "ANNOUNCEMENT";
+  content: string;
+  status: "OPEN" | "ACKNOWLEDGED" | "RESOLVED" | "CLOSED";
+  proposed_category?: string | null;
+  proposed_unit?: string | null;
+  reactions: Record<string, string[]>;
+  created_at: string;
+  updated_at: string;
+  replies?: FeedMessage[];
+}
+
+export const feedAPI = {
+  getAll: (params?: { type?: string | undefined; status?: string | undefined }) =>
+    http.get("/api/v1/notifications/feed", { params }),
+  create: (data: {
+    content: string;
+    message_type?: string | undefined;
+    proposed_category?: string | undefined;
+    proposed_unit?: string | undefined;
+    parent_id?: string | undefined;
+    organization_id?: string | undefined;
+    organization_name?: string | undefined;
+  }) => http.post("/api/v1/notifications/feed", data),
+  toggleReaction: (messageId: string, emoji: string) =>
+    http.post(`/api/v1/notifications/feed/${messageId}/react`, { emoji }),
+  updateStatus: (messageId: string, status: string) =>
+    http.patch(`/api/v1/notifications/feed/${messageId}/status`, { status }),
+  delete: (messageId: string) =>
+    http.delete(`/api/v1/notifications/feed/${messageId}`),
+};
+
