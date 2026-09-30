@@ -35,6 +35,8 @@ import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
 import { Toolbar, EmptyState } from "@/components/toolbar";
 import { StatusBadge } from "@/components/status-badge";
+import { StatCard } from "@/components/stat-card";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -141,6 +143,7 @@ function RequestsPage() {
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [category, setCategory] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(1);
 
   // Selected request for Preview Modal
@@ -169,7 +172,9 @@ function RequestsPage() {
       priority: request.priority,
     };
     try {
-      localStorage.setItem("resq_hub_active_allocation", JSON.stringify(allocPayload));
+      localStorage.removeItem("resq_hub_active_allocation");
+      sessionStorage.setItem("resq_hub_active_allocation", JSON.stringify(allocPayload));
+      sessionStorage.setItem("resq_hub_allocation_auto_open", "true");
     } catch (_) {}
     toast.info("🎯 Opening Inventory Allocation Sorter...", {
       description: `Navigating to ${request.category || 'Relief'} shelves to select variant.`,
@@ -217,7 +222,7 @@ function RequestsPage() {
     queryKey: ["tasks", orgId],
     queryFn: async () => {
       try {
-        const res = await tasksAPI.getAll();
+        const res = await tasksAPI.getAll(orgId);
         const list = res.data?.data ?? res.data ?? [];
         return Array.isArray(list) ? list : [];
       } catch (err) {
@@ -236,7 +241,15 @@ function RequestsPage() {
 
   const requests: NormalizedRequest[] = useMemo(() => {
     if (!Array.isArray(rawRequests)) return [];
-    return rawRequests.map((r: any) => {
+    return rawRequests
+      .filter((r: any) => {
+        if (!orgId) return true;
+        const status = (r.status || "").toUpperCase();
+        const isPending = status === "PENDING" || status === "UNDER_REVIEW";
+        const isOwnOrg = (r.organization_id || r.orgId) === orgId;
+        return isPending || isOwnOrg;
+      })
+      .map((r: any) => {
       const u = r.users || {};
       const g = (r.guest_request_contacts && r.guest_request_contacts[0]) || {};
       const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ");
@@ -401,7 +414,7 @@ function RequestsPage() {
       // Auto-approve request if pending
       if (taskCreatingRequest && (taskCreatingRequest.status === "Pending" || taskCreatingRequest.status === "Under Review")) {
         try {
-          await requestsAPI.approve(taskCreatingRequest.id);
+          await requestsAPI.approve(taskCreatingRequest.id, orgId);
         } catch (e) {
           console.warn("Auto-approve request note:", e);
         }
@@ -455,64 +468,246 @@ function RequestsPage() {
 
   const filtered = useMemo(
     () =>
-      requests.filter(
-        (r) =>
-          (status === "all" || r.status === status) &&
-          (priority === "all" || r.priority === priority) &&
-          (category === "all" || r.category === category) &&
-          (search === "" ||
-            [r.code, r.requester, r.resourceType, r.location, r.requesterPhone].join(" ").toLowerCase().includes(search.toLowerCase())),
-      ),
-    [requests, status, priority, category, search],
+      requests.filter((r) => {
+        if (activeTab === "pending" && r.status !== "Pending" && r.status !== "Under Review") return false;
+        if (activeTab === "critical" && (r.priority !== "Critical" || r.status === "Fulfilled" || r.status === "Rejected")) return false;
+        if (activeTab === "fulfilled" && r.status !== "Fulfilled") return false;
+        if (activeTab === "in_delivery") {
+          const task = getLinkedTask(r);
+          if (!task || (task.status !== "IN_PROGRESS" && task.status !== "ASSIGNED")) return false;
+        }
+
+        const matchStatus = status === "all" || r.status === status;
+        const matchPriority = priority === "all" || r.priority === priority;
+        const matchCategory = category === "all" || r.category === category;
+        const matchSearch =
+          search === "" ||
+          [r.code, r.requester, r.resourceType, r.location, r.requesterPhone].join(" ").toLowerCase().includes(search.toLowerCase());
+
+        return matchStatus && matchPriority && matchCategory && matchSearch;
+      }),
+    [requests, activeTab, status, priority, category, search, allTasks],
   );
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
   const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
+  const totalCount = requests.length;
   const pendingCount = requests.filter((r) => r.status === "Pending" || r.status === "Under Review").length;
+  const criticalCount = requests.filter((r) => r.priority === "Critical" && r.status !== "Fulfilled" && r.status !== "Rejected").length;
+  const activeMissionsCount = requests.filter((r) => {
+    const task = getLinkedTask(r);
+    return task && (task.status === "IN_PROGRESS" || task.status === "ASSIGNED");
+  }).length;
+  const fulfilledCount = requests.filter((r) => r.status === "Fulfilled").length;
+
+  const hasActiveFilters =
+    activeTab !== "all" || search.trim() !== "" || status !== "all" || priority !== "all" || category !== "all";
+
+  const clearAllFilters = () => {
+    setActiveTab("all");
+    setSearch("");
+    setStatus("all");
+    setPriority("all");
+    setCategory("all");
+    setPage(1);
+  };
+
+  const quickTabs = [
+    { id: "all", label: "All Requests", count: totalCount },
+    { id: "pending", label: "Needs Triage", count: pendingCount },
+    { id: "critical", label: "Critical Urgency", count: criticalCount },
+    { id: "in_delivery", label: "Active Deliveries", count: activeMissionsCount },
+    { id: "fulfilled", label: "Fulfilled", count: fulfilledCount },
+  ];
 
   return (
     <>
       <PageHeader
         title="Help Requests"
-        description={`${pendingCount} request${pendingCount === 1 ? "" : "s"} awaiting review and volunteer dispatch.`}
+        description={`${pendingCount} community request${pendingCount === 1 ? "" : "s"} awaiting review and volunteer dispatch.`}
       />
 
-      <Toolbar
-        search={search}
-        onSearch={(v) => {
-          setSearch(v);
-          setPage(1);
-        }}
-        placeholder="Search by requester, resource, phone or location"
-        filters={[
-          { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
-          { label: "Priority", value: priority, options: PRIORITIES, onChange: (v) => { setPriority(v); setPage(1); } },
-          { label: "Category", value: category, options: categories, onChange: (v) => { setCategory(v); setPage(1); } },
-        ]}
-      />
+      {/* 📊 Key Operational Metrics Bar */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-5">
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "pending" ? "all" : "pending");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "pending" && "ring-2 ring-amber-500/50 rounded-xl")}
+        >
+          <StatCard
+            label="Needs Triage"
+            value={pendingCount}
+            hint="Awaiting review & approval"
+            icon={Clock}
+            tone="warning"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "critical" ? "all" : "critical");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "critical" && "ring-2 ring-red-500/50 rounded-xl")}
+        >
+          <StatCard
+            label="Critical Urgency"
+            value={criticalCount}
+            hint="Immediate relief needed"
+            icon={AlertTriangle}
+            tone="danger"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "in_delivery" ? "all" : "in_delivery");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "in_delivery" && "ring-2 ring-primary/50 rounded-xl")}
+        >
+          <StatCard
+            label="Active Deliveries"
+            value={activeMissionsCount}
+            hint="Volunteers dispatched"
+            icon={Truck}
+            tone="default"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab(activeTab === "fulfilled" ? "all" : "fulfilled");
+            setPage(1);
+          }}
+          className={cn("cursor-pointer transition-all hover:scale-[1.01]", activeTab === "fulfilled" && "ring-2 ring-emerald-500/50 rounded-xl")}
+        >
+          <StatCard
+            label="Fulfilled Requests"
+            value={fulfilledCount}
+            hint="Successfully completed"
+            icon={CheckCircle2}
+            tone="success"
+          />
+        </div>
+      </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      {/* 🔍 Filter Area: Quick Tabs + Detailed Toolbar */}
+      <div className="space-y-3 mb-4">
+        {/* Quick Filter Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {quickTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setPage(1);
+                }}
+                className={cn(
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border",
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[10px] tabular-nums font-bold",
+                    isActive
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-auto shrink-0"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset filters
+            </button>
+          )}
+        </div>
+
+        {/* Detailed Search & Filters */}
+        <Toolbar
+          search={search}
+          onSearch={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          placeholder="Search by requester, resource, phone or location"
+          filters={[
+            { label: "Status", value: status, options: STATUSES, onChange: (v) => { setStatus(v); setPage(1); } },
+            { label: "Priority", value: priority, options: PRIORITIES, onChange: (v) => { setPriority(v); setPage(1); } },
+            { label: "Category", value: category, options: categories, onChange: (v) => { setCategory(v); setPage(1); } },
+          ]}
+        />
+      </div>
+
+      {/* 📋 Elevated Requests Table */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
         {isLoading ? (
-          <div className="space-y-2 p-4">
+          <div className="space-y-3 p-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-10" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <EmptyState message="No help requests match the current filters." />
+          <div className="p-12 text-center">
+            <EmptyState message="No help requests match the current filters." />
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 gap-1.5 text-xs"
+                onClick={clearAllFilters}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Clear all filters
+              </Button>
+            )}
+          </div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead>Requester</TableHead>
-                <TableHead>Resource</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Delivery Location</TableHead>
-                <TableHead>Volunteer Mission</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+              <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border">
+                <TableHead className="py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Requester
+                </TableHead>
+                <TableHead className="py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Resource Needed
+                </TableHead>
+                <TableHead className="py-3.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quantity
+                </TableHead>
+                <TableHead className="py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Priority
+                </TableHead>
+                <TableHead className="py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Delivery Destination
+                </TableHead>
+                <TableHead className="py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Volunteer Mission
+                </TableHead>
+                <TableHead className="py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Status
+                </TableHead>
+                <TableHead className="py-3.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Action
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -521,65 +716,86 @@ function RequestsPage() {
                 return (
                   <TableRow
                     key={r.id || Math.random().toString()}
-                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                    className="cursor-pointer transition-colors hover:bg-muted/50 border-b border-border/60"
                     onClick={() => setPreviewRequestId(r.id)}
                   >
-                    <TableCell>
-                      <span className="block font-medium text-foreground">{r.requester}</span>
-                      <span className="block text-xs font-mono text-muted-foreground">{r.requesterPhone || "Contact in App"}</span>
+                    <TableCell className="py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {r.requester.charAt(0).toUpperCase() || "U"}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block font-medium text-foreground truncate max-w-[140px] text-sm">
+                            {r.requester}
+                          </span>
+                          <span className="block text-xs font-mono text-muted-foreground truncate max-w-[140px]">
+                            {r.requesterPhone || "In-app contact"}
+                          </span>
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="block font-semibold text-foreground">{r.resourceType}</span>
-                      <span className="block text-xs text-muted-foreground">{r.category}</span>
+                    <TableCell className="py-3.5">
+                      <div className="min-w-0">
+                        <span className="block font-medium text-foreground truncate max-w-[190px] text-sm">
+                          {r.resourceType}
+                        </span>
+                        <span className="inline-block mt-0.5 rounded px-1.5 py-0.5 bg-muted text-[11px] font-medium text-muted-foreground">
+                          {r.category}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums font-semibold">
-                      {r.quantity} {r.unit}
+                    <TableCell className="py-3.5 text-right tabular-nums">
+                      <span className="font-semibold text-foreground text-sm">{r.quantity}</span>{" "}
+                      <span className="text-xs text-muted-foreground">{r.unit}</span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5">
                       <StatusBadge value={r.priority} />
                     </TableCell>
-                    <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
+                    <TableCell className="py-3.5 max-w-[190px]">
+                      <div
+                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground truncate w-full"
+                        title={r.location || "Contact requester for exact location"}
+                      >
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
                         <span className="truncate">{r.location || "Contact requester for location"}</span>
-                      </span>
+                      </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5">
                       {linkedTask ? (
                         <div className="flex items-center gap-1.5">
                           {linkedTask.status === "COMPLETED" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                               <CheckCircle2 className="h-3 w-3" /> Fulfilled
                             </span>
                           ) : linkedTask.status === "IN_PROGRESS" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400 border border-blue-500/20">
                               <Activity className="h-3 w-3 animate-pulse" /> Delivering
                             </span>
                           ) : linkedTask.status === "ASSIGNED" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-400">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-400 border border-purple-500/20">
                               <User className="h-3 w-3" /> Assigned
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400 border border-amber-500/20">
                               <Clock className="h-3 w-3" /> Dispatched
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground/60">— Unassigned</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5">
                       <StatusBadge value={r.status} />
                     </TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                        className="h-8 gap-1.5 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground shadow-2xs hover:bg-muted hover:border-border transition-all"
                         onClick={() => setPreviewRequestId(r.id)}
                       >
-                        <Eye className="size-3.5" />
+                        <Eye className="size-3.5 text-primary" />
                         Preview
                       </Button>
                     </TableCell>
@@ -609,36 +825,84 @@ function RequestsPage() {
 
       {/* 👁️ PREVIEW & VERIFICATION MODAL */}
       <Dialog open={!!previewRequest} onOpenChange={(open) => !open && setPreviewRequestId(null)}>
-        <DialogContent className="max-w-2xl overflow-hidden p-0">
+        <DialogContent className="max-w-5xl sm:max-w-5xl w-full max-h-[92vh] overflow-hidden p-0 rounded-2xl border border-border shadow-2xl bg-card">
           {previewRequest && (
-            <div>
+            <div className="flex flex-col max-h-[92vh]">
               {/* Header */}
-              <div className="border-b border-border bg-muted/30 p-6">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              <div className="border-b border-border bg-gradient-to-r from-card via-card/95 to-primary/5 p-6 shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-lg bg-primary/15 border border-primary/25 px-3 py-1 text-xs font-bold text-primary">
                       {previewRequest.category}
                     </span>
                     <StatusBadge value={previewRequest.priority} />
-                    <span className="text-xs text-muted-foreground">
+                    <span className="font-mono text-xs px-2.5 py-1 rounded-md bg-muted/80 border border-border text-muted-foreground font-semibold">
                       #{previewRequest.code}
                     </span>
                   </div>
                   <StatusBadge value={previewRequest.status} />
                 </div>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-                  {previewRequest.resourceType}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Requested on {new Date(previewRequest.createdAt).toLocaleDateString()} • Needed by:{" "}
-                  <strong className="text-foreground">
-                    {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
-                  </strong>
-                </p>
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                      {previewRequest.resourceType}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-primary" /> Requested on {new Date(previewRequest.createdAt).toLocaleDateString()} • Needed by:{" "}
+                      <strong className="text-foreground font-semibold">
+                        {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Body Content */}
-              <div className="space-y-5 p-6 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-6 p-6 overflow-y-auto flex-1">
+                {/* 1. TOP QUICK METRICS BAR */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-border bg-card/60 p-3.5 shadow-2xs hover:border-primary/40 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Package className="h-3.5 w-3.5 text-primary" /> Quantity Needed
+                    </span>
+                    <p className="mt-1.5 text-xl font-black text-foreground">
+                      {previewRequest.quantity}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">{previewRequest.unit}</span>
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3.5 shadow-2xs hover:border-primary/40 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-500" /> Urgency Level
+                    </span>
+                    <p className="mt-1.5 text-base font-bold text-foreground">
+                      {previewRequest.priority} Priority
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3.5 shadow-2xs hover:border-primary/40 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-blue-500" /> Required By
+                    </span>
+                    <p className="mt-1.5 text-base font-bold text-foreground">
+                      {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3.5 shadow-2xs hover:border-primary/40 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Workflow State
+                    </span>
+                    <div className="mt-1.5">
+                      <StatusBadge value={previewRequest.status} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. TWO-COLUMN OPERATIONAL LAYOUT */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                  {/* LEFT COLUMN: Operations, PIN Lifecycle, & Stock Allocation */}
+                  <div className="lg:col-span-7 space-y-5">
                 {/* 🚚 LIVE VOLUNTEER TASK PROGRESS BANNER */}
                 {detailedTask ? (
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
@@ -909,39 +1173,6 @@ function RequestsPage() {
                   </div>
                 )}
 
-                {/* Rejection notice if rejected */}
-                {previewRequest.status === "Rejected" && previewRequest.rejectionReason && (
-                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-sm text-destructive">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <AlertCircle className="h-4 w-4" />
-                      Rejection Reason
-                    </div>
-                    <p className="mt-1 text-xs">{previewRequest.rejectionReason}</p>
-                  </div>
-                )}
-
-                {/* Request Spec Cards */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Quantity Needed</span>
-                    <p className="mt-1 text-lg font-bold text-foreground">
-                      {previewRequest.quantity} <span className="text-sm font-normal text-muted-foreground">{previewRequest.unit}</span>
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Urgency Priority</span>
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      {previewRequest.priority} Priority
-                    </p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground">Required By</span>
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      {previewRequest.requiredDate ? new Date(previewRequest.requiredDate).toLocaleDateString() : "Immediate"}
-                    </p>
-                  </div>
-                </div>
-
                 
                 {/* 📦 HIGH-PRIORITY RESOURCE ALLOCATION & WAREHOUSE STOCK (MIDDLE OF POPUP) */}
                 <div className={`rounded-2xl border-2 p-5 shadow-sm transition-all ${
@@ -1044,90 +1275,115 @@ function RequestsPage() {
                 </div>
 
 
-                {/* Requester Information & Verification Card */}
-                <div className="rounded-xl border border-border bg-muted/10 p-4">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <User className="h-4 w-4 text-primary" />
-                    Requester Contact & Verification
-                  </h3>
-
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <span className="text-xs text-muted-foreground">Requester Name</span>
-                      <p className="text-sm font-semibold text-foreground">{previewRequest.requester}</p>
-                      {previewRequest.requesterEmail && (
-                        <p className="text-xs text-muted-foreground">{previewRequest.requesterEmail}</p>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-xs text-muted-foreground">Contact Phone</span>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <span className="font-mono text-sm font-semibold text-foreground">
-                          {previewRequest.requesterPhone || "Contact in App"}
+                    {/* Requester Reason / Description */}
+                    {previewRequest.description && (
+                      <div className="rounded-2xl border border-border bg-card p-4 shadow-2xs">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                          Situation & Citizen Request Details
                         </span>
+                        <p className="mt-1.5 text-sm text-foreground/90 italic leading-relaxed">
+                          "{previewRequest.description}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* RIGHT COLUMN: Requester Profile, Contact, Location Verification */}
+                  <div className="lg:col-span-5 space-y-4">
+                    {/* Rejection notice if rejected */}
+                    {previewRequest.status === "Rejected" && previewRequest.rejectionReason && (
+                      <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive shadow-2xs">
+                        <div className="flex items-center gap-2 font-bold">
+                          <AlertCircle className="h-4 w-4" />
+                          Rejection Reason
+                        </div>
+                        <p className="mt-1.5 text-xs leading-relaxed">{previewRequest.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    {/* Requester Information & Verification Card */}
+                    <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-border/70">
+                        <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                          <User className="h-4 w-4 text-primary" />
+                          Requester Contact & Profile
+                        </h3>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          Verified Citizen
+                        </span>
+                      </div>
+
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="text-muted-foreground font-medium block">Full Name</span>
+                          <p className="text-base font-bold text-foreground mt-0.5">{previewRequest.requester}</p>
+                          {previewRequest.requesterEmail && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{previewRequest.requesterEmail}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <span className="text-muted-foreground font-medium block">Phone Number</span>
+                          <div className="mt-1 flex items-center justify-between gap-2 p-2 rounded-xl bg-muted/50 border border-border/80">
+                            <span className="font-mono text-sm font-bold text-foreground">
+                              {previewRequest.requesterPhone || "Contact in Mobile App"}
+                            </span>
+                            {previewRequest.requesterPhone && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs font-semibold gap-1 text-primary hover:bg-primary/10"
+                                title="Copy phone number"
+                                onClick={() => handleCopyPhone(previewRequest.requesterPhone)}
+                              >
+                                <Copy className="h-3 w-3" /> Copy
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Coordinator Phone Call Verification Button */}
                         {previewRequest.requesterPhone && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title="Copy phone number"
-                            onClick={() => handleCopyPhone(previewRequest.requesterPhone)}
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-3 text-xs text-emerald-950 dark:text-emerald-200">
+                            <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 block mb-2">
+                              Instant Citizen Verification Call:
+                            </span>
+                            <a
+                              href={`tel:${previewRequest.requesterPhone}`}
+                              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
+                            >
+                              <Phone className="h-3.5 w-3.5" />
+                              Call {previewRequest.requesterPhone}
+                            </a>
+                          </div>
                         )}
+
+                        {/* Delivery Location & Maps Link */}
+                        <div className="pt-2 border-t border-border/60">
+                          <span className="text-muted-foreground font-medium block">Relief Delivery Destination</span>
+                          <div className="mt-1.5 p-3 rounded-xl bg-muted/40 border border-border/80 space-y-2">
+                            <p className="flex items-start gap-2 text-xs text-foreground leading-snug">
+                              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                              <span className="font-medium">
+                                {previewRequest.location || "Contact requester for exact location coordinates"}
+                              </span>
+                            </p>
+                            {previewRequest.location && (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(previewRequest.location)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-2xs"
+                              >
+                                View on Google Maps <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Delivery Location & Maps Link */}
-                  <div className="mt-3 border-t border-border/60 pt-3">
-                    <span className="text-xs text-muted-foreground">Delivery / Relief Location</span>
-                    <div className="mt-1 flex items-start justify-between gap-2">
-                      <p className="flex items-start gap-1.5 text-sm text-foreground">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                        <span className="font-medium">
-                          {previewRequest.location || "Contact requester for exact location coordinates"}
-                        </span>
-                      </p>
-                      {previewRequest.location && (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(previewRequest.location)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-2.5 py-1 text-xs font-medium text-primary hover:underline shadow-xs"
-                        >
-                          Maps <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Coordinator Phone Call Verification Aid */}
-                  {previewRequest.requesterPhone && (
-                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-950 dark:text-emerald-200">
-                      <div className="flex items-center gap-2">
-                        <PhoneCall className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Call citizen to confirm emergency needs and location:</span>
-                      </div>
-                      <a
-                        href={`tel:${previewRequest.requesterPhone}`}
-                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
-                      >
-                        <Phone className="h-3 w-3" />
-                        Call {previewRequest.requesterPhone}
-                      </a>
-                    </div>
-                  )}
                 </div>
-
-                {/* Requester Reason / Description */}
-                {previewRequest.description && (
-                  <div className="rounded-lg border border-border bg-card p-3.5">
-                    <span className="text-xs font-medium text-muted-foreground">Situation & Request Details</span>
-                    <p className="mt-1 text-sm text-foreground/90 italic">"{previewRequest.description}"</p>
-                  </div>
-                )}
               </div>
 
               {/* Modal Action Footer */}

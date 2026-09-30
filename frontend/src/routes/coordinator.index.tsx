@@ -75,13 +75,21 @@ function DashboardPage() {
   const requestList = toSafeArray(rawRequests);
   const requests = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return requestList.map((r: any) => ({
-      id: r.request_id ?? r.id,
-      orgId: r.organization_id ?? r.orgId ?? "",
-      priority: capitalize(r.urgency ?? r.priority ?? "medium"),
-      status: mapStatus(r.status),
-    }));
-  }, [requestList]);
+    return requestList
+      .filter((r: any) => {
+        if (!orgId) return true;
+        const status = (r.status || "").toUpperCase();
+        const isPending = status === "PENDING" || status === "UNDER_REVIEW";
+        const isOwnOrg = (r.organization_id || r.orgId) === orgId;
+        return isPending || isOwnOrg;
+      })
+      .map((r: any) => ({
+        id: r.request_id ?? r.id,
+        orgId: r.organization_id ?? r.orgId ?? "",
+        priority: capitalize(r.urgency ?? r.priority ?? "medium"),
+        status: mapStatus(r.status),
+      }));
+  }, [requestList, orgId]);
   
   const openRequests = requests.filter(r => !["Fulfilled", "Rejected", "Cancelled"].includes(r.status)).length;
   const criticalRequests = requests.filter(r => r.priority === "Critical" && r.status !== "Fulfilled").length;
@@ -115,7 +123,7 @@ function DashboardPage() {
   const { data: rawVolunteers = [] } = useQuery({
     queryKey: ["volunteers", orgId],
     queryFn: async () => {
-      const res = await volunteersAPI.getAll();
+      const res = await volunteersAPI.getAll(orgId);
       const d = res.data?.data ?? res.data ?? [];
       return Array.isArray(d) ? d : [];
     },
@@ -125,7 +133,7 @@ function DashboardPage() {
   const { data: rawTasks = [] } = useQuery({
     queryKey: ["tasks", orgId],
     queryFn: async () => {
-      const res = await tasksAPI.getAll();
+      const res = await tasksAPI.getAll(orgId);
       const d = res.data?.data ?? res.data ?? [];
       return Array.isArray(d) ? d : [];
     },
