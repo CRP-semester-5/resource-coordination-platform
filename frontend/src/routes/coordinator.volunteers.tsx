@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { volunteersAPI } from "@/api/real";
@@ -28,10 +28,14 @@ function VolunteersPage() {
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["volunteers", orgId],
-    queryFn: () => volunteersAPI.getAll(),
+    queryFn: async () => {
+      const res = await volunteersAPI.getAll();
+      const list = res.data?.data ?? res.data ?? [];
+      return Array.isArray(list) ? list : [];
+    },
   });
 
-  const volunteers = response?.data?.data || [];
+  const volunteers = Array.isArray(response) ? response : ((response as any)?.data?.data || []);
 
   const filtered = useMemo(
     () =>

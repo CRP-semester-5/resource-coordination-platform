@@ -215,12 +215,22 @@ function RequestsPage() {
   // 2. Fetch Tasks for linking volunteer delivery progress
   const { data: tasksRes } = useQuery({
     queryKey: ["tasks", orgId],
-    queryFn: () => tasksAPI.getAll(),
+    queryFn: async () => {
+      try {
+        const res = await tasksAPI.getAll();
+        const list = res.data?.data ?? res.data ?? [];
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        console.error("Failed to fetch tasks:", err);
+        return [];
+      }
+    },
     refetchInterval: 2500,
   });
 
   const allTasks: any[] = useMemo(() => {
-    const list = tasksRes?.data?.data ?? tasksRes?.data ?? [];
+    if (Array.isArray(tasksRes)) return tasksRes;
+    const list = (tasksRes as any)?.data?.data ?? (tasksRes as any)?.data ?? [];
     return Array.isArray(list) ? list : [];
   }, [tasksRes]);
 

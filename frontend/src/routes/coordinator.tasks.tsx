@@ -56,7 +56,11 @@ function TasksPage() {
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["tasks", orgId],
-    queryFn: () => tasksAPI.getAll(),
+    queryFn: async () => {
+      const res = await tasksAPI.getAll();
+      const list = res.data?.data ?? res.data ?? [];
+      return Array.isArray(list) ? list : [];
+    },
     refetchInterval: 5000,
   });
 
@@ -71,11 +75,15 @@ function TasksPage() {
 
   const { data: volunteersResponse } = useQuery({
     queryKey: ["volunteers", orgId],
-    queryFn: () => volunteersAPI.getAll(),
+    queryFn: async () => {
+      const res = await volunteersAPI.getAll();
+      const list = res.data?.data ?? res.data ?? [];
+      return Array.isArray(list) ? list : [];
+    },
     enabled: creating || !!selectedTaskId,
   });
 
-  const availableVolunteers = volunteersResponse?.data?.data || [];
+  const availableVolunteers = Array.isArray(volunteersResponse) ? volunteersResponse : ((volunteersResponse as any)?.data?.data || []);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => tasksAPI.create(data),
@@ -119,7 +127,7 @@ function TasksPage() {
     setLocation("");
   };
 
-  const tasks = response?.data?.data || [];
+  const tasks = Array.isArray(response) ? response : ((response as any)?.data?.data || []);
 
   const filtered = useMemo(
     () =>

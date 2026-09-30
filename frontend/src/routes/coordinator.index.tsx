@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Boxes, ClipboardList, HeartHandshake, ListChecks, Users } from "lucide-react";
@@ -22,6 +23,15 @@ export const Route = createFileRoute("/coordinator/")({
   }),
   component: DashboardPage,
 });
+
+/** Helper to safely unpack any React Query result into an array, even if an Axios response was cached */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toSafeArray(val: any): any[] {
+  if (Array.isArray(val)) return val;
+  if (Array.isArray(val?.data?.data)) return val.data.data;
+  if (Array.isArray(val?.data)) return val.data;
+  return [];
+}
 
 /** Map backend status strings → UI display strings */
 function mapStatus(s: string): string {
@@ -54,23 +64,24 @@ function DashboardPage() {
   const { data: rawRequests = [], isLoading } = useQuery({
     queryKey: ["requests", orgId],
     queryFn: async () => {
-      const res = await requestsAPI.getAll();
+      const res = await requestsAPI.getAll(orgId);
       const list = res.data?.data ?? res.data ?? [];
-      // Normalize backend shape to UI shape
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return list.map((r: any) => ({
-        id: r.request_id ?? r.id,
-        orgId: r.organization_id ?? "",
-        priority: capitalize(r.urgency ?? r.priority ?? "medium"),
-        status: mapStatus(r.status),
-      }));
+      return Array.isArray(list) ? list : [];
     },
     enabled: !!orgId,
   });
 
-  // Calculate dynamic request metrics
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const requests: any[] = rawRequests;
+  // Calculate dynamic request metrics safely regardless of whether raw or mapped data is in cache
+  const requestList = toSafeArray(rawRequests);
+  const requests = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return requestList.map((r: any) => ({
+      id: r.request_id ?? r.id,
+      orgId: r.organization_id ?? r.orgId ?? "",
+      priority: capitalize(r.urgency ?? r.priority ?? "medium"),
+      status: mapStatus(r.status),
+    }));
+  }, [requestList]);
   
   const openRequests = requests.filter(r => !["Fulfilled", "Rejected", "Cancelled"].includes(r.status)).length;
   const criticalRequests = requests.filter(r => r.priority === "Critical" && r.status !== "Fulfilled").length;
@@ -124,18 +135,27 @@ function DashboardPage() {
   const { data: rawInventory = [] } = useQuery({
     queryKey: ["inventory", orgId],
     queryFn: async () => {
-      const res = await inventoryAPI.getAll();
+      const res = await inventoryAPI.getAll(orgId);
       const d = res.data?.data ?? res.data ?? [];
       return Array.isArray(d) ? d : [];
     },
     enabled: !!orgId,
   });
 
-  // Calculate dynamic metrics
-  const pendingDonations = rawDonations.filter((d: any) => d.status === "PENDING").length;
-  const activeVolunteers = rawVolunteers.filter((v: any) => v.is_available).length;
-  const lowStock = rawInventory.filter((i: any) => i.quantity < 50).length; // simple threshold
-  const overdueTasks = rawTasks.filter((t: any) => t.status !== "COMPLETED" && new Date(t.created_at).getTime() < Date.now() - 86400000).length; // Older than 1 day
+  const taskList = toSafeArray(rawTasks);
+  const volunteerList = toSafeArray(rawVolunteers);
+  const donationList = toSafeArray(rawDonations);
+  const inventoryList = toSafeArray(rawInventory);
+
+  // Calculate dynamic metrics safely
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pendingDonations = donationList.filter((d: any) => d.status === "PENDING" || d.status === "Pending").length;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeVolunteers = volunteerList.filter((v: any) => v.is_available).length;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lowStock = inventoryList.filter((i: any) => Number(i.quantity) < 50).length;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const overdueTasks = taskList.filter((t: any) => t.status !== "COMPLETED" && t.status !== "Completed" && new Date(t.created_at).getTime() < Date.now() - 86400000).length;
 
   return (
     <>
