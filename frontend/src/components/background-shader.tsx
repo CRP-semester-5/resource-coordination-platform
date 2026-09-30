@@ -111,7 +111,7 @@ export function BackgroundShader() {
 
         gradient.addColorStop(0, blob.innerColor);
         gradient.addColorStop(0.45, blob.color);
-        gradient.addColorStop(0.8, blob.color.replace(/[\d\.]+\)$/, "0.10)"));
+        gradient.addColorStop(0.8, blob.color.replace(/[\d.]+\)$/, "0.10)"));
         gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
         ctx.fillStyle = gradient;

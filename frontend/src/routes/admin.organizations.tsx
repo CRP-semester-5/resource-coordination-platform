@@ -57,7 +57,11 @@ export const Route = createFileRoute("/admin/organizations")({
   head: () => ({
     meta: [
       { title: "Organizations Management — ResQ Hub Admin" },
-      { name: "description", content: "Review onboarding applications, manage verified relief organizations and branch hubs." },
+      {
+        name: "description",
+        content:
+          "Review onboarding applications, manage verified relief organizations and branch hubs.",
+      },
     ],
   }),
   component: AdminOrganizationsPage,
@@ -69,11 +73,11 @@ function AdminOrganizationsPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("pending");
   const [search, setSearch] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [inspectOrg, setInspectOrg] = useState<any | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [rejectingOrg, setRejectingOrg] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
@@ -103,7 +107,7 @@ function AdminOrganizationsPage() {
       toast.success("Organization approved successfully! It is now active on the platform.");
       setInspectOrg(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to approve organization.");
     },
@@ -119,7 +123,7 @@ function AdminOrganizationsPage() {
       setRejectionReason("");
       setInspectOrg(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to reject organization.");
     },
@@ -134,43 +138,34 @@ function AdminOrganizationsPage() {
       setConfirmDelete(null);
       setInspectOrg(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to delete organization.");
     },
   });
 
   /* ── Stats ── */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const activeOrgs = (allOrgs as any[]).filter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (o: any) => o.status === "ACTIVE" || o.status === "APPROVED" || o.status === "active"
+    (o: any) => o.status === "ACTIVE" || o.status === "APPROVED" || o.status === "active",
   );
   const pendingCount = (pendingOrgs as unknown[]).length;
   const activeCount = activeOrgs.length;
   const totalCount = (allOrgs as unknown[]).length + pendingCount;
 
   /* ── Filtered data ── */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const source: any[] = tab === "pending" ? pendingOrgs : allOrgs;
   const isLoading = tab === "pending" ? pendingLoading : allLoading;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filtered = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return source.filter((o: any) => {
       const name = (o.organization_name ?? o.name ?? "").toLowerCase();
       const loc = (o.address ?? o.district ?? "").toLowerCase();
       const desc = (o.description ?? "").toLowerCase();
       const email = (o.email ?? "").toLowerCase();
       const q = search.toLowerCase().trim();
-      return (
-        !q ||
-        name.includes(q) ||
-        loc.includes(q) ||
-        desc.includes(q) ||
-        email.includes(q)
-      );
+      return !q || name.includes(q) || loc.includes(q) || desc.includes(q) || email.includes(q);
     });
   }, [source, search]);
 
@@ -194,9 +189,14 @@ function AdminOrganizationsPage() {
       {/* Metric Quick-Pills */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div
-          onClick={() => { setTab("all"); setSearch(""); }}
+          onClick={() => {
+            setTab("all");
+            setSearch("");
+          }}
           className={`p-4 rounded-xl border bg-card flex items-center justify-between cursor-pointer transition-all ${
-            tab === "all" ? "border-primary/50 ring-1 ring-primary/20 shadow-sm" : "border-border hover:border-border/80"
+            tab === "all"
+              ? "border-primary/50 ring-1 ring-primary/20 shadow-sm"
+              : "border-border hover:border-border/80"
           }`}
         >
           <div className="flex items-center gap-3">
@@ -212,9 +212,14 @@ function AdminOrganizationsPage() {
         </div>
 
         <div
-          onClick={() => { setTab("pending"); setSearch(""); }}
+          onClick={() => {
+            setTab("pending");
+            setSearch("");
+          }}
           className={`p-4 rounded-xl border bg-card flex items-center justify-between cursor-pointer transition-all ${
-            tab === "pending" ? "border-amber-500/50 ring-1 ring-amber-500/20 shadow-sm" : "border-border hover:border-border/80"
+            tab === "pending"
+              ? "border-amber-500/50 ring-1 ring-amber-500/20 shadow-sm"
+              : "border-border hover:border-border/80"
           }`}
         >
           <div className="flex items-center gap-3">
@@ -222,7 +227,9 @@ function AdminOrganizationsPage() {
               <Clock className="size-5" />
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-amber-600 dark:text-amber-400">{pendingCount}</div>
+              <div className="text-xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+                {pendingCount}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Pending Review</div>
             </div>
           </div>
@@ -234,7 +241,10 @@ function AdminOrganizationsPage() {
         </div>
 
         <div
-          onClick={() => { setTab("all"); setSearch(""); }}
+          onClick={() => {
+            setTab("all");
+            setSearch("");
+          }}
           className="p-4 rounded-xl border border-border bg-card flex items-center justify-between cursor-pointer hover:border-border/80 transition-all"
         >
           <div className="flex items-center gap-3">
@@ -242,8 +252,12 @@ function AdminOrganizationsPage() {
               <CheckCircle2 className="size-5" />
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">{activeCount}</div>
-              <div className="text-xs text-muted-foreground font-medium">Active Operational Hubs</div>
+              <div className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                {activeCount}
+              </div>
+              <div className="text-xs text-muted-foreground font-medium">
+                Active Operational Hubs
+              </div>
             </div>
           </div>
           <span className="text-xs text-muted-foreground font-semibold">Verified</span>
@@ -256,7 +270,10 @@ function AdminOrganizationsPage() {
         <div className="flex gap-1 rounded-xl border border-border bg-muted/60 p-1 w-fit">
           <button
             type="button"
-            onClick={() => { setTab("pending"); setSearch(""); }}
+            onClick={() => {
+              setTab("pending");
+              setSearch("");
+            }}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${
               tab === "pending"
                 ? "bg-background shadow-sm text-foreground"
@@ -272,7 +289,10 @@ function AdminOrganizationsPage() {
           </button>
           <button
             type="button"
-            onClick={() => { setTab("all"); setSearch(""); }}
+            onClick={() => {
+              setTab("all");
+              setSearch("");
+            }}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${
               tab === "all"
                 ? "bg-background shadow-sm text-foreground"
@@ -324,16 +344,20 @@ function AdminOrganizationsPage() {
                 <TableHead className="py-3 px-4 font-semibold text-xs">
                   {tab === "pending" ? "Applicant Details" : "Headquarters"}
                 </TableHead>
-                <TableHead className="py-3 px-4 font-semibold text-xs">Operations Scope / Mission</TableHead>
+                <TableHead className="py-3 px-4 font-semibold text-xs">
+                  Operations Scope / Mission
+                </TableHead>
                 <TableHead className="py-3 px-4 font-semibold text-xs">Status</TableHead>
                 <TableHead className="py-3 px-4 font-semibold text-xs">
                   {tab === "pending" ? "Applied Date" : "Registered"}
                 </TableHead>
-                <TableHead className="py-3 px-4 font-semibold text-xs text-right">Actions</TableHead>
+                <TableHead className="py-3 px-4 font-semibold text-xs text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {}
               {filtered.map((org: any) => {
                 const id = org.organization_id ?? org.id;
                 const name = org.organization_name ?? org.name ?? "—";
@@ -341,7 +365,10 @@ function AdminOrganizationsPage() {
                 const initial = name.slice(0, 2).toUpperCase();
 
                 const applicant = org.users || {};
-                const applicantName = [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") || applicant.email || "Applicant";
+                const applicantName =
+                  [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") ||
+                  applicant.email ||
+                  "Applicant";
                 const applicantEmail = applicant.email || org.email || "";
 
                 return (
@@ -392,7 +419,8 @@ function AdminOrganizationsPage() {
                     {/* Scope / Mission description */}
                     <TableCell className="py-3.5 px-4 text-xs text-muted-foreground max-w-xs">
                       <p className="line-clamp-2 leading-relaxed">
-                        {org.description || "Relief resource coordination and emergency management unit."}
+                        {org.description ||
+                          "Relief resource coordination and emergency management unit."}
                       </p>
                     </TableCell>
 
@@ -493,7 +521,9 @@ function AdminOrganizationsPage() {
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
               <div className="size-10 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-sm">
-                {(inspectOrg?.organization_name || inspectOrg?.name || "O").slice(0, 2).toUpperCase()}
+                {(inspectOrg?.organization_name || inspectOrg?.name || "O")
+                  .slice(0, 2)
+                  .toUpperCase()}
               </div>
               <div>
                 <DialogTitle className="text-base font-bold">
@@ -509,7 +539,9 @@ function AdminOrganizationsPage() {
           <div className="space-y-4 py-2 text-xs">
             {/* Mission Statement */}
             <div className="p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="font-semibold text-foreground mb-1 text-xs">Mission &amp; Operational Scope</div>
+              <div className="font-semibold text-foreground mb-1 text-xs">
+                Mission &amp; Operational Scope
+              </div>
               <p className="text-muted-foreground leading-relaxed">
                 {inspectOrg?.description || "No description provided."}
               </p>
@@ -557,7 +589,11 @@ function AdminOrganizationsPage() {
                   Applicant Coordinator Details
                 </div>
                 <div className="text-muted-foreground">
-                  <strong>{[inspectOrg.users.first_name, inspectOrg.users.last_name].filter(Boolean).join(" ")}</strong>
+                  <strong>
+                    {[inspectOrg.users.first_name, inspectOrg.users.last_name]
+                      .filter(Boolean)
+                      .join(" ")}
+                  </strong>
                   {inspectOrg.users.email && ` (${inspectOrg.users.email})`}
                 </div>
               </div>
@@ -648,19 +684,14 @@ function AdminOrganizationsPage() {
       </Dialog>
 
       {/* Delete confirmation dialog */}
-      <AlertDialog
-        open={!!confirmDelete}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-      >
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete organization?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete{" "}
-              <strong>
-                {confirmDelete?.organization_name ?? confirmDelete?.name}
-              </strong>{" "}
-              and all its associated inventories and coordinator memberships from the platform.
+              <strong>{confirmDelete?.organization_name ?? confirmDelete?.name}</strong> and all its
+              associated inventories and coordinator memberships from the platform.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -668,9 +699,7 @@ function AdminOrganizationsPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() =>
-                deleteMutation.mutate(
-                  confirmDelete?.organization_id ?? confirmDelete?.id
-                )
+                deleteMutation.mutate(confirmDelete?.organization_id ?? confirmDelete?.id)
               }
             >
               Delete

@@ -36,11 +36,15 @@ import { StatCard } from "@/components/stat-card";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/coordinator/volunteers")({
   head: () => ({
@@ -48,7 +52,8 @@ export const Route = createFileRoute("/coordinator/volunteers")({
       { title: "Volunteers — ResQ Hub Coordinator" },
       {
         name: "description",
-        content: "Manage volunteer deployment, skills, active field missions, and availability for emergency relief.",
+        content:
+          "Manage volunteer deployment, skills, active field missions, and availability for emergency relief.",
       },
     ],
   }),
@@ -84,7 +89,9 @@ function getInitials(name: string): string {
 
 function VolunteersPage() {
   const { orgId } = useOrganization();
-  const [activeTab, setActiveTab] = useState<"all" | "available" | "on_mission" | "unavailable" | "skilled">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "available" | "on_mission" | "unavailable" | "skilled"
+  >("all");
   const [search, setSearch] = useState("");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [skillFilter, setSkillFilter] = useState("all");
@@ -170,7 +177,9 @@ function VolunteersPage() {
 
   // Operational metrics
   const totalCount = volunteers.length;
-  const onMissionCount = volunteers.filter((v) => getVolunteerTasks(v.volunteer_id).active.length > 0).length;
+  const onMissionCount = volunteers.filter(
+    (v) => getVolunteerTasks(v.volunteer_id).active.length > 0,
+  ).length;
   const availableCount = volunteers.filter(
     (v) =>
       (v.availability_status === "AVAILABLE" || v.availability_status === "available") &&
@@ -444,7 +453,8 @@ function VolunteersPage() {
                 const tasks = getVolunteerTasks(v.volunteer_id);
                 const isOnMission = tasks.active.length > 0;
                 const isAvailable =
-                  (v.availability_status === "AVAILABLE" || v.availability_status === "available") &&
+                  (v.availability_status === "AVAILABLE" ||
+                    v.availability_status === "available") &&
                   !isOnMission;
 
                 return (
@@ -465,13 +475,15 @@ function VolunteersPage() {
                               isOnMission
                                 ? "bg-blue-500 animate-pulse"
                                 : isAvailable
-                                ? "bg-emerald-500"
-                                : "bg-slate-400",
+                                  ? "bg-emerald-500"
+                                  : "bg-slate-400",
                             )}
                           />
                         </div>
                         <div>
-                          <span className="block font-semibold text-foreground text-sm">{name}</span>
+                          <span className="block font-semibold text-foreground text-sm">
+                            {name}
+                          </span>
                           <span className="block text-[11px] text-muted-foreground font-mono">
                             #VOL-{v.volunteer_id.slice(0, 6).toUpperCase()}
                           </span>
@@ -481,7 +493,10 @@ function VolunteersPage() {
 
                     {/* Contact Details */}
                     <TableCell>
-                      <span className="block text-xs text-foreground font-medium truncate max-w-[180px]" title={email}>
+                      <span
+                        className="block text-xs text-foreground font-medium truncate max-w-[180px]"
+                        title={email}
+                      >
                         {email}
                       </span>
                       <div className="flex items-center gap-1.5 mt-0.5">
@@ -489,7 +504,10 @@ function VolunteersPage() {
                           {phone || "No phone"}
                         </span>
                         {phone && (
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               type="button"
                               className="text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
@@ -549,7 +567,9 @@ function VolunteersPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground/70 italic">General relief</span>
+                        <span className="text-xs text-muted-foreground/70 italic">
+                          General relief
+                        </span>
                       )}
                       <span className="block text-[11px] text-muted-foreground mt-0.5">
                         Exp: {exp > 0 ? `${exp} yrs` : "Entry level"}
@@ -561,7 +581,9 @@ function VolunteersPage() {
                       <div className="inline-flex flex-col items-center">
                         <span className="text-xs font-bold text-foreground">
                           {tasks.active.length}{" "}
-                          <span className="text-[10px] font-normal text-muted-foreground">active</span>
+                          <span className="text-[10px] font-normal text-muted-foreground">
+                            active
+                          </span>
                         </span>
                         <span className="text-[10px] text-muted-foreground">
                           {tasks.completed.length} done
@@ -598,13 +620,24 @@ function VolunteersPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}—{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}—{Math.min(current * PAGE_SIZE, filtered.length)}{" "}
+            of {filtered.length}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current === pageCount} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === pageCount}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>
@@ -612,7 +645,10 @@ function VolunteersPage() {
       )}
 
       {/* 👤 HIGH-CLARITY VOLUNTEER PROFILE MODAL */}
-      <Dialog open={!!selectedVolunteer} onOpenChange={(open) => !open && setSelectedVolunteerId(null)}>
+      <Dialog
+        open={!!selectedVolunteer}
+        onOpenChange={(open) => !open && setSelectedVolunteerId(null)}
+      >
         <DialogContent className="max-w-4xl lg:max-w-5xl overflow-hidden p-0 max-h-[90vh] flex flex-col">
           {selectedVolunteer && (
             <div className="flex flex-col h-full overflow-hidden">
@@ -633,7 +669,8 @@ function VolunteersPage() {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Registered Volunteer since {new Date(selectedVolunteer.created_at).toLocaleDateString()}
+                        Registered Volunteer since{" "}
+                        {new Date(selectedVolunteer.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -644,8 +681,8 @@ function VolunteersPage() {
                       <Activity className="h-3.5 w-3.5 animate-pulse" />
                       On Mission ({selectedVolunteerTasks.active.length} Active)
                     </span>
-                  ) : (selectedVolunteer.availability_status === "AVAILABLE" ||
-                      selectedVolunteer.availability_status === "available") ? (
+                  ) : selectedVolunteer.availability_status === "AVAILABLE" ||
+                    selectedVolunteer.availability_status === "available" ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Available for Dispatch
@@ -668,8 +705,8 @@ function VolunteersPage() {
                       {selectedVolunteerTasks.active.length > 0
                         ? "Deployed in Field"
                         : selectedVolunteer.availability_status === "AVAILABLE"
-                        ? "Ready for Tasks"
-                        : "Off Duty"}
+                          ? "Ready for Tasks"
+                          : "Off Duty"}
                     </p>
                   </div>
                   <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
@@ -677,7 +714,8 @@ function VolunteersPage() {
                       Active Missions
                     </span>
                     <p className="text-base font-extrabold text-foreground mt-0.5">
-                      {selectedVolunteerTasks.active.length} <span className="text-xs font-normal text-muted-foreground">tasks</span>
+                      {selectedVolunteerTasks.active.length}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">tasks</span>
                     </p>
                   </div>
                   <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
@@ -685,7 +723,8 @@ function VolunteersPage() {
                       Completed Missions
                     </span>
                     <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                      {selectedVolunteerTasks.completed.length} <span className="text-xs font-normal text-muted-foreground">tasks</span>
+                      {selectedVolunteerTasks.completed.length}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">tasks</span>
                     </p>
                   </div>
                   <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 shadow-2xs">
@@ -693,7 +732,9 @@ function VolunteersPage() {
                       Experience
                     </span>
                     <p className="text-xs font-bold text-foreground mt-0.5 truncate">
-                      {selectedVolunteer.experience_years ? `${selectedVolunteer.experience_years} Years in Field` : "Entry Level"}
+                      {selectedVolunteer.experience_years
+                        ? `${selectedVolunteer.experience_years} Years in Field`
+                        : "Entry Level"}
                     </p>
                   </div>
                 </div>
@@ -712,7 +753,11 @@ function VolunteersPage() {
                           Active Field Missions ({selectedVolunteerTasks.active.length})
                         </h3>
                         <Link to="/coordinator/tasks">
-                          <Button variant="ghost" size="sm" className="h-7 text-xs text-primary gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-primary gap-1"
+                          >
                             Browse All Tasks <ArrowRight className="h-3 w-3" />
                           </Button>
                         </Link>
@@ -721,12 +766,18 @@ function VolunteersPage() {
                       {selectedVolunteerTasks.active.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center">
                           <CheckCircle2 className="mx-auto h-7 w-7 text-emerald-500/70" />
-                          <p className="mt-1 text-xs font-semibold text-foreground">No active missions right now</p>
+                          <p className="mt-1 text-xs font-semibold text-foreground">
+                            No active missions right now
+                          </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
                             This volunteer is ready for humanitarian relief dispatch.
                           </p>
                           <Link to="/coordinator/tasks" className="mt-3 inline-block">
-                            <Button size="sm" variant="outline" className="h-7 text-xs font-semibold gap-1 text-primary border-primary/30">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs font-semibold gap-1 text-primary border-primary/30"
+                            >
                               <PlusCircle className="h-3 w-3" /> Assign to a Task
                             </Button>
                           </Link>
@@ -788,9 +839,12 @@ function VolunteersPage() {
                               className="rounded-lg border border-border bg-card p-2.5 flex items-center justify-between gap-2 text-xs"
                             >
                               <div className="truncate">
-                                <span className="font-semibold text-foreground block truncate">{t.title}</span>
+                                <span className="font-semibold text-foreground block truncate">
+                                  {t.title}
+                                </span>
                                 <span className="text-[10px] text-muted-foreground">
-                                  Finished: {new Date(t.updated_at || t.created_at).toLocaleDateString()}
+                                  Finished:{" "}
+                                  {new Date(t.updated_at || t.created_at).toLocaleDateString()}
                                 </span>
                               </div>
                               <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
@@ -892,7 +946,9 @@ function VolunteersPage() {
                       <div className="pt-2 border-t border-border text-xs text-muted-foreground flex items-center justify-between">
                         <span>Humanitarian Experience:</span>
                         <strong className="text-foreground">
-                          {selectedVolunteer.experience_years ? `${selectedVolunteer.experience_years} Years` : "Entry Level"}
+                          {selectedVolunteer.experience_years
+                            ? `${selectedVolunteer.experience_years} Years`
+                            : "Entry Level"}
                         </strong>
                       </div>
                     </div>
@@ -918,7 +974,8 @@ function VolunteersPage() {
                   Close
                 </Button>
                 <span className="text-xs text-muted-foreground">
-                  Volunteer Database ID: <code className="font-mono">{selectedVolunteer.volunteer_id}</code>
+                  Volunteer Database ID:{" "}
+                  <code className="font-mono">{selectedVolunteer.volunteer_id}</code>
                 </span>
               </div>
             </div>

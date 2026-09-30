@@ -16,7 +16,7 @@ import {
   Building2,
   Clock,
   RotateCw,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { useAuth } from "@/context/auth";
 import { useOrganization } from "@/context/organization";
@@ -37,7 +37,10 @@ export const Route = createFileRoute("/coordinator/team")({
   head: () => ({
     meta: [
       { title: "Team & Staff — ResQ Hub Coordinator" },
-      { name: "description", content: "Manage coordinators and administrators for your organization." },
+      {
+        name: "description",
+        content: "Manage coordinators and administrators for your organization.",
+      },
     ],
   }),
   component: TeamPage,
@@ -178,12 +181,9 @@ function TeamPage() {
     return members.filter((m) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        !q ||
-        m.name.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q);
+        !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
 
-      const matchesRole =
-        roleFilter === "ALL" || m.role === roleFilter;
+      const matchesRole = roleFilter === "ALL" || m.role === roleFilter;
 
       return matchesSearch && matchesRole;
     });
@@ -238,7 +238,9 @@ function TeamPage() {
             <UserCheck className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">{stats.coordinators}</div>
+            <div className="text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
+              {stats.coordinators}
+            </div>
             <div className="text-xs text-muted-foreground font-medium">Coordinators</div>
           </div>
         </div>
@@ -253,9 +255,7 @@ function TeamPage() {
                 <div className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
                   {stats.pending}
                 </div>
-                <div className="text-xs text-muted-foreground font-medium">
-                  Pending Invites
-                </div>
+                <div className="text-xs text-muted-foreground font-medium">Pending Invites</div>
               </div>
             </>
           ) : (
@@ -280,7 +280,9 @@ function TeamPage() {
             <Sparkles className="size-5" />
           </div>
           <div>
-            <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">{stats.active}</div>
+            <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+              {stats.active}
+            </div>
             <div className="text-xs text-muted-foreground font-medium">Active Accounts</div>
           </div>
         </div>
@@ -422,11 +424,13 @@ function TeamPage() {
                       <td className="px-5 py-4 text-xs text-muted-foreground hidden md:table-cell">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="size-3.5 text-muted-foreground/70" />
-                          {m.joined_at ? new Date(m.joined_at).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }) : "—"}
+                          {m.joined_at
+                            ? new Date(m.joined_at).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "—"}
                         </div>
                       </td>
 
@@ -446,52 +450,61 @@ function TeamPage() {
 
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {(m.status === "PENDING" || m.status === "pending") && m.organization_member_id && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => resend.mutate(m.organization_member_id!)}
-                                disabled={resend.isPending}
-                                className="h-8 px-2.5 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 gap-1.5"
-                                title="Resend Invitation Email"
-                              >
-                                <RotateCw className={`size-3.5 ${resend.isPending ? "animate-spin" : ""}`} />
-                                <span className="hidden sm:inline">Resend Invite</span>
-                              </Button>
+                          {(m.status === "PENDING" || m.status === "pending") &&
+                            m.organization_member_id && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => resend.mutate(m.organization_member_id!)}
+                                  disabled={resend.isPending}
+                                  className="h-8 px-2.5 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 gap-1.5"
+                                  title="Resend Invitation Email"
+                                >
+                                  <RotateCw
+                                    className={`size-3.5 ${resend.isPending ? "animate-spin" : ""}`}
+                                  />
+                                  <span className="hidden sm:inline">Resend Invite</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (confirm(`Cancel invitation for ${m.email}?`)) {
+                                      remove.mutate(m.organization_member_id!);
+                                    }
+                                  }}
+                                  disabled={remove.isPending}
+                                  className="h-8 px-2 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 gap-1"
+                                  title="Cancel Invitation"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                  <span className="hidden sm:inline">Cancel</span>
+                                </Button>
+                              </>
+                            )}
+                          {(m.status === "ACTIVE" || m.status === "active") &&
+                            !isCurrent &&
+                            m.organization_member_id && (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  if (confirm(`Cancel invitation for ${m.email}?`)) {
+                                  if (
+                                    confirm(
+                                      `Remove ${m.name || m.email} from the organization team?`,
+                                    )
+                                  ) {
                                     remove.mutate(m.organization_member_id!);
                                   }
                                 }}
                                 disabled={remove.isPending}
-                                className="h-8 px-2 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 gap-1"
-                                title="Cancel Invitation"
+                                className="h-8 px-2 text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 gap-1"
+                                title="Remove Member"
                               >
                                 <Trash2 className="size-3.5" />
-                                <span className="hidden sm:inline">Cancel</span>
                               </Button>
-                            </>
-                          )}
-                          {(m.status === "ACTIVE" || m.status === "active") && !isCurrent && m.organization_member_id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                if (confirm(`Remove ${m.name || m.email} from the organization team?`)) {
-                                  remove.mutate(m.organization_member_id!);
-                                }
-                              }}
-                              disabled={remove.isPending}
-                              className="h-8 px-2 text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 gap-1"
-                              title="Remove Member"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
-                          )}
+                            )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -522,8 +535,8 @@ function TeamPage() {
             </div>
             <DialogTitle className="text-lg">Invite Staff Member</DialogTitle>
             <DialogDescription className="text-xs">
-              Add a new staff member to <strong>{organization?.name ?? "this organization"}</strong>.
-              They must have a registered account on the platform.
+              Add a new staff member to <strong>{organization?.name ?? "this organization"}</strong>
+              . They must have a registered account on the platform.
             </DialogDescription>
           </DialogHeader>
 
@@ -555,10 +568,13 @@ function TeamPage() {
                 disabled
                 className="w-full rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm outline-none shadow-sm cursor-not-allowed text-foreground font-medium"
               >
-                <option value="COORDINATOR">Coordinator (Operations, Tasks, Requests, Donations)</option>
+                <option value="COORDINATOR">
+                  Coordinator (Operations, Tasks, Requests, Donations)
+                </option>
               </select>
               <p className="mt-1.5 text-[11px] text-muted-foreground">
-                All staff members join as Organization Coordinators with operations and relief management access.
+                All staff members join as Organization Coordinators with operations and relief
+                management access.
               </p>
             </div>
 
@@ -569,7 +585,12 @@ function TeamPage() {
             )}
 
             <DialogFooter className="gap-2 sm:gap-0 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowInvite(false)} className="rounded-xl">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowInvite(false)}
+                className="rounded-xl"
+              >
                 Cancel
               </Button>
               <Button

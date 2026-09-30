@@ -52,7 +52,11 @@ export const Route = createFileRoute("/admin/categories")({
   head: () => ({
     meta: [
       { title: "Resource Categories — ResQ Hub Admin" },
-      { name: "description", content: "Manage standardized relief resource categories and measurement units across the platform." },
+      {
+        name: "description",
+        content:
+          "Manage standardized relief resource categories and measurement units across the platform.",
+      },
     ],
   }),
   component: CategoriesPage,
@@ -92,14 +96,17 @@ function CategoriesPage() {
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await categoriesAPI.getAll();
-      return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      return Array.isArray(res.data) ? res.data : res.data?.data || [];
     },
   });
 
   /* ── Mutations ── */
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; unit_of_measure: string; description?: string | undefined }) =>
-      categoriesAPI.create(data),
+    mutationFn: (data: {
+      name: string;
+      unit_of_measure: string;
+      description?: string | undefined;
+    }) => categoriesAPI.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
       toast.success("Resource category created successfully!");
@@ -108,21 +115,26 @@ function CategoriesPage() {
       setDescription("");
       setUnit("");
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to create category.");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name: string; unit_of_measure: string; description?: string | undefined } }) =>
-      categoriesAPI.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { name: string; unit_of_measure: string; description?: string | undefined };
+    }) => categoriesAPI.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
       toast.success("Category updated successfully!");
       setEditingCategory(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to update category.");
     },
@@ -135,7 +147,7 @@ function CategoriesPage() {
       toast.success("Category deleted.");
       setDeletingCategory(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to delete category.");
     },
@@ -213,8 +225,12 @@ function CategoriesPage() {
               <Tag className="size-5" />
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-foreground">{categories.length}</div>
-              <div className="text-xs text-muted-foreground font-medium">Standardized Categories</div>
+              <div className="text-xl font-bold tracking-tight text-foreground">
+                {categories.length}
+              </div>
+              <div className="text-xs text-muted-foreground font-medium">
+                Standardized Categories
+              </div>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">
@@ -228,7 +244,9 @@ function CategoriesPage() {
               <Package className="size-5" />
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-foreground">{distinctUnits.length}</div>
+              <div className="text-xl font-bold tracking-tight text-foreground">
+                {distinctUnits.length}
+              </div>
               <div className="text-xs text-muted-foreground font-medium">Measurement Units</div>
             </div>
           </div>
@@ -243,7 +261,9 @@ function CategoriesPage() {
               <Layers className="size-5" />
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">Universal</div>
+              <div className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                Universal
+              </div>
               <div className="text-xs text-muted-foreground font-medium">All Multi-Tenant Hubs</div>
             </div>
           </div>
@@ -269,7 +289,9 @@ function CategoriesPage() {
             All Units ({categories.length})
           </button>
           {distinctUnits.map((u) => {
-            const count = categories.filter((c) => c.unit_of_measure.toLowerCase().trim() === u).length;
+            const count = categories.filter(
+              (c) => c.unit_of_measure.toLowerCase().trim() === u,
+            ).length;
             return (
               <button
                 key={u}
@@ -319,7 +341,9 @@ function CategoriesPage() {
                 <TableHead className="py-3 px-4 font-semibold text-xs">Description</TableHead>
                 <TableHead className="py-3 px-4 font-semibold text-xs">Unit of Measure</TableHead>
                 <TableHead className="py-3 px-4 font-semibold text-xs">Created Date</TableHead>
-                <TableHead className="py-3 px-4 font-semibold text-xs text-right">Actions</TableHead>
+                <TableHead className="py-3 px-4 font-semibold text-xs text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -343,7 +367,11 @@ function CategoriesPage() {
                   {/* Description */}
                   <TableCell className="py-3.5 px-4 text-xs text-muted-foreground max-w-sm">
                     <p className="line-clamp-2 leading-relaxed">
-                      {cat.description || <span className="italic text-muted-foreground/60">No description provided</span>}
+                      {cat.description || (
+                        <span className="italic text-muted-foreground/60">
+                          No description provided
+                        </span>
+                      )}
                     </p>
                   </TableCell>
 
@@ -410,13 +438,16 @@ function CategoriesPage() {
               Create Resource Category
             </DialogTitle>
             <DialogDescription>
-              Define a new standardized emergency relief category that all organizations can stock in warehouse inventory.
+              Define a new standardized emergency relief category that all organizations can stock
+              in warehouse inventory.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="cat-name" className="text-xs">Category Name *</Label>
+              <Label htmlFor="cat-name" className="text-xs">
+                Category Name *
+              </Label>
               <Input
                 id="cat-name"
                 value={name}
@@ -426,7 +457,9 @@ function CategoriesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cat-unit" className="text-xs">Unit of Measure *</Label>
+              <Label htmlFor="cat-unit" className="text-xs">
+                Unit of Measure *
+              </Label>
               <Input
                 id="cat-unit"
                 value={unit}
@@ -436,7 +469,9 @@ function CategoriesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cat-desc" className="text-xs">Description (Optional)</Label>
+              <Label htmlFor="cat-desc" className="text-xs">
+                Description (Optional)
+              </Label>
               <Textarea
                 id="cat-desc"
                 value={description}
@@ -477,13 +512,16 @@ function CategoriesPage() {
               Edit Resource Category
             </DialogTitle>
             <DialogDescription>
-              Update the specifications and measurement unit for <strong>{editingCategory?.name}</strong>.
+              Update the specifications and measurement unit for{" "}
+              <strong>{editingCategory?.name}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleUpdateSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-name" className="text-xs">Category Name *</Label>
+              <Label htmlFor="edit-name" className="text-xs">
+                Category Name *
+              </Label>
               <Input
                 id="edit-name"
                 value={editName}
@@ -493,7 +531,9 @@ function CategoriesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-unit" className="text-xs">Unit of Measure *</Label>
+              <Label htmlFor="edit-unit" className="text-xs">
+                Unit of Measure *
+              </Label>
               <Input
                 id="edit-unit"
                 value={editUnit}
@@ -503,7 +543,9 @@ function CategoriesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-desc" className="text-xs">Description (Optional)</Label>
+              <Label htmlFor="edit-desc" className="text-xs">
+                Description (Optional)
+              </Label>
               <Textarea
                 id="edit-desc"
                 value={editDesc}
@@ -513,7 +555,12 @@ function CategoriesPage() {
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0 pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditingCategory(null)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingCategory(null)}
+              >
                 Cancel
               </Button>
               <Button
@@ -534,7 +581,8 @@ function CategoriesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Resource Category?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deletingCategory?.name}</strong>? This category will be removed from future inventory additions across organizations.
+              Are you sure you want to delete <strong>{deletingCategory?.name}</strong>? This
+              category will be removed from future inventory additions across organizations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

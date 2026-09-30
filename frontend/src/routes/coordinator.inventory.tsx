@@ -954,7 +954,7 @@ export function CoordinatorInventoryPage() {
       const dbCategoryIds = new Set(dbCategories.map((c: any) => c.category_id));
       const dbCategoryNames = new Set(dbCategories.map((c: any) => c.name?.trim().toLowerCase()));
 
-      let currentBranches = prevBranches.filter((branch) => {
+      const currentBranches = prevBranches.filter((branch) => {
         // Always retain default baseline branches
         if (defaultBranchIds.has(branch.id)) return true;
 

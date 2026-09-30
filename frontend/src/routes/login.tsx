@@ -17,7 +17,8 @@ function LoginPage() {
   const { login, isAuthenticated, isSuperAdmin } = useAuth();
   const router = useRouter();
 
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const searchParams =
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const invitation = searchParams?.get("invitation");
   const inviteOrg = searchParams?.get("org") || "the Organization";
   const inviteEmail = searchParams?.get("email") || "";
@@ -104,13 +105,17 @@ function LoginPage() {
             className="text-2xl font-bold mb-1"
             style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}
           >
-            {role === "admin" ? "Admin Sign in" : role === "coordinator" ? "Coordinator Sign in" : "Sign in"}
+            {role === "admin"
+              ? "Admin Sign in"
+              : role === "coordinator"
+                ? "Coordinator Sign in"
+                : "Sign in"}
           </h1>
           <p className="text-sm mb-8" style={{ color: "var(--muted-foreground)" }}>
-            {role === "admin" 
-              ? "Sign in to access platform administration & governance" 
-              : role === "coordinator" 
-                ? "Sign in to access organization relief & inventory workspace" 
+            {role === "admin"
+              ? "Sign in to access platform administration & governance"
+              : role === "coordinator"
+                ? "Sign in to access organization relief & inventory workspace"
                 : "Sign in to your ResQ Hub account"}
           </p>
 
@@ -120,7 +125,9 @@ function LoginPage() {
               <div>
                 <div className="font-semibold text-sm">Invitation Accepted! 🎉</div>
                 <div className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5 leading-relaxed">
-                  You are now an active <strong>Coordinator</strong> for <strong>{inviteOrg}</strong>. Please sign in below with your credentials to access your operations workspace.
+                  You are now an active <strong>Coordinator</strong> for{" "}
+                  <strong>{inviteOrg}</strong>. Please sign in below with your credentials to access
+                  your operations workspace.
                 </div>
               </div>
             </div>
@@ -132,7 +139,8 @@ function LoginPage() {
               <div>
                 <div className="font-semibold text-sm">Already a Member</div>
                 <div className="text-xs text-blue-700 dark:text-blue-400 mt-0.5 leading-relaxed">
-                  You have already accepted the invitation to <strong>{inviteOrg}</strong>. Sign in below to continue.
+                  You have already accepted the invitation to <strong>{inviteOrg}</strong>. Sign in
+                  below to continue.
                 </div>
               </div>
             </div>

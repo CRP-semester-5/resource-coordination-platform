@@ -21,7 +21,7 @@ import {
   Activity,
   ArrowRight,
   Shield,
-  Layers
+  Layers,
 } from "lucide-react";
 import { orgsAPI, categoriesAPI } from "@/api/real";
 import { PageHeader } from "@/components/page-header";
@@ -41,7 +41,10 @@ export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
       { title: "Admin Overview — ResQ Hub" },
-      { name: "description", content: "Super Administrator platform overview and management console." },
+      {
+        name: "description",
+        content: "Super Administrator platform overview and management console.",
+      },
     ],
   }),
   component: AdminOverviewPage,
@@ -80,9 +83,7 @@ function StatCard({
             <p className="text-2xl font-bold tabular-nums tracking-tight">{value}</p>
           )}
           <p className="text-xs text-muted-foreground font-medium">{label}</p>
-          {subLabel && (
-            <p className="text-[11px] text-muted-foreground/75 mt-0.5">{subLabel}</p>
-          )}
+          {subLabel && <p className="text-[11px] text-muted-foreground/75 mt-0.5">{subLabel}</p>}
         </div>
       </div>
       {badge && (
@@ -139,21 +140,21 @@ function AdminOverviewPage() {
   // Defensive array extraction to guarantee safe array operations on navigation
   const allOrgs = useMemo(() => {
     if (Array.isArray(allOrgsRaw)) return allOrgsRaw;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     if (Array.isArray((allOrgsRaw as any)?.data)) return (allOrgsRaw as any).data;
     return [];
   }, [allOrgsRaw]);
 
   const pendingOrgs = useMemo(() => {
     if (Array.isArray(pendingOrgsRaw)) return pendingOrgsRaw;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     if (Array.isArray((pendingOrgsRaw as any)?.data)) return (pendingOrgsRaw as any).data;
     return [];
   }, [pendingOrgsRaw]);
 
   const categories = useMemo(() => {
     if (Array.isArray(categoriesRaw)) return categoriesRaw;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     if (Array.isArray((categoriesRaw as any)?.data)) return (categoriesRaw as any).data;
     return [];
   }, [categoriesRaw]);
@@ -166,7 +167,7 @@ function AdminOverviewPage() {
       qc.invalidateQueries({ queryKey: ["all-organizations"] });
       toast.success("Organization approved successfully! It is now active on the platform.");
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to approve organization.");
     },
@@ -181,15 +182,18 @@ function AdminOverviewPage() {
       setRejectingOrg(null);
       setRejectionReason("");
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to reject organization.");
     },
   });
 
   const createCategoryMutation = useMutation({
-    mutationFn: (data: { name: string; unit_of_measure: string; description?: string | undefined }) =>
-      categoriesAPI.create(data),
+    mutationFn: (data: {
+      name: string;
+      unit_of_measure: string;
+      description?: string | undefined;
+    }) => categoriesAPI.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
       toast.success("Resource category created successfully.");
@@ -198,22 +202,24 @@ function AdminOverviewPage() {
       setNewCatUnit("");
       setNewCatDesc("");
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to create category.");
     },
   });
 
   /* ── Calculations & Metrics ── */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const activeOrgs = (allOrgs as any[]).filter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (o: any) => o.status === "ACTIVE" || o.status === "APPROVED" || o.status === "active"
+    (o: any) => o.status === "ACTIVE" || o.status === "APPROVED" || o.status === "active",
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const rejectedCount = (allOrgs as any[]).filter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (o: any) => o.status === "REJECTED" || o.status === "rejected" || o.status === "SUSPENDED" || o.status === "INACTIVE"
+    (o: any) =>
+      o.status === "REJECTED" ||
+      o.status === "rejected" ||
+      o.status === "SUSPENDED" ||
+      o.status === "INACTIVE",
   ).length;
 
   const totalRegistered = (allOrgs as unknown[]).length + (pendingOrgs as unknown[]).length;
@@ -226,7 +232,7 @@ function AdminOverviewPage() {
   const filteredActiveOrgs = useMemo(() => {
     const q = orgSearch.toLowerCase().trim();
     if (!q) return activeOrgs;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     return activeOrgs.filter((org: any) => {
       const name = (org.organization_name || org.name || "").toLowerCase();
       const addr = (org.address || "").toLowerCase();
@@ -312,7 +318,9 @@ function AdminOverviewPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-foreground">Pending Organizations</h2>
-                  <p className="text-xs text-muted-foreground">Applications requiring onboarding approval</p>
+                  <p className="text-xs text-muted-foreground">
+                    Applications requiring onboarding approval
+                  </p>
                 </div>
               </div>
               {pendingCount > 0 && (
@@ -333,17 +341,23 @@ function AdminOverviewPage() {
                 <div className="size-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-3">
                   <ShieldCheck className="size-6" />
                 </div>
-                <div className="text-sm font-semibold text-foreground">All Applications Reviewed</div>
+                <div className="text-sm font-semibold text-foreground">
+                  All Applications Reviewed
+                </div>
                 <p className="text-xs text-muted-foreground max-w-xs mt-1">
-                  There are no pending organization applications at this time. All submissions have been processed.
+                  There are no pending organization applications at this time. All submissions have
+                  been processed.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {}
                 {(pendingOrgs as any[]).map((org: any) => {
                   const applicant = org.users || {};
-                  const applicantName = [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") || applicant.email || "Organization Applicant";
+                  const applicantName =
+                    [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") ||
+                    applicant.email ||
+                    "Organization Applicant";
                   const applicantEmail = applicant.email || org.email || "";
 
                   return (
@@ -400,7 +414,12 @@ function AdminOverviewPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setRejectingOrg({ id: org.organization_id, name: org.organization_name || org.name })}
+                          onClick={() =>
+                            setRejectingOrg({
+                              id: org.organization_id,
+                              name: org.organization_name || org.name,
+                            })
+                          }
                           disabled={rejectMutation.isPending || approveMutation.isPending}
                           className="h-8 px-3 text-xs text-rose-600 border-rose-500/30 hover:bg-rose-500/10 gap-1.5"
                         >
@@ -425,7 +444,9 @@ function AdminOverviewPage() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Manage approvals &amp; organization details</span>
+            <span className="text-muted-foreground">
+              Manage approvals &amp; organization details
+            </span>
             <Link
               to="/admin/organizations"
               className="font-semibold text-primary hover:underline flex items-center gap-1"
@@ -445,7 +466,9 @@ function AdminOverviewPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-foreground">Resource Categories</h2>
-                  <p className="text-xs text-muted-foreground">Standardized relief supplies &amp; measurement units</p>
+                  <p className="text-xs text-muted-foreground">
+                    Standardized relief supplies &amp; measurement units
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -477,7 +500,7 @@ function AdminOverviewPage() {
               </div>
             ) : (
               <div className="divide-y divide-border/60 max-h-[340px] overflow-y-auto pr-1">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {}
                 {(categories as any[]).map((cat: any) => (
                   <div
                     key={cat.category_id}
@@ -486,7 +509,9 @@ function AdminOverviewPage() {
                     <div>
                       <p className="text-sm font-semibold text-foreground">{cat.name}</p>
                       {cat.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1">{cat.description}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {cat.description}
+                        </p>
                       )}
                     </div>
                     <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/80">
@@ -519,7 +544,9 @@ function AdminOverviewPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-foreground">Active Relief Organizations</h2>
-              <p className="text-xs text-muted-foreground">Verified operational hubs currently coordinating on ResQ Hub</p>
+              <p className="text-xs text-muted-foreground">
+                Verified operational hubs currently coordinating on ResQ Hub
+              </p>
             </div>
           </div>
 
@@ -567,9 +594,11 @@ function AdminOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {}
                 {filteredActiveOrgs.map((org: any) => {
-                  const initial = (org.organization_name || org.name || "O").slice(0, 2).toUpperCase();
+                  const initial = (org.organization_name || org.name || "O")
+                    .slice(0, 2)
+                    .toUpperCase();
                   return (
                     <tr key={org.organization_id} className="hover:bg-muted/20 transition-colors">
                       <td className="py-3 px-3">
@@ -724,7 +753,12 @@ function AdminOverviewPage() {
             </div>
 
             <DialogFooter className="pt-2 gap-2 sm:gap-0">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddCategory(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddCategory(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" size="sm" disabled={createCategoryMutation.isPending}>

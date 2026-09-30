@@ -1,7 +1,14 @@
 import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Boxes, ClipboardList, HeartHandshake, ListChecks, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Boxes,
+  ClipboardList,
+  HeartHandshake,
+  ListChecks,
+  Users,
+} from "lucide-react";
 import { requestsAPI, donationsAPI, volunteersAPI, tasksAPI, inventoryAPI } from "@/api/real";
 import { useOrganization } from "@/context/organization";
 import { PageHeader } from "@/components/page-header";
@@ -15,17 +22,21 @@ export const Route = createFileRoute("/coordinator/")({
       { title: "Coordinator Dashboard — ResQ Hub" },
       {
         name: "description",
-        content: "Live overview of open help requests, pending donations, stock alerts, volunteers and overdue relief tasks.",
+        content:
+          "Live overview of open help requests, pending donations, stock alerts, volunteers and overdue relief tasks.",
       },
       { property: "og:title", content: "Coordinator Dashboard — ResQ Hub" },
-      { property: "og:description", content: "Live overview of relief operations for your organization." },
+      {
+        property: "og:description",
+        content: "Live overview of relief operations for your organization.",
+      },
     ],
   }),
   component: DashboardPage,
 });
 
 /** Helper to safely unpack any React Query result into an array, even if an Axios response was cached */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function toSafeArray(val: any): any[] {
   if (Array.isArray(val)) return val;
   if (Array.isArray(val?.data?.data)) return val.data.data;
@@ -74,7 +85,6 @@ function DashboardPage() {
   // Calculate dynamic request metrics safely regardless of whether raw or mapped data is in cache
   const requestList = toSafeArray(rawRequests);
   const requests = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return requestList
       .filter((r: any) => {
         if (!orgId) return true;
@@ -90,10 +100,14 @@ function DashboardPage() {
         status: mapStatus(r.status),
       }));
   }, [requestList, orgId]);
-  
-  const openRequests = requests.filter(r => !["Fulfilled", "Rejected", "Cancelled"].includes(r.status)).length;
-  const criticalRequests = requests.filter(r => r.priority === "Critical" && r.status !== "Fulfilled").length;
-  
+
+  const openRequests = requests.filter(
+    (r) => !["Fulfilled", "Rejected", "Cancelled"].includes(r.status),
+  ).length;
+  const criticalRequests = requests.filter(
+    (r) => r.priority === "Critical" && r.status !== "Fulfilled",
+  ).length;
+
   const statuses = [
     "Pending",
     "Under Review",
@@ -156,14 +170,21 @@ function DashboardPage() {
   const inventoryList = toSafeArray(rawInventory);
 
   // Calculate dynamic metrics safely
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pendingDonations = donationList.filter((d: any) => d.status === "PENDING" || d.status === "Pending").length;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+  const pendingDonations = donationList.filter(
+    (d: any) => d.status === "PENDING" || d.status === "Pending",
+  ).length;
+
   const activeVolunteers = volunteerList.filter((v: any) => v.is_available).length;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const lowStock = inventoryList.filter((i: any) => Number(i.quantity) < 50).length;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const overdueTasks = taskList.filter((t: any) => t.status !== "COMPLETED" && t.status !== "Completed" && new Date(t.created_at).getTime() < Date.now() - 86400000).length;
+
+  const overdueTasks = taskList.filter(
+    (t: any) =>
+      t.status !== "COMPLETED" &&
+      t.status !== "Completed" &&
+      new Date(t.created_at).getTime() < Date.now() - 86400000,
+  ).length;
 
   return (
     <>
@@ -208,7 +229,13 @@ function DashboardPage() {
               icon={Users}
               tone="success"
             />
-            <StatCard label="Overdue tasks" value={overdueTasks} hint="Past deadline" icon={AlertTriangle} tone="danger" />
+            <StatCard
+              label="Overdue tasks"
+              value={overdueTasks}
+              hint="Past deadline"
+              icon={AlertTriangle}
+              tone="danger"
+            />
             <StatCard
               label="Critical requests"
               value={criticalRequests}
@@ -233,7 +260,9 @@ function DashboardPage() {
                         style={{ width: `${(row.count / maxCount) * 100}%` }}
                       />
                     </span>
-                    <span className="w-6 text-right text-sm font-medium tabular-nums">{row.count}</span>
+                    <span className="w-6 text-right text-sm font-medium tabular-nums">
+                      {row.count}
+                    </span>
                   </li>
                 ))}
               </ul>

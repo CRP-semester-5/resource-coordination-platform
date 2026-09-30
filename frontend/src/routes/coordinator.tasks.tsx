@@ -11,12 +11,32 @@ import { StatCard } from "@/components/stat-card";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Users,
   User,
@@ -46,7 +66,8 @@ export const Route = createFileRoute("/coordinator/tasks")({
       { title: "Tasks — ResQ Hub Coordinator" },
       {
         name: "description",
-        content: "Dispatch, monitor, and verify volunteer tasks, field missions, and multi-stage delivery PINs.",
+        content:
+          "Dispatch, monitor, and verify volunteer tasks, field missions, and multi-stage delivery PINs.",
       },
     ],
   }),
@@ -60,20 +81,30 @@ const TYPE_OPTIONS = ["INDIVIDUAL", "TEAM"];
 
 function cleanTaskDescription(desc?: string): string {
   if (!desc) return "No description provided.";
-  return desc
-    .replace(/\[DONATION_ID:[^\]]+\]/gi, "")
-    .replace(/\[DONATION_CODE:[^\]]+\]/gi, "")
-    .replace(/\[REQUEST_ID:[^\]]+\]/gi, "")
-    .replace(/\[REQUEST_CODE:[^\]]+\]/gi, "")
-    .trim() || "Emergency relief operation instructions.";
+  return (
+    desc
+      .replace(/\[DONATION_ID:[^\]]+\]/gi, "")
+      .replace(/\[DONATION_CODE:[^\]]+\]/gi, "")
+      .replace(/\[REQUEST_ID:[^\]]+\]/gi, "")
+      .replace(/\[REQUEST_CODE:[^\]]+\]/gi, "")
+      .trim() || "Emergency relief operation instructions."
+  );
 }
 
 function getTaskOrigin(title: string, desc: string): "DONATION" | "REQUEST" | "GENERAL" {
   const combined = `${title || ""} ${desc || ""}`.toLowerCase();
-  if (combined.includes("[donation_") || combined.includes("pickup donation") || combined.includes("donor")) {
+  if (
+    combined.includes("[donation_") ||
+    combined.includes("pickup donation") ||
+    combined.includes("donor")
+  ) {
     return "DONATION";
   }
-  if (combined.includes("[request_") || combined.includes("deliver aid") || combined.includes("requester")) {
+  if (
+    combined.includes("[request_") ||
+    combined.includes("deliver aid") ||
+    combined.includes("requester")
+  ) {
     return "REQUEST";
   }
   return "GENERAL";
@@ -83,7 +114,9 @@ function TasksPage() {
   const { orgId } = useOrganization();
   const qc = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<"all" | "needs_volunteers" | "active" | "critical" | "completed">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "needs_volunteers" | "active" | "critical" | "completed"
+  >("all");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
@@ -140,7 +173,7 @@ function TasksPage() {
 
   const availableVolunteers = Array.isArray(volunteersResponse)
     ? volunteersResponse
-    : ((volunteersResponse as any)?.data?.data || []);
+    : (volunteersResponse as any)?.data?.data || [];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => tasksAPI.create(data),
@@ -184,7 +217,7 @@ function TasksPage() {
     setLocation("");
   };
 
-  const tasks: any[] = Array.isArray(response) ? response : ((response as any)?.data?.data || []);
+  const tasks: any[] = Array.isArray(response) ? response : (response as any)?.data?.data || [];
 
   // Operational metrics
   const totalCount = tasks.length;
@@ -248,9 +281,7 @@ function TasksPage() {
       // Search filter
       if (search.trim() !== "") {
         const cleanDesc = cleanTaskDescription(t.description);
-        const target = [t.title, cleanDesc, t.required_skill, t.location]
-          .join(" ")
-          .toLowerCase();
+        const target = [t.title, cleanDesc, t.required_skill, t.location].join(" ").toLowerCase();
         if (!target.includes(search.toLowerCase())) return false;
       }
 
@@ -480,7 +511,10 @@ function TasksPage() {
                           {t.title}
                         </span>
                       </div>
-                      <span className="block text-xs text-muted-foreground truncate mt-1" title={cleanDesc}>
+                      <span
+                        className="block text-xs text-muted-foreground truncate mt-1"
+                        title={cleanDesc}
+                      >
                         {cleanDesc}
                       </span>
                       {t.location && (
@@ -513,10 +547,10 @@ function TasksPage() {
                           t.priority === "CRITICAL"
                             ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200"
                             : t.priority === "HIGH"
-                            ? "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200"
-                            : t.priority === "LOW"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200"
-                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200"
+                              : t.priority === "LOW"
+                                ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200"
+                                : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200"
                         }`}
                       >
                         {t.priority}
@@ -548,8 +582,8 @@ function TasksPage() {
                             isFull
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300"
                               : assignedCount > 0
-                              ? "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-300"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300"
+                                ? "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-300"
+                                : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300"
                           }`}
                         >
                           {assignedCount} / {required}
@@ -584,13 +618,24 @@ function TasksPage() {
       {filtered.length > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <p>
-            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+            Showing {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)}{" "}
+            of {filtered.length}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 1} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current === pageCount} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === pageCount}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>
@@ -651,7 +696,10 @@ function TasksPage() {
             {/* Task Type & Volunteer Capacity Selector */}
             <div className="grid grid-cols-2 gap-3 p-3 bg-muted/40 rounded-lg border border-border">
               <div className="space-y-1.5">
-                <Label htmlFor="task-type" className="font-semibold text-xs text-foreground uppercase tracking-wider">
+                <Label
+                  htmlFor="task-type"
+                  className="font-semibold text-xs text-foreground uppercase tracking-wider"
+                >
                   Mission Type
                 </Label>
                 <Select
@@ -686,7 +734,10 @@ function TasksPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="volunteer-count" className="font-semibold text-xs text-foreground uppercase tracking-wider">
+                <Label
+                  htmlFor="volunteer-count"
+                  className="font-semibold text-xs text-foreground uppercase tracking-wider"
+                >
                   {taskType === "TEAM" ? "Volunteers Needed" : "Capacity"}
                 </Label>
                 <Input
@@ -696,7 +747,9 @@ function TasksPage() {
                   max={50}
                   disabled={taskType === "INDIVIDUAL"}
                   value={volunteersRequired}
-                  onChange={(e) => setVolunteersRequired(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  onChange={(e) =>
+                    setVolunteersRequired(Math.max(1, parseInt(e.target.value, 10) || 1))
+                  }
                   className="bg-background"
                   placeholder="e.g. 5"
                 />
@@ -801,27 +854,32 @@ function TasksPage() {
                         selectedTask.priority === "CRITICAL"
                           ? "bg-red-100 text-red-700 dark:bg-red-950/50 border border-red-300"
                           : selectedTask.priority === "HIGH"
-                          ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 border border-orange-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 border border-amber-300"
+                            ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 border border-orange-300"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 border border-amber-300"
                       }`}
                     >
                       {selectedTask.priority} Priority
                     </span>
                     <StatusBadge value={(selectedTask.status || "UNASSIGNED").replace("_", " ")} />
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300">
-                      {selectedTask.task_type === "TEAM" || (selectedTask.volunteers_required || 1) > 1
+                      {selectedTask.task_type === "TEAM" ||
+                      (selectedTask.volunteers_required || 1) > 1
                         ? `Team Mission (${selectedTask.volunteers_required || 1} Volunteers)`
                         : "Individual Solo (1 Volunteer)"}
                     </span>
                   </div>
 
                   <span className="font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                    #TASK-{selectedTask.task_id?.slice(0, 8).toUpperCase() || selectedTask.id?.slice(0, 8).toUpperCase()}
+                    #TASK-
+                    {selectedTask.task_id?.slice(0, 8).toUpperCase() ||
+                      selectedTask.id?.slice(0, 8).toUpperCase()}
                   </span>
                 </div>
 
                 <div className="mt-2.5">
-                  <h2 className="text-xl font-bold tracking-tight text-foreground">{selectedTask.title}</h2>
+                  <h2 className="text-xl font-bold tracking-tight text-foreground">
+                    {selectedTask.title}
+                  </h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {cleanTaskDescription(selectedTask.description)}
                   </p>
@@ -843,9 +901,11 @@ function TasksPage() {
                       Volunteers Assigned
                     </span>
                     <p className="text-base font-extrabold text-foreground mt-0.5">
-                      {selectedTask.task_assignments?.length || 0} / {selectedTask.volunteers_required || 1}{" "}
+                      {selectedTask.task_assignments?.length || 0} /{" "}
+                      {selectedTask.volunteers_required || 1}{" "}
                       <span className="text-xs font-normal text-muted-foreground">
-                        {(selectedTask.task_assignments?.length || 0) >= (selectedTask.volunteers_required || 1)
+                        {(selectedTask.task_assignments?.length || 0) >=
+                        (selectedTask.volunteers_required || 1)
                           ? "(Filled)"
                           : "(Needed)"}
                       </span>
@@ -900,7 +960,8 @@ function TasksPage() {
                         <div className="rounded-xl border border-primary/20 bg-background p-4 shadow-2xs space-y-3">
                           <div className="flex items-center justify-between border-b border-border/60 pb-2">
                             <span className="flex items-center gap-1.5 font-bold text-xs text-foreground">
-                              <ShieldCheck className="h-4 w-4 text-primary" /> Multi-Stage Security PIN Lifecycle
+                              <ShieldCheck className="h-4 w-4 text-primary" /> Multi-Stage Security
+                              PIN Lifecycle
                             </span>
                             <span className="text-[10px] text-muted-foreground font-medium">
                               Stage-by-Stage Verification
@@ -914,28 +975,30 @@ function TasksPage() {
                                 isWarehouseDone
                                   ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
                                   : isAssigned
-                                  ? "bg-primary/5 border-primary/30 text-foreground"
-                                  : "bg-muted/30 border-dashed border-border text-muted-foreground"
+                                    ? "bg-primary/5 border-primary/30 text-foreground"
+                                    : "bg-muted/30 border-dashed border-border text-muted-foreground"
                               }`}
                             >
                               <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-bold">
-                                  {isDonation ? "🎁 Stage 1: Donor Collection PIN" : "📦 Stage 1: Warehouse Dispatch PIN"}
+                                  {isDonation
+                                    ? "🎁 Stage 1: Donor Collection PIN"
+                                    : "📦 Stage 1: Warehouse Dispatch PIN"}
                                 </span>
                                 <span
                                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                                     isWarehouseDone
                                       ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
                                       : isAssigned
-                                      ? "bg-primary/20 text-primary animate-pulse"
-                                      : "bg-slate-500/10 text-slate-500"
+                                        ? "bg-primary/20 text-primary animate-pulse"
+                                        : "bg-slate-500/10 text-slate-500"
                                   }`}
                                 >
                                   {isWarehouseDone
                                     ? "VERIFIED & CLOSED"
                                     : isAssigned
-                                    ? "ACTIVE FOR STAFF"
-                                    : "PENDING ASSIGNMENT"}
+                                      ? "ACTIVE FOR STAFF"
+                                      : "PENDING ASSIGNMENT"}
                                 </span>
                               </div>
 
@@ -943,7 +1006,8 @@ function TasksPage() {
                                 {isWarehouseDone ? (
                                   <div>
                                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                      <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                      <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified &
+                                      Expired (Closed)
                                     </span>
                                     <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300 mt-0.5">
                                       {isDonation
@@ -957,7 +1021,8 @@ function TasksPage() {
                                       🔒 •••• (Private to Donor)
                                     </span>
                                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                                      Donor provides 4-digit code directly from mobile app to volunteer.
+                                      Donor provides 4-digit code directly from mobile app to
+                                      volunteer.
                                     </p>
                                   </div>
                                 ) : isAssigned ? (
@@ -1025,8 +1090,8 @@ function TasksPage() {
                                 isCompleted
                                   ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
                                   : isWarehouseDone && isDonation
-                                  ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200"
-                                  : "bg-muted/40 border-border text-foreground"
+                                    ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-950 dark:text-indigo-200"
+                                    : "bg-muted/40 border-border text-foreground"
                               }`}
                             >
                               <div className="flex items-center justify-between">
@@ -1040,15 +1105,15 @@ function TasksPage() {
                                     isCompleted
                                       ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
                                       : isWarehouseDone && isDonation
-                                      ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse"
-                                      : "bg-slate-500/10 text-slate-600 dark:text-slate-300"
+                                        ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 animate-pulse"
+                                        : "bg-slate-500/10 text-slate-600 dark:text-slate-300"
                                   }`}
                                 >
                                   {isCompleted
                                     ? "COMPLETED & CLOSED"
                                     : isWarehouseDone && isDonation
-                                    ? "ACTIVE FOR STORE"
-                                    : "AWAITING STAGE 1"}
+                                      ? "ACTIVE FOR STORE"
+                                      : "AWAITING STAGE 1"}
                                 </span>
                               </div>
 
@@ -1056,7 +1121,8 @@ function TasksPage() {
                                 {isCompleted ? (
                                   <div>
                                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                      <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified & Expired (Closed)
+                                      <CheckCircle2 className="h-3.5 w-3.5" /> PIN Verified &
+                                      Expired (Closed)
                                     </span>
                                     <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300 mt-0.5">
                                       {isDonation
@@ -1085,7 +1151,8 @@ function TasksPage() {
                                         </Button>
                                       </div>
                                       <p className="text-[10px] text-indigo-700/80 dark:text-indigo-300 mt-0.5">
-                                        Store staff provide to volunteer to confirm inventory receipt.
+                                        Store staff provide to volunteer to confirm inventory
+                                        receipt.
                                       </p>
                                     </div>
                                   ) : (
@@ -1100,10 +1167,13 @@ function TasksPage() {
                                             ...prev,
                                             [selectedTask.id || selectedTask.task_id || ""]: true,
                                           }));
-                                          toast.info("Warehouse Deposit PIN revealed for store staff.");
+                                          toast.info(
+                                            "Warehouse Deposit PIN revealed for store staff.",
+                                          );
                                         }}
                                       >
-                                        <KeyRound className="h-3.5 w-3.5" /> Reveal Store Deposit PIN
+                                        <KeyRound className="h-3.5 w-3.5" /> Reveal Store Deposit
+                                        PIN
                                       </Button>
                                       <p className="text-[10px] text-muted-foreground mt-1">
                                         Click to display code for inventory inward receipt.
@@ -1113,7 +1183,11 @@ function TasksPage() {
                                 ) : (
                                   <div>
                                     <span className="text-sm font-bold tracking-widest text-muted-foreground font-mono block">
-                                      🔒 •••• ({isDonation ? "Pending Stage 1 Collection" : "Private to Recipient"})
+                                      🔒 •••• (
+                                      {isDonation
+                                        ? "Pending Stage 1 Collection"
+                                        : "Private to Recipient"}
+                                      )
                                     </span>
                                     <p className="text-[10px] text-muted-foreground mt-0.5">
                                       {isDonation
@@ -1133,13 +1207,16 @@ function TasksPage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Activity className="h-4 w-4 text-emerald-600" />
-                        <h3 className="font-bold text-sm text-foreground">Live Progress & Field SitReps</h3>
+                        <h3 className="font-bold text-sm text-foreground">
+                          Live Progress & Field SitReps
+                        </h3>
                       </div>
 
                       {/* Calculated Progress Bar */}
                       {(() => {
                         const isTeam =
-                          selectedTask.task_type === "TEAM" || (selectedTask.volunteers_required || 1) > 1;
+                          selectedTask.task_type === "TEAM" ||
+                          (selectedTask.volunteers_required || 1) > 1;
                         const requiredCount = selectedTask.volunteers_required || 1;
 
                         const volProgMap = new Map();
@@ -1161,7 +1238,8 @@ function TasksPage() {
                             const uid = p.users?.email || p.updated_by_user_id;
                             if (uid) {
                               const curr = volProgMap.get(uid) || 0;
-                              const pPercent = typeof p.progress_percent === "number" ? p.progress_percent : 0;
+                              const pPercent =
+                                typeof p.progress_percent === "number" ? p.progress_percent : 0;
                               volProgMap.set(uid, Math.max(curr, pPercent));
                             }
                           }
@@ -1174,9 +1252,11 @@ function TasksPage() {
                         const teamPercent = isTeam
                           ? Math.min(100, Math.round(sumProg / requiredCount))
                           : selectedTask.status === "COMPLETED"
-                          ? 100
-                          : selectedTask.task_progress?.[0]?.progress_percent ||
-                            (selectedTask.task_assignments?.[0]?.assignment_status === "COMPLETED" ? 100 : 25);
+                            ? 100
+                            : selectedTask.task_progress?.[0]?.progress_percent ||
+                              (selectedTask.task_assignments?.[0]?.assignment_status === "COMPLETED"
+                                ? 100
+                                : 25);
 
                         return (
                           <div className="p-3 bg-card border border-border rounded-lg space-y-1.5 shadow-2xs">
@@ -1186,7 +1266,9 @@ function TasksPage() {
                                   ? `Team Mission Progress (${volProgMap.size} of ${requiredCount} active)`
                                   : "Mission Progress"}
                               </span>
-                              <span className="text-emerald-600 font-bold">{teamPercent}% Completed</span>
+                              <span className="text-emerald-600 font-bold">
+                                {teamPercent}% Completed
+                              </span>
                             </div>
                             <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                               <div
@@ -1199,11 +1281,12 @@ function TasksPage() {
                       })()}
 
                       {/* Timeline */}
-                      {(!selectedTask.task_progress || selectedTask.task_progress.length === 0) ? (
+                      {!selectedTask.task_progress || selectedTask.task_progress.length === 0 ? (
                         <div className="p-4 bg-muted/20 border border-border/80 rounded-xl text-center">
                           <Clock className="h-6 w-6 text-muted-foreground mx-auto mb-1 opacity-50" />
                           <p className="text-xs text-muted-foreground font-medium">
-                            No live field SitReps recorded yet. When volunteers update status from their mobile app, updates will stream here.
+                            No live field SitReps recorded yet. When volunteers update status from
+                            their mobile app, updates will stream here.
                           </p>
                         </div>
                       ) : (
@@ -1216,7 +1299,8 @@ function TasksPage() {
                             .map((p: any, idx: number) => {
                               const user = p.users || {};
                               const author =
-                                `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Volunteer";
+                                `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                                "Volunteer";
 
                               return (
                                 <div
@@ -1275,10 +1359,12 @@ function TasksPage() {
                       </div>
 
                       {/* Assignment List */}
-                      {!selectedTask.task_assignments || selectedTask.task_assignments.length === 0 ? (
+                      {!selectedTask.task_assignments ||
+                      selectedTask.task_assignments.length === 0 ? (
                         <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center">
                           <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                            No volunteers assigned yet. Open for registered volunteers to pick up or assign manually above.
+                            No volunteers assigned yet. Open for registered volunteers to pick up or
+                            assign manually above.
                           </p>
                         </div>
                       ) : (
@@ -1316,7 +1402,9 @@ function TasksPage() {
                                   </div>
                                   <div>
                                     <div className="flex items-center gap-1.5">
-                                      <p className="font-semibold text-xs text-foreground">{name}</p>
+                                      <p className="font-semibold text-xs text-foreground">
+                                        {name}
+                                      </p>
                                       {isTeam && (
                                         <span
                                           className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${
@@ -1381,7 +1469,8 @@ function TasksPage() {
                           className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary hover:bg-muted transition-colors shadow-2xs"
                         >
                           <MapPin className="h-3 w-3 text-red-500" />
-                          Open Location in Google Maps <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+                          Open Location in Google Maps{" "}
+                          <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
                         </a>
                       )}
                     </div>

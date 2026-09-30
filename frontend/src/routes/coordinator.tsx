@@ -1,6 +1,15 @@
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Boxes, ClipboardList, HeartHandshake, LayoutDashboard, ListChecks, Users, UserPlus, MessagesSquare } from "lucide-react";
+import {
+  Boxes,
+  ClipboardList,
+  HeartHandshake,
+  LayoutDashboard,
+  ListChecks,
+  Users,
+  UserPlus,
+  MessagesSquare,
+} from "lucide-react";
 import { AppShell, type NavItem } from "@/components/app-shell";
 import { OrganizationProvider } from "@/context/organization";
 import { useAuth } from "@/context/auth";
