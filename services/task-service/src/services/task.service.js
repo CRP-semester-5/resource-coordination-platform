@@ -101,8 +101,10 @@ const recordInventoryTransaction = async ({
 const syncLinkedRequestStatus = async (taskId, newStatus, taskDesc = null) => {
     try {
         let desc = taskDesc;
+        let orgId = null;
         if (!desc) {
             const task = await taskRepo.getTaskById(taskId);
+            orgId = task?.data?.organization_id || null;
             desc = task.data?.description || '';
         }
 
@@ -124,8 +126,8 @@ const syncLinkedRequestStatus = async (taskId, newStatus, taskDesc = null) => {
                 if (reqStatus === 'FULFILLED') {
                     updatePayload.fulfilled_at = new Date().toISOString();
                 }
-                if (task.data?.organization_id) {
-                    updatePayload.organization_id = task.data.organization_id;
+                if (orgId) {
+                    updatePayload.organization_id = orgId;
                 }
                 await supabase.from('requests').update(updatePayload).eq('request_id', reqId);
                 console.log(`[Sync] Updated linked request ${reqId} to ${reqStatus}`);
