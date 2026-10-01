@@ -19,7 +19,7 @@ import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
 import { BackgroundShader } from "./background-shader";
 
-export const MOBILE_APP_DOWNLOAD_URL = "https://drive.google.com/YOUR_GOOGLE_DRIVE_LINK_HERE";
+export const MOBILE_APP_DOWNLOAD_URL = "https://drive.google.com/file/d/1AYGfFdXrHtkMYPI6NXp0RgWjtGuaVvtD/view?usp=sharing";
 
 export function HomePageView() {
   const { isAuthenticated, isSuperAdmin, user, logout } = useAuth();
