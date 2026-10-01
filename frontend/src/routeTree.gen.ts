@@ -16,9 +16,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminFeedRouteImport } from './routes/admin.feed'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin.organizations'
 import { Route as CoordinatorIndexRouteImport } from './routes/coordinator.index'
 import { Route as CoordinatorDonationsRouteImport } from './routes/coordinator.donations'
+import { Route as CoordinatorFeedRouteImport } from './routes/coordinator.feed'
 import { Route as CoordinatorInventoryRouteImport } from './routes/coordinator.inventory'
 import { Route as CoordinatorRequestsRouteImport } from './routes/coordinator.requests'
 import { Route as CoordinatorTasksRouteImport } from './routes/coordinator.tasks'
@@ -60,6 +62,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeedRoute = AdminFeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
   id: '/organizations',
   path: '/organizations',
@@ -73,6 +80,11 @@ const CoordinatorIndexRoute = CoordinatorIndexRouteImport.update({
 const CoordinatorDonationsRoute = CoordinatorDonationsRouteImport.update({
   id: '/donations',
   path: '/donations',
+  getParentRoute: () => CoordinatorRoute,
+} as any)
+const CoordinatorFeedRoute = CoordinatorFeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
   getParentRoute: () => CoordinatorRoute,
 } as any)
 const CoordinatorInventoryRoute = CoordinatorInventoryRouteImport.update({
@@ -108,8 +120,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/feed': typeof AdminFeedRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/coordinator/donations': typeof CoordinatorDonationsRoute
+  '/coordinator/feed': typeof CoordinatorFeedRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
   '/coordinator/tasks': typeof CoordinatorTasksRoute
@@ -123,8 +137,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/feed': typeof AdminFeedRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/coordinator/donations': typeof CoordinatorDonationsRoute
+  '/coordinator/feed': typeof CoordinatorFeedRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
   '/coordinator/tasks': typeof CoordinatorTasksRoute
@@ -141,8 +157,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/feed': typeof AdminFeedRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/coordinator/donations': typeof CoordinatorDonationsRoute
+  '/coordinator/feed': typeof CoordinatorFeedRoute
   '/coordinator/inventory': typeof CoordinatorInventoryRoute
   '/coordinator/requests': typeof CoordinatorRequestsRoute
   '/coordinator/tasks': typeof CoordinatorTasksRoute
@@ -160,8 +178,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/categories'
+    | '/admin/feed'
     | '/admin/organizations'
     | '/coordinator/donations'
+    | '/coordinator/feed'
     | '/coordinator/inventory'
     | '/coordinator/requests'
     | '/coordinator/tasks'
@@ -175,8 +195,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/categories'
+    | '/admin/feed'
     | '/admin/organizations'
     | '/coordinator/donations'
+    | '/coordinator/feed'
     | '/coordinator/inventory'
     | '/coordinator/requests'
     | '/coordinator/tasks'
@@ -192,8 +214,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/categories'
+    | '/admin/feed'
     | '/admin/organizations'
     | '/coordinator/donations'
+    | '/coordinator/feed'
     | '/coordinator/inventory'
     | '/coordinator/requests'
     | '/coordinator/tasks'
@@ -262,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/feed': {
+      id: '/admin/feed'
+      path: '/feed'
+      fullPath: '/admin/feed'
+      preLoaderRoute: typeof AdminFeedRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/organizations': {
       id: '/admin/organizations'
       path: '/organizations'
@@ -281,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/donations'
       fullPath: '/coordinator/donations'
       preLoaderRoute: typeof CoordinatorDonationsRouteImport
+      parentRoute: typeof CoordinatorRoute
+    }
+    '/coordinator/feed': {
+      id: '/coordinator/feed'
+      path: '/feed'
+      fullPath: '/coordinator/feed'
+      preLoaderRoute: typeof CoordinatorFeedRouteImport
       parentRoute: typeof CoordinatorRoute
     }
     '/coordinator/inventory': {
@@ -323,12 +361,14 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminFeedRoute: typeof AdminFeedRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminFeedRoute: AdminFeedRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -337,6 +377,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CoordinatorRouteChildren {
   CoordinatorDonationsRoute: typeof CoordinatorDonationsRoute
+  CoordinatorFeedRoute: typeof CoordinatorFeedRoute
   CoordinatorInventoryRoute: typeof CoordinatorInventoryRoute
   CoordinatorRequestsRoute: typeof CoordinatorRequestsRoute
   CoordinatorTasksRoute: typeof CoordinatorTasksRoute
@@ -347,6 +388,7 @@ interface CoordinatorRouteChildren {
 
 const CoordinatorRouteChildren: CoordinatorRouteChildren = {
   CoordinatorDonationsRoute: CoordinatorDonationsRoute,
+  CoordinatorFeedRoute: CoordinatorFeedRoute,
   CoordinatorInventoryRoute: CoordinatorInventoryRoute,
   CoordinatorRequestsRoute: CoordinatorRequestsRoute,
   CoordinatorTasksRoute: CoordinatorTasksRoute,

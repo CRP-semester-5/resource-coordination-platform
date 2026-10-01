@@ -54,14 +54,34 @@ export const addInventory = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "Missing x-organization-id header" });
         }
         
-        const { category_id, quantity } = req.body;
+        const { category_id, quantity, donation_id, item_name, remarks } = req.body;
         if (!category_id || quantity === undefined) {
             return res.status(400).json({ success: false, message: "Missing category_id or quantity" });
         }
         
         const result = await inventoryService.increaseInventory(organizationId, category_id, quantity, {
-            createdBy: req.user?.sub
+            createdBy: req.user?.sub,
+            referenceType: donation_id ? 'DONATION' : 'RESTOCK',
+            referenceId: donation_id || null,
+            remarks: remarks || (donation_id ? `Inward Donation Shelved: ${quantity} units of ${item_name || 'Supplies'}` : `Restocked ${quantity} units`)
         });
+
+        // If from an inward donation, mark the donation as SORTED in the database so it's permanently recorded as shelved
+        if (donation_id) {
+            try {
+                const { supabase } = await import("../lib/supabase.js");
+                await supabase
+                    .from("donations")
+                    .update({
+                        status: "SORTED",
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("donation_id", donation_id);
+            } catch (dErr) {
+                console.warn("[Inventory] Could not update donation status to SORTED:", dErr.message);
+            }
+        }
+
         return res.json({ success: true, data: result });
     } catch (error) {
         next(error);

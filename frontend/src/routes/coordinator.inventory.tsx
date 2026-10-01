@@ -95,6 +95,22 @@ export interface MainBranch {
   types: SubType[];
 }
 
+// Helper to assign a fitting icon to dynamic categories
+export function getCategoryIcon(name: string): string {
+  const n = (name || "").toLowerCase();
+  if (n.includes("food") || n.includes("meal") || n.includes("rice")) return "🍲";
+  if (n.includes("water") || n.includes("drink")) return "💧";
+  if (n.includes("med") || n.includes("first aid")) return "💊";
+  if (n.includes("baby") || n.includes("infant")) return "👶";
+  if (n.includes("cloth") || n.includes("garment")) return "👕";
+  if (n.includes("shelter") || n.includes("bed") || n.includes("tent")) return "⛺";
+  if (n.includes("hygiene") || n.includes("soap") || n.includes("sanit")) return "🧼";
+  if (n.includes("tool") || n.includes("equip") || n.includes("torch")) return "🔦";
+  if (n.includes("rescue") || n.includes("boat") || n.includes("jacket")) return "🦺";
+  if (n.includes("electric") || n.includes("power") || n.includes("battery")) return "⚡";
+  return "📦";
+}
+
 // 9 OFFICIAL HUMANITARIAN RELIEF CATEGORIES WITH KEYWORD MAPPINGS FOR REAL DB
 const DEFAULT_BRANCHES: MainBranch[] = [
   {
@@ -232,7 +248,7 @@ const DEFAULT_BRANCHES: MainBranch[] = [
   },
   {
     id: "medical",
-    dbCategoryNameKeywords: ["medical", "medicine", "pill", "drug", "health", "pharm"],
+    dbCategoryNameKeywords: ["medical", "medicine", "pill", "drug", "health", "pharm", "supplies"],
     name: "Medical Supplies & First Aid",
     icon: "💊",
     description: "Prescription medicines, paracetamol, trauma bandages, and surgical supplies.",
@@ -648,15 +664,35 @@ export function CoordinatorInventoryPage() {
   // "food" | "water" | etc. = Dedicated Category Sub-Type Sorter View
   const [selectedCategoryView, setSelectedCategoryView] = useState<string | null>(null);
 
-  // STATE 2: 3-Tier Hierarchy layout structure with safe fallback
+  // HELPER: Save branches scoped by active organization
+  const saveBranches = (data: MainBranch[]) => {
+    if (orgId) {
+      try {
+        localStorage.setItem(`resq_hub_custom_branches_${orgId}`, JSON.stringify(data));
+      } catch (_) {}
+    }
+  };
+
+  // STATE 2: 3-Tier Hierarchy layout structure with safe fallback (clean 0-quantity default)
   const [branches, setBranches] = useState<MainBranch[]>(() => {
+    return DEFAULT_BRANCHES.map((defB) => ({
+      ...defB,
+      types: (defB.types || []).map((t) => ({
+        ...t,
+        variants: (t.variants || []).map((v) => ({ ...v, quantity: 0 })),
+      })),
+    }));
+  });
+
+  // Re-sync branches when active organization changes
+  useEffect(() => {
+    if (!orgId) return;
     try {
-      const saved = localStorage.getItem("resq_hub_custom_branches");
+      const saved = localStorage.getItem(`resq_hub_custom_branches_${orgId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length >= 9) {
-          // Merge with default properties to ensure all fields are safely present
-          return DEFAULT_BRANCHES.map((defB) => {
+          const defaultUpdated = DEFAULT_BRANCHES.map((defB) => {
             const userB = parsed.find((p: any) => p.id === defB.id);
             if (!userB) return defB;
             return {
@@ -667,11 +703,26 @@ export function CoordinatorInventoryPage() {
                 Array.isArray(userB.types) && userB.types.length > 0 ? userB.types : defB.types,
             };
           });
+          const extraUserBranches = parsed.filter(
+            (p: any) => !DEFAULT_BRANCHES.some((defB) => defB.id === p.id),
+          );
+          setBranches([...defaultUpdated, ...extraUserBranches]);
+          return;
         }
       }
     } catch (_) {}
-    return DEFAULT_BRANCHES;
-  });
+
+    // Default clean 0-quantity branches for newly created/selected organization
+    setBranches(
+      DEFAULT_BRANCHES.map((defB) => ({
+        ...defB,
+        types: (defB.types || []).map((t) => ({
+          ...t,
+          variants: (t.variants || []).map((v) => ({ ...v, quantity: 0 })),
+        })),
+      })),
+    );
+  }, [orgId]);
 
   // DRAG & DROP RUNTIME STATE
   const [draggedDonation, setDraggedDonation] = useState<any | null>(null);
@@ -697,21 +748,28 @@ export function CoordinatorInventoryPage() {
   const [quickAssignDonationId, setQuickAssignDonationId] = useState<string | null>(null);
   const [quickAssignVariantId, setQuickAssignVariantId] = useState<string>("");
 
-  // PERSISTED SORTED / SHELVED DONATION IDS (prevents infinite drag & drop)
-  const [sortedDonationIds, setSortedDonationIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("resq_hub_sorted_donation_ids");
-      return saved ? JSON.parse(saved) : [];
-    } catch (_) {
-      return [];
-    }
-  });
+  // PERSISTED SORTED / SHELVED DONATION IDS (scoped per organization)
+  const [sortedDonationIds, setSortedDonationIds] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!orgId) return;
     try {
-      localStorage.setItem("resq_hub_sorted_donation_ids", JSON.stringify(sortedDonationIds));
+      const saved = localStorage.getItem(`resq_hub_sorted_donation_ids_${orgId}`);
+      setSortedDonationIds(saved ? JSON.parse(saved) : []);
+    } catch (_) {
+      setSortedDonationIds([]);
+    }
+  }, [orgId]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    try {
+      localStorage.setItem(
+        `resq_hub_sorted_donation_ids_${orgId}`,
+        JSON.stringify(sortedDonationIds),
+      );
     } catch (_) {}
-  }, [sortedDonationIds]);
+  }, [sortedDonationIds, orgId]);
 
   // ACTIVE ALLOCATION STATE (when triggered from Requests preview modal)
   const [activeAllocation, setActiveAllocation] = useState<{
@@ -726,31 +784,39 @@ export function CoordinatorInventoryPage() {
     priority?: string;
   } | null>(() => {
     try {
-      const stored = localStorage.getItem("resq_hub_active_allocation");
+      // Clear obsolete stuck allocation from localStorage so clicking the Inventory tab never gets hijacked
+      localStorage.removeItem("resq_hub_active_allocation");
+      const stored = sessionStorage.getItem("resq_hub_active_allocation");
       if (stored) return JSON.parse(stored);
     } catch (_) {}
     return null;
   });
 
-  // Automatically switch to the matching category view when activeAllocation exists
+  // Only auto-switch to category view if the user EXPLICITLY clicked "Allocate" in Requests right now
   useEffect(() => {
-    if (activeAllocation) {
-      const reqCat = (activeAllocation.category || activeAllocation.item || "").toLowerCase();
-      const matchedB = branches.find((b) => {
-        if (b.name.toLowerCase() === reqCat || b.id.toLowerCase() === reqCat) return true;
-        const kws = b.dbCategoryNameKeywords || [];
-        return kws.some((kw) => reqCat.includes(kw));
-      });
-      if (matchedB) {
-        setSelectedCategoryView(matchedB.id);
-      } else {
-        setSelectedCategoryView(branches[0]?.id || "food");
+    try {
+      const autoOpenIntent = sessionStorage.getItem("resq_hub_allocation_auto_open");
+      if (autoOpenIntent === "true" && activeAllocation) {
+        sessionStorage.removeItem("resq_hub_allocation_auto_open");
+        const reqCat = (activeAllocation.category || activeAllocation.item || "").toLowerCase();
+        const matchedB = branches.find((b) => {
+          if (b.name.toLowerCase() === reqCat || b.id.toLowerCase() === reqCat) return true;
+          const kws = b.dbCategoryNameKeywords || [];
+          return kws.some((kw) => reqCat.includes(kw));
+        });
+        if (matchedB) {
+          setSelectedCategoryView(matchedB.id);
+        }
       }
-    }
+    } catch (_) {}
   }, [activeAllocation, branches]);
 
   const cancelActiveAllocation = () => {
-    localStorage.removeItem("resq_hub_active_allocation");
+    try {
+      localStorage.removeItem("resq_hub_active_allocation");
+      sessionStorage.removeItem("resq_hub_active_allocation");
+      sessionStorage.removeItem("resq_hub_allocation_auto_open");
+    } catch (_) {}
     setActiveAllocation(null);
     toast.info("Allocation mode cancelled.");
   };
@@ -791,7 +857,7 @@ export function CoordinatorInventoryPage() {
           }),
         };
       });
-      localStorage.setItem("resq_hub_custom_branches", JSON.stringify(updated));
+      saveBranches(updated);
       return updated;
     });
 
@@ -838,7 +904,11 @@ export function CoordinatorInventoryPage() {
     } catch (_) {}
 
     // 4. Clear active allocation
-    localStorage.removeItem("resq_hub_active_allocation");
+    try {
+      localStorage.removeItem("resq_hub_active_allocation");
+      sessionStorage.removeItem("resq_hub_active_allocation");
+      sessionStorage.removeItem("resq_hub_allocation_auto_open");
+    } catch (_) {}
     setActiveAllocation(null);
 
     toast.success(
@@ -869,7 +939,98 @@ export function CoordinatorInventoryPage() {
         return [];
       }
     },
+    refetchInterval: 4000,
   });
+
+  // Automatically integrate custom / newly created DB categories into branches (and prune deleted categories)
+  useEffect(() => {
+    if (!Array.isArray(dbCategories)) return;
+
+    setBranches((prevBranches) => {
+      let changed = false;
+      const defaultBranchIds = new Set(DEFAULT_BRANCHES.map((d) => d.id));
+
+      // 1. Prune custom branches that no longer exist in dbCategories
+      const dbCategoryIds = new Set(dbCategories.map((c: any) => c.category_id));
+      const dbCategoryNames = new Set(dbCategories.map((c: any) => c.name?.trim().toLowerCase()));
+
+      const currentBranches = prevBranches.filter((branch) => {
+        // Always retain default baseline branches
+        if (defaultBranchIds.has(branch.id)) return true;
+
+        // Custom branch: verify if it still exists in dbCategories
+        const branchName = branch.name?.trim().toLowerCase();
+        const matchesId = dbCategoryIds.has(branch.id);
+        const matchesName = dbCategoryNames.has(branchName);
+
+        if (!matchesId && !matchesName) {
+          changed = true;
+          return false; // Remove deleted custom branch!
+        }
+        return true;
+      });
+
+      // 2. Add any new dbCategories that aren't yet in currentBranches
+      dbCategories.forEach((dbCat: any) => {
+        const catName = dbCat.name?.trim();
+        if (!catName) return;
+
+        // Check if existing branch matches this dbCat
+        const alreadyExists = currentBranches.some((b) => {
+          if (b.id === dbCat.category_id) return true;
+          if (b.name.toLowerCase().trim() === catName.toLowerCase()) return true;
+          const kws = b.dbCategoryNameKeywords || [];
+          return kws.some((kw) => catName.toLowerCase().includes(kw));
+        });
+
+        if (!alreadyExists) {
+          const newBranchId =
+            dbCat.category_id || `cat_${catName.toLowerCase().replace(/\s+/g, "_")}`;
+          const newBranch: MainBranch = {
+            id: newBranchId,
+            dbCategoryNameKeywords: [catName.toLowerCase()],
+            name: catName,
+            icon: getCategoryIcon(catName),
+            description: dbCat.description || `Humanitarian relief category for ${catName}.`,
+            color: "text-emerald-600 dark:text-emerald-400",
+            borderTheme: "border-emerald-500/30 hover:border-emerald-500/60",
+            bgGradient: "from-emerald-500/15 via-teal-500/5 to-transparent",
+            types: [
+              {
+                id: `type_${newBranchId}`,
+                name: `${catName} Stock`,
+                icon: "📦",
+                unit: dbCat.unit_of_measure || "units",
+                variants: [
+                  {
+                    id: `var_${newBranchId}`,
+                    name: `Standard ${catName}`,
+                    quantity: 0,
+                    unit: dbCat.unit_of_measure || "units",
+                  },
+                ],
+              },
+            ],
+          };
+          currentBranches.push(newBranch);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        if (orgId) {
+          try {
+            localStorage.setItem(
+              `resq_hub_custom_branches_${orgId}`,
+              JSON.stringify(currentBranches),
+            );
+          } catch (_) {}
+        }
+        return currentBranches;
+      }
+      return prevBranches;
+    });
+  }, [dbCategories, orgId]);
 
   // Real DB Inventory Balances
   const { data: dbInventoryRaw = [], refetch: refetchInventory } = useQuery({
@@ -937,56 +1098,91 @@ export function CoordinatorInventoryPage() {
     const cats = Array.isArray(dbCategories) ? dbCategories : [];
     if (cats.length === 0) return null;
 
+    // 0. Direct match by category_id
+    const byId = cats.find((c: any) => c.category_id === branch?.id);
+    if (byId) return byId.category_id;
+
     // 1. Exact match by name
     const exact = cats.find(
       (c: any) => c.name?.toLowerCase().trim() === (branch?.name || "").toLowerCase().trim(),
     );
     if (exact) return exact.category_id;
 
-    // 2. Match by keywords
+    // 2. Match by keywords (using word boundary so 'ration' never matches 'hydration')
     const keywords = branch?.dbCategoryNameKeywords || [];
     for (const kw of keywords) {
-      const match = cats.find((c: any) => (c.name || "").toLowerCase().includes(kw));
+      const regex = new RegExp(`\\b${kw.toLowerCase()}`, "i");
+      const match = cats.find((c: any) => regex.test((c.name || "").toLowerCase()));
       if (match) return match.category_id;
     }
 
-    // 3. Fallback to first available category
-    return cats[0]?.category_id || null;
+    // 3. Fallback: Return null if no matching category found (NEVER return cats[0]!)
+    return null;
   };
 
-  // Real inventory mapped per branch
+  // Real inventory mapped per branch directly from Supabase PostgreSQL database
   const branchStockMap = useMemo(() => {
     const map = new Map<string, number>();
     const invList = Array.isArray(dbInventoryRaw) ? dbInventoryRaw : [];
 
     branches.forEach((b) => {
-      let totalStock = 0;
       const matchedDbCatId = getDbCategoryIdForBranch(b);
 
-      if (matchedDbCatId && invList.length > 0) {
+      const invRow = invList.find((inv: any) => {
+        const catId = inv.category_id || inv.resource_categories?.category_id;
+        if (matchedDbCatId) {
+          return catId === matchedDbCatId;
+        }
+        const catName = (inv.resource_categories?.name || "").toLowerCase().trim();
+        const branchName = (b.name || "").toLowerCase().trim();
+        return (
+          catName === branchName ||
+          (b.dbCategoryNameKeywords || []).some((kw) => {
+            const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, "i");
+            return regex.test(catName);
+          })
+        );
+      });
+
+      if (invRow) {
+        map.set(b.id, Number(invRow.quantity) || 0);
+      } else {
+        // If not found in DB for this organization, stock is 0
+        map.set(b.id, 0);
+      }
+    });
+
+    return map;
+  }, [branches, dbCategories, dbInventoryRaw]);
+
+  // Synchronize shelf variants with live Supabase PostgreSQL database stock whenever DB data is loaded
+  useEffect(() => {
+    const invList = Array.isArray(dbInventoryRaw) ? dbInventoryRaw : [];
+
+    setBranches((prev) => {
+      let changed = false;
+      const updated = prev.map((b) => {
+        const matchedDbCatId = getDbCategoryIdForBranch(b);
+
         const invRow = invList.find((inv: any) => {
           const catId = inv.category_id || inv.resource_categories?.category_id;
-          return catId === matchedDbCatId;
-        });
-        if (invRow) {
-          totalStock += Number(invRow.quantity) || 0;
-        }
-      }
-
-      // Also check if any inventory item matched by name
-      if (totalStock === 0 && invList.length > 0) {
-        invList.forEach((inv: any) => {
-          const catName = (inv.resource_categories?.name || "").toLowerCase();
-          const kws = b?.dbCategoryNameKeywords || [];
-          if (kws.some((kw) => catName.includes(kw))) {
-            totalStock += Number(inv.quantity) || 0;
+          if (matchedDbCatId) {
+            return catId === matchedDbCatId;
           }
+          const catName = (inv.resource_categories?.name || "").toLowerCase().trim();
+          const branchName = (b.name || "").toLowerCase().trim();
+          return (
+            catName === branchName ||
+            (b.dbCategoryNameKeywords || []).some((kw) => {
+              const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, "i");
+              return regex.test(catName);
+            })
+          );
         });
-      }
 
-      // If database has 0, sum variants
-      if (totalStock === 0 && Array.isArray(b?.types)) {
-        totalStock = b.types.reduce(
+        const dbQty = invRow ? Math.max(0, Number(invRow.quantity) || 0) : 0;
+
+        const currentShelvesSum = (b.types || []).reduce(
           (tSum, t) =>
             tSum +
             (Array.isArray(t?.variants)
@@ -994,15 +1190,103 @@ export function CoordinatorInventoryPage() {
               : 0),
           0,
         );
-      }
 
-      map.set(b.id, totalStock);
+        if (currentShelvesSum !== dbQty) {
+          changed = true;
+          if (dbQty === 0) {
+            return {
+              ...b,
+              types: (b.types || []).map((t) => ({
+                ...t,
+                variants: (t.variants || []).map((v) => ({ ...v, quantity: 0 })),
+              })),
+            };
+          }
+
+          // If starting from 0, initialize primary variant with DB quantity
+          if (currentShelvesSum === 0) {
+            let firstSet = false;
+            return {
+              ...b,
+              types: (b.types || []).map((t, tIdx) => ({
+                ...t,
+                variants: (t.variants || []).map((v, vIdx) => {
+                  if (!firstSet && tIdx === 0 && vIdx === 0) {
+                    firstSet = true;
+                    return { ...v, quantity: dbQty };
+                  }
+                  return v;
+                }),
+              })),
+            };
+          }
+
+          // When shelves already have items distributed, preserve all shelf variants and apply delta to primary variant
+          const diff = dbQty - currentShelvesSum;
+          return {
+            ...b,
+            types: (b.types || []).map((t, tIdx) => ({
+              ...t,
+              variants: (t.variants || []).map((v, vIdx) => {
+                if (tIdx === 0 && vIdx === 0) {
+                  return { ...v, quantity: Math.max(0, (Number(v.quantity) || 0) + diff) };
+                }
+                return v;
+              }),
+            })),
+          };
+        }
+
+        return b;
+      });
+
+      if (changed) {
+        if (orgId) {
+          try {
+            localStorage.setItem(`resq_hub_custom_branches_${orgId}`, JSON.stringify(updated));
+          } catch (_) {}
+        }
+        return updated;
+      }
+      return prev;
+    });
+  }, [dbInventoryRaw, dbCategories, orgId]);
+
+  // Real unit of measure per branch from DB or subType
+  const branchUnitMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const invList = Array.isArray(dbInventoryRaw) ? dbInventoryRaw : [];
+
+    branches.forEach((b) => {
+      const matchedDbCatId = getDbCategoryIdForBranch(b);
+
+      const invRow = invList.find((inv: any) => {
+        const catId = inv.category_id || inv.resource_categories?.category_id;
+        if (matchedDbCatId) {
+          return catId === matchedDbCatId;
+        }
+        const catName = (inv.resource_categories?.name || "").toLowerCase().trim();
+        const branchName = (b.name || "").toLowerCase().trim();
+        return (
+          catName === branchName ||
+          (b.dbCategoryNameKeywords || []).some((kw) => {
+            const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, "i");
+            return regex.test(catName);
+          })
+        );
+      });
+
+      if (invRow?.resource_categories?.unit_of_measure) {
+        map.set(b.id, invRow.resource_categories.unit_of_measure);
+      } else {
+        map.set(b.id, b.types?.[0]?.unit || "units");
+      }
     });
 
     return map;
   }, [branches, dbCategories, dbInventoryRaw]);
 
-  // Grand Total of Real Stock
+  // Grand Total of Real Warehouse Stock
   const grandTotalStockUnits = useMemo(() => {
     let sum = 0;
     branchStockMap.forEach((qty) => {
@@ -1010,6 +1294,38 @@ export function CoordinatorInventoryPage() {
     });
     return sum;
   }, [branchStockMap]);
+
+  // Active categories that currently have real warehouse stock
+  const activeCategoriesCount = useMemo(() => {
+    let count = 0;
+    branchStockMap.forEach((qty) => {
+      if (qty > 0) count++;
+    });
+    return count;
+  }, [branchStockMap]);
+
+  // Cleanse any old dummy seed numbers from localStorage/state once on mount so all categories start clean from 0
+  useEffect(() => {
+    const isCleaned = localStorage.getItem("resq_hub_inventory_v3_zero_reset");
+    if (!isCleaned) {
+      setBranches((prev) => {
+        const cleaned = prev.map((b) => ({
+          ...b,
+          types: (b.types || []).map((t) => ({
+            ...t,
+            variants: (t.variants || []).map((v) => ({ ...v, quantity: 0 })),
+          })),
+        }));
+        try {
+          saveBranches(cleaned);
+          localStorage.setItem("resq_hub_inventory_v3_zero_reset", "true");
+          localStorage.removeItem("resq_hub_custom_branches");
+          localStorage.removeItem("resq_hub_sorted_donation_ids");
+        } catch (_) {}
+        return cleaned;
+      });
+    }
+  }, []);
 
   // Real Inward Donations that have been VERIFIED & DELIVERED to warehouse
   const realUnsortedDonations = useMemo(() => {
@@ -1046,12 +1362,15 @@ export function CoordinatorInventoryPage() {
 
     const kws = currentB.dbCategoryNameKeywords || [];
     return realUnsortedDonations.filter((d: any) => {
-      const cat = (d.category || "").toLowerCase();
-      const resName = (d.resource_name || d.item_name || d.resource || "").toLowerCase();
-      const notes = (d.donation_notes || d.remarks || "").toLowerCase();
+      const cat = (d.category || "").toLowerCase().trim();
+      const resName = (d.resource_name || d.item_name || d.resource || "").toLowerCase().trim();
+      const notes = (d.donation_notes || d.remarks || "").toLowerCase().trim();
       const combined = (cat + " " + resName + " " + notes).trim();
 
-      const matchesKw = kws.some((kw: string) => combined.includes(kw.toLowerCase()));
+      const matchesKw = kws.some((kw: string) => {
+        const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, "i");
+        return regex.test(combined);
+      });
       if (matchesKw) return true;
       if (currentB.id === "other") return true;
       return false;
@@ -1095,16 +1414,17 @@ export function CoordinatorInventoryPage() {
       categoryId,
       quantity,
       donationId,
+      itemName,
     }: {
       categoryId: string;
       quantity: number;
-      donationId?: string;
-      itemName?: string;
+      donationId?: string | undefined;
+      itemName?: string | undefined;
     }) => {
-      // 1. Add / Increase inventory in Supabase
-      const res = await inventoryAPI.add(categoryId, quantity, orgId);
+      // 1. Add / Increase inventory in Supabase with donation tracking
+      const res = await inventoryAPI.add(categoryId, quantity, orgId, donationId, itemName);
 
-      // 2. If it was from a donation, mark/approve the donation in DB
+      // 2. Also attempt donation status approve/shelve if applicable
       if (donationId) {
         try {
           await donationsAPI.approve(donationId);
@@ -1182,7 +1502,7 @@ export function CoordinatorInventoryPage() {
         };
       });
       try {
-        localStorage.setItem("resq_hub_custom_branches", JSON.stringify(updated));
+        saveBranches(updated);
       } catch (_) {}
       return updated;
     });
@@ -1191,9 +1511,11 @@ export function CoordinatorInventoryPage() {
     setSortedDonationIds((prev) => {
       if (prev.includes(donationId)) return prev;
       const next = [...prev, donationId];
-      try {
-        localStorage.setItem("resq_hub_sorted_donation_ids", JSON.stringify(next));
-      } catch (_) {}
+      if (orgId) {
+        try {
+          localStorage.setItem(`resq_hub_sorted_donation_ids_${orgId}`, JSON.stringify(next));
+        } catch (_) {}
+      }
       return next;
     });
 
@@ -1306,7 +1628,7 @@ export function CoordinatorInventoryPage() {
         };
       });
       try {
-        localStorage.setItem("resq_hub_custom_branches", JSON.stringify(updated));
+        saveBranches(updated);
       } catch (_) {}
       return updated;
     });
@@ -1350,7 +1672,7 @@ export function CoordinatorInventoryPage() {
         return { ...b, types: [...(b.types || []), newSub] };
       });
       try {
-        localStorage.setItem("resq_hub_custom_branches", JSON.stringify(updated));
+        saveBranches(updated);
       } catch (_) {}
       return updated;
     });
@@ -1394,7 +1716,7 @@ export function CoordinatorInventoryPage() {
         };
       });
       try {
-        localStorage.setItem("resq_hub_custom_branches", JSON.stringify(updated));
+        saveBranches(updated);
       } catch (_) {}
       return updated;
     });
@@ -1432,6 +1754,28 @@ export function CoordinatorInventoryPage() {
 
     return (
       <div className="space-y-6 pb-20">
+        {activeAllocation && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-foreground shadow-xs">
+            <div className="flex items-center gap-2.5 text-xs font-semibold">
+              <PackageCheck className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>
+                Request Allocation Mode Active: Reserving for Request #
+                {activeAllocation.requestCode || activeAllocation.requestId.slice(0, 8)} (
+                {activeAllocation.quantity} {activeAllocation.unit || "units"} of{" "}
+                {activeAllocation.item || activeAllocation.category})
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={cancelActiveAllocation}
+              className="h-7 text-xs font-bold gap-1 text-destructive border-destructive/30 hover:bg-destructive/10 shrink-0"
+            >
+              <X className="h-3.5 w-3.5" /> Cancel Allocation
+            </Button>
+          </div>
+        )}
+
         {/* TOP NAVIGATION BREADCRUMB & CATEGORY HEADER */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/80">
           <div className="space-y-1.5">
@@ -1477,7 +1821,9 @@ export function CoordinatorInventoryPage() {
               </span>
               <strong className="text-base font-black text-foreground">
                 {categoryRealStock.toLocaleString()}{" "}
-                <span className="text-xs font-normal text-muted-foreground">units</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {branchUnitMap.get(currentCategory.id) || "units"}
+                </span>
               </strong>
             </div>
             <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-right">
@@ -1552,7 +1898,11 @@ export function CoordinatorInventoryPage() {
                       }}
                       onDrop={(e) => {
                         if (subType.variants && subType.variants.length > 0) {
-                          handleDropOnSubTypeContainer(e, subType.id, subType.variants[0].id);
+                          handleDropOnSubTypeContainer(
+                            e,
+                            subType.id,
+                            subType.variants[0]?.id || "",
+                          );
                         }
                       }}
                       className="p-5 rounded-2xl border border-border bg-card/70 shadow-sm space-y-4 hover:border-primary/40 transition-all duration-200 relative group"
@@ -1746,6 +2096,8 @@ export function CoordinatorInventoryPage() {
                         ) {
                           setSortedDonationIds([]);
                           try {
+                            if (orgId)
+                              localStorage.removeItem(`resq_hub_sorted_donation_ids_${orgId}`);
                             localStorage.removeItem("resq_hub_sorted_donation_ids");
                           } catch (_) {}
                           toast.info("Sorted donations cache reset.");
@@ -1871,7 +2223,7 @@ export function CoordinatorInventoryPage() {
                                       setQuickAssignDonationId(donId);
                                       if (allVariantsInCurrentCategory.length > 0) {
                                         setQuickAssignVariantId(
-                                          allVariantsInCurrentCategory[0].variantId,
+                                          allVariantsInCurrentCategory[0]?.variantId || "",
                                         );
                                       }
                                     }}
@@ -2054,7 +2406,7 @@ export function CoordinatorInventoryPage() {
       <PageHeader
         title="Relief Inventory Hub & Warehouse Management"
         description="Live humanitarian warehouse inventory connected to Supabase PostgreSQL real database."
-        action={
+        actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
@@ -2067,6 +2419,28 @@ export function CoordinatorInventoryPage() {
           </div>
         }
       />
+
+      {activeAllocation && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-foreground shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-semibold">
+            <PackageCheck className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              Request Allocation Mode Active: Reserving for Request #
+              {activeAllocation.requestCode || activeAllocation.requestId.slice(0, 8)} (
+              {activeAllocation.quantity} {activeAllocation.unit || "units"} of{" "}
+              {activeAllocation.item || activeAllocation.category})
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={cancelActiveAllocation}
+            className="h-7 text-xs font-bold gap-1 text-destructive border-destructive/30 hover:bg-destructive/10 shrink-0"
+          >
+            <X className="h-3.5 w-3.5" /> Cancel Allocation
+          </Button>
+        </div>
+      )}
 
       {/* TOP KPI CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -2090,11 +2464,12 @@ export function CoordinatorInventoryPage() {
             Active Relief Categories
           </span>
           <div className="mt-1 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-primary">9</span>
-            <span className="text-xs font-semibold text-muted-foreground">Humanitarian Depts</span>
+            <span className="text-2xl font-black text-primary">{activeCategoriesCount}</span>
+            <span className="text-xs font-semibold text-muted-foreground">Active Depts</span>
           </div>
           <span className="text-[11px] text-muted-foreground mt-1 block">
-            {(Array.isArray(dbCategories) ? dbCategories : []).length} Categories Registered in DB
+            {activeCategoriesCount} of {(Array.isArray(dbCategories) ? dbCategories : []).length}{" "}
+            Categories in Warehouse
           </span>
         </div>
 
@@ -2119,7 +2494,7 @@ export function CoordinatorInventoryPage() {
           </span>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-2xl font-black text-foreground">
-              {filteredLedgerEntries.length}
+              {Array.isArray(dbTransactionsRaw) ? dbTransactionsRaw.length : 0}
             </span>
             <span className="text-xs font-semibold text-muted-foreground">transactions</span>
           </div>
@@ -2129,12 +2504,13 @@ export function CoordinatorInventoryPage() {
         </div>
       </div>
 
-      {/* SECTION 1: THE 9 RELIEF CATEGORIES */}
+      {/* SECTION 1: RELIEF CATEGORIES */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-black text-foreground flex items-center gap-2">
-              <Layers className="h-5 w-5 text-primary" /> 9 Humanitarian Relief Categories
+              <Layers className="h-5 w-5 text-primary" /> {branches.length} Humanitarian Relief
+              Categories
             </h2>
             <p className="text-xs text-muted-foreground">
               Click any category card to open its variant shelves and drag-and-drop inward donation
@@ -2190,7 +2566,7 @@ export function CoordinatorInventoryPage() {
 
                     {pendingForThisCategory > 0 && (
                       <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-500/30 shrink-0">
-                        ⚡ {pendingForThisCategory} in DB
+                        ⚡ {pendingForThisCategory} to sort
                       </span>
                     )}
                   </div>
@@ -2207,7 +2583,9 @@ export function CoordinatorInventoryPage() {
                     </span>
                     <strong className="text-lg font-black text-foreground">
                       {branchTotalUnits.toLocaleString()}{" "}
-                      <span className="text-xs font-normal text-muted-foreground">units</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {branchUnitMap.get(b.id) || "units"}
+                      </span>
                     </strong>
                   </div>
 

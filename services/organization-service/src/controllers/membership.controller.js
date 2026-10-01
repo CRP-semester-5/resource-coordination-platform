@@ -129,3 +129,56 @@ export const deleteMembership = async (req, res) => {
     }
 
 };
+
+export const acceptInvitation = async (req, res) => {
+    try {
+        const result = await membershipService.acceptInvitation(
+            req.params.organizationId,
+            req.params.membershipId
+        );
+
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        const redirectUrl = `${frontendUrl}/login?invitation=${result.alreadyAccepted ? "already_accepted" : "accepted"}&org=${encodeURIComponent(result.organizationName)}&email=${encodeURIComponent(result.email)}`;
+
+        // If accessed directly in browser (GET request from email)
+        if (req.method === "GET") {
+            return res.redirect(redirectUrl);
+        }
+
+        return res.json({
+            success: true,
+            message: result.alreadyAccepted ? "Invitation was already accepted." : "Invitation accepted successfully.",
+            data: result
+        });
+    } catch (error) {
+        if (req.method === "GET") {
+            const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+            return res.redirect(`${frontendUrl}/login?invitation=error&message=${encodeURIComponent(error.message)}`);
+        }
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const resendInvitation = async (req, res) => {
+    try {
+        await membershipService.resendInvitation(
+            req.params.organizationId,
+            req.params.membershipId,
+            req.user?.sub
+        );
+
+        return res.json({
+            success: true,
+            message: "Invitation email resent successfully."
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+

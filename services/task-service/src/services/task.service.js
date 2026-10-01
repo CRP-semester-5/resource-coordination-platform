@@ -124,6 +124,9 @@ const syncLinkedRequestStatus = async (taskId, newStatus, taskDesc = null) => {
                 if (reqStatus === 'FULFILLED') {
                     updatePayload.fulfilled_at = new Date().toISOString();
                 }
+                if (task.data?.organization_id) {
+                    updatePayload.organization_id = task.data.organization_id;
+                }
                 await supabase.from('requests').update(updatePayload).eq('request_id', reqId);
                 console.log(`[Sync] Updated linked request ${reqId} to ${reqStatus}`);
             }

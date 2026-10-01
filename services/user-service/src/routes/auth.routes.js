@@ -7,6 +7,7 @@ import {
     forgotPassword,
     resetPassword,
     logout,
+    updateFCMToken,
 } from '../controllers/auth.controller.js'
 import { authenticate } from '../middlewares/auth.middleware.js'
 import { validate } from '../middlewares/validate.js'
@@ -34,5 +35,6 @@ router.post('/reset-password', validate(resetPasswordSchema), resetPassword)
 
 // ── Protected ─────────────────────────────────────────────────────────────────
 router.post('/logout', authenticate, logout)
+router.post('/fcm-token', authenticate, updateFCMToken)
 
 export default router

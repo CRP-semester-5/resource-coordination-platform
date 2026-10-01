@@ -127,14 +127,13 @@ export const getTransactionsByOrg = async (organizationId) => {
             resources ( resource_name, category, unit ),
             users:created_by ( first_name, last_name, email )
         `)
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .order("created_at", { ascending: false });
 
     if (organizationId) {
         query = query.eq("organization_id", organizationId);
     }
 
-    return await query;
+    return await query.limit(500);
 };
 
 export const checkStockAvailability = async (organizationId, categoryName, requiredQty) => {

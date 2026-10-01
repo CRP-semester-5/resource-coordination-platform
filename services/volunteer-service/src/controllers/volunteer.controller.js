@@ -1,4 +1,4 @@
-﻿import * as volunteerService from "../services/volunteer.service.js";
+import * as volunteerService from "../services/volunteer.service.js";
 
 export const registerVolunteer = async (req, res, next) => {
     try {
@@ -12,7 +12,8 @@ export const registerVolunteer = async (req, res, next) => {
 
 export const getVolunteers = async (req, res, next) => {
     try {
-        const volunteers = await volunteerService.getVolunteers();
+        const organizationId = req.headers["x-organization-id"] || req.query.organization_id;
+        const volunteers = await volunteerService.getVolunteers(organizationId);
         return res.json({ success: true, data: volunteers });
     } catch (error) {
         console.error('VOLUNTEER_API_ERROR:', error); next(error);
