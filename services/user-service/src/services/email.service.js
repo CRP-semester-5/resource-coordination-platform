@@ -70,7 +70,8 @@ async function send({ to, subject, html }) {
 export async function sendVerificationEmail(email, token) {
     // Points to the API's GET endpoint — works immediately without a frontend.
     // When the React app is live, change this to: ${env.frontendUrl}/verify-email?token=${token}
-    const link = `http://localhost:3001/api/v1/auth/verify-email?token=${token}`
+    const apiBase = env.apiUrl || process.env.API_URL || 'https://api.resqhub.mrt.lk/api/v1';
+    const link = `${apiBase.replace(/\/$/, '')}/auth/verify-email?token=${token}`;
 
 
     await send({

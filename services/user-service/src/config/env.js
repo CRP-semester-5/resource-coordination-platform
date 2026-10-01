@@ -36,6 +36,7 @@ export const env = {
 
     // ── App ────────────────────────────────────────────────────────
     frontendUrl: optional('FRONTEND_URL', 'http://localhost:5173'),
+    apiUrl: optional('API_URL', 'https://api.resqhub.mrt.lk/api/v1'),
     emailVerificationExpiresMinutes: parseInt(
         optional('EMAIL_VERIFICATION_EXPIRES_MINUTES', '60'),
         10
