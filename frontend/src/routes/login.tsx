@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useAuth } from "@/context/auth";
+import { CheckCircle2, Info, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -16,7 +17,14 @@ function LoginPage() {
   const { login, isAuthenticated, isSuperAdmin } = useAuth();
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const searchParams =
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const invitation = searchParams?.get("invitation");
+  const inviteOrg = searchParams?.get("org") || "the Organization";
+  const inviteEmail = searchParams?.get("email") || "";
+  const role = searchParams?.get("role");
+
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -50,16 +58,11 @@ function LoginPage() {
         {/* Logo */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--primary)" }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="white" opacity=".3" />
-                <path d="M12 2L2 7l10 5 10-5-10-5z" fill="white" />
-                <path d="M2 17l10 5V12L2 7v10z" fill="white" opacity=".6" />
-              </svg>
-            </div>
+            <img
+              src="/logo.png"
+              alt="ResQ Hub Logo"
+              className="w-11 h-11 object-contain rounded-xl shadow-xs"
+            />
             <div>
               <div
                 className="font-bold text-lg leading-none"
@@ -74,19 +77,86 @@ function LoginPage() {
           </div>
         </div>
 
+        {/* Back to Home Link */}
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Home
+          </Link>
+        </div>
+
         <div
           className="rounded-xl border p-8"
           style={{ background: "var(--card)", borderColor: "var(--border)" }}
         >
+          {role === "admin" && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-3">
+              Super Admin Console
+            </div>
+          )}
+          {role === "coordinator" && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary border border-primary/20 mb-3">
+              Coordinator Workspace
+            </div>
+          )}
           <h1
             className="text-2xl font-bold mb-1"
             style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}
           >
-            Sign in
+            {role === "admin"
+              ? "Admin Sign in"
+              : role === "coordinator"
+                ? "Coordinator Sign in"
+                : "Sign in"}
           </h1>
           <p className="text-sm mb-8" style={{ color: "var(--muted-foreground)" }}>
-            Sign in to your ResQ Hub account
+            {role === "admin"
+              ? "Sign in to access platform administration & governance"
+              : role === "coordinator"
+                ? "Sign in to access organization relief & inventory workspace"
+                : "Sign in to your ResQ Hub account"}
           </p>
+
+          {invitation === "accepted" && (
+            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 flex items-start gap-3">
+              <CheckCircle2 className="size-5 shrink-0 mt-0.5 text-emerald-600" />
+              <div>
+                <div className="font-semibold text-sm">Invitation Accepted! 🎉</div>
+                <div className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5 leading-relaxed">
+                  You are now an active <strong>Coordinator</strong> for{" "}
+                  <strong>{inviteOrg}</strong>. Please sign in below with your credentials to access
+                  your operations workspace.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {invitation === "already_accepted" && (
+            <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-800 dark:text-blue-300 flex items-start gap-3">
+              <Info className="size-5 shrink-0 mt-0.5 text-blue-600" />
+              <div>
+                <div className="font-semibold text-sm">Already a Member</div>
+                <div className="text-xs text-blue-700 dark:text-blue-400 mt-0.5 leading-relaxed">
+                  You have already accepted the invitation to <strong>{inviteOrg}</strong>. Sign in
+                  below to continue.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {invitation === "error" && (
+            <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-800 dark:text-rose-300 flex items-start gap-3">
+              <AlertTriangle className="size-5 shrink-0 mt-0.5 text-rose-600" />
+              <div>
+                <div className="font-semibold text-sm">Invitation Error</div>
+                <div className="text-xs text-rose-700 dark:text-rose-400 mt-0.5 leading-relaxed">
+                  {searchParams?.get("message") || "The invitation link is invalid or has expired."}
+                </div>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

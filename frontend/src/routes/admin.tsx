@@ -1,11 +1,12 @@
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Building2, Tag, LayoutDashboard } from "lucide-react";
+import { Building2, Tag, LayoutDashboard, MessagesSquare } from "lucide-react";
 import { AppShell, type NavItem } from "@/components/app-shell";
 import { useAuth } from "@/context/auth";
 
 const nav: NavItem[] = [
   { label: "Overview", to: "/admin", icon: LayoutDashboard, exact: true },
+  { label: "Coordination Feed", to: "/admin/feed", icon: MessagesSquare },
   { label: "Organizations", to: "/admin/organizations", icon: Building2 },
   { label: "Categories", to: "/admin/categories", icon: Tag },
 ];

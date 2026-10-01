@@ -36,7 +36,6 @@ function NotificationsBell() {
     refetchInterval: 5000, // Poll every 5s for pseudo-realtime
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const items: { id: string; title: string; description: string; read: boolean; at: string }[] =
     itemsRaw.map((n: any) => ({
       id: String(n.notification_id),

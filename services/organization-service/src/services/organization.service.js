@@ -119,7 +119,7 @@ export const approveOrganization = async (organizationId) => {
         throw new Error(error.message);
     }
 
-    // 3. Auto-assign the applicant as ORGANIZATION_ADMIN
+    // 3. Auto-assign the applicant as COORDINATOR
     if (org.applicant_id) {
         // Check if already a member to prevent unique constraint error on double-click
         const existing = await membershipRepository.findExistingMembership(organizationId, org.applicant_id);
@@ -127,7 +127,7 @@ export const approveOrganization = async (organizationId) => {
             await membershipRepository.createMembership({
                 organization_id: organizationId,
                 user_id: org.applicant_id,
-                role: 'ORGANIZATION_ADMIN',
+                role: 'COORDINATOR',
                 status: 'ACTIVE'
             });
         }

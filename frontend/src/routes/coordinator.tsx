@@ -8,6 +8,7 @@ import {
   ListChecks,
   Users,
   UserPlus,
+  MessagesSquare,
 } from "lucide-react";
 import { AppShell, type NavItem } from "@/components/app-shell";
 import { OrganizationProvider } from "@/context/organization";
@@ -15,6 +16,7 @@ import { useAuth } from "@/context/auth";
 
 const nav: NavItem[] = [
   { label: "Dashboard", to: "/coordinator", icon: LayoutDashboard, exact: true },
+  { label: "Coordination Feed", to: "/coordinator/feed", icon: MessagesSquare },
   { label: "Requests", to: "/coordinator/requests", icon: ClipboardList },
   { label: "Donations", to: "/coordinator/donations", icon: HeartHandshake },
   { label: "Inventory", to: "/coordinator/inventory", icon: Boxes },
