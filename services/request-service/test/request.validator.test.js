@@ -15,3 +15,15 @@ test('request update rejects empty updates and invalid urgency', () => {
     assert.ok(updateRequestSchema.validate({}).error)
     assert.ok(updateRequestSchema.validate({ urgency: 'IMMEDIATE' }).error)
 })
+
+test('request validation rejects missing required fields and non-positive quantities', () => {
+    assert.ok(createRequestSchema.validate({}).error)
+    assert.ok(createRequestSchema.validate({ ...validRequest, quantity_required: 0 }).error)
+})
+
+test('request validation accepts critical urgency and preserves unknown fields', () => {
+    const result = createRequestSchema.validate({ ...validRequest, urgency: 'CRITICAL', source: 'mobile' })
+    assert.equal(result.error, undefined)
+    assert.equal(result.value.urgency, 'CRITICAL')
+    assert.equal(result.value.source, 'mobile')
+})
