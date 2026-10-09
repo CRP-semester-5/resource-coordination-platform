@@ -18,3 +18,20 @@ test('markAsRead maps missing notifications to not found', async () => {
     const repository = { markAsRead: async () => ({ data: null, error: null }) }
     await assert.rejects(() => createNotificationService(repository).markAsRead('notification-1', 'user-1'), { statusCode: 404 })
 })
+
+test('markAsRead returns the updated notification', async () => {
+    const notification = { notification_id: 'notification-1', is_read: true }
+    const repository = {
+        markAsRead: async (notificationId, userId) => {
+            assert.equal(notificationId, 'notification-1')
+            assert.equal(userId, 'user-1')
+            return { data: notification, error: null }
+        },
+    }
+    assert.deepEqual(await createNotificationService(repository).markAsRead('notification-1', 'user-1'), notification)
+})
+
+test('getUnreadCount propagates repository errors', async () => {
+    const repository = { getUnreadCount: async () => ({ count: null, error: { message: 'database unavailable' } }) }
+    await assert.rejects(() => createNotificationService(repository).getUnreadCount('user-1'), { message: 'database unavailable' })
+})

@@ -17,3 +17,13 @@ test('email verification requires a 64-character hex token', () => {
     assert.ok(verifyEmailSchema.validate({ token: 'not-a-token' }).error)
     assert.equal(loginSchema.validate({ email: 'invalid', password: 'secret' }).error.details[0].path[0], 'email')
 })
+
+test('user registration requires the core identity fields', () => {
+    const result = registerSchema.validate({ email: 'ada@example.com', password: 'Password1' })
+    assert.ok(result.error)
+})
+
+test('login validation accepts a valid email and password', () => {
+    const result = loginSchema.validate({ email: 'ada@example.com', password: 'Password1' })
+    assert.equal(result.error, undefined)
+})

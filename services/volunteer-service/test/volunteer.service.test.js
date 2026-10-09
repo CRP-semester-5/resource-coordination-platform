@@ -21,3 +21,22 @@ test('registerVolunteer rejects an existing volunteer', async () => {
     const repository = { getVolunteerByUserId: async () => ({ data: { volunteer_id: 'vol-1' }, error: null }) }
     await assert.rejects(() => createVolunteerService(repository).registerVolunteer('user-1', {}), { statusCode: 400 })
 })
+
+test('registerVolunteer continues when the lookup returns an error', async () => {
+    const repository = {
+        getVolunteerByUserId: async () => ({ data: null, error: { code: 'DB_ERROR', message: 'lookup failed' } }),
+        createVolunteer: async data => ({ data: { volunteer_id: 'vol-2', ...data }, error: null }),
+    }
+    const result = await createVolunteerService(repository).registerVolunteer('user-1', {})
+    assert.equal(result.volunteer_id, 'vol-2')
+})
+
+test('registerVolunteer supports registration without skills', async () => {
+    const repository = {
+        getVolunteerByUserId: async () => ({ data: null, error: { code: 'PGRST116' } }),
+        createVolunteer: async data => ({ data: { volunteer_id: 'vol-2', ...data }, error: null }),
+        addSkill: async () => { throw new Error('addSkill should not be called') },
+    }
+    const result = await createVolunteerService(repository).registerVolunteer('user-2', {})
+    assert.equal(result.volunteer_id, 'vol-2')
+})

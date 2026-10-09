@@ -21,3 +21,21 @@ test('assignTask maps duplicate assignments to a conflict error', async () => {
     const repository = { getTaskById: async () => ({ data: { status: 'ASSIGNED' }, error: null }), assignTask: async () => ({ data: null, error: { code: '23505', message: 'duplicate' } }) }
     await assert.rejects(() => createTaskService(repository).assignTask('task-1', 'volunteer-1'), { statusCode: 409, message: 'Volunteer already assigned to this task' })
 })
+
+test('assignTask rejects a missing task', async () => {
+    const repository = {
+        getTaskById: async () => ({ data: null, error: null }),
+        assignTask: async () => ({ data: {}, error: null }),
+    }
+    await assert.rejects(() => createTaskService(repository).assignTask('missing-task', 'volunteer-1'), { statusCode: 404 })
+})
+
+test('assignTask keeps completed tasks unchanged after assignment', async () => {
+    const repository = {
+        getTaskById: async () => ({ data: { task_id: 'task-1', status: 'COMPLETED' }, error: null }),
+        assignTask: async () => ({ data: { task_id: 'task-1', volunteer_id: 'volunteer-1' }, error: null }),
+        updateTask: async () => { throw new Error('updateTask should not be called') },
+    }
+    const result = await createTaskService(repository).assignTask('task-1', 'volunteer-1')
+    assert.deepEqual(result, { task_id: 'task-1', volunteer_id: 'volunteer-1' })
+})
